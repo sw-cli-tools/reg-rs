@@ -1,6 +1,6 @@
-use rtt1::args::subcommands;
+use rtt1::builder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("{:?}", subcommands());
+    println!("{:?}", builder::build());
     Ok(())
 }
