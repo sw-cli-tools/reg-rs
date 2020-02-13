@@ -2,8 +2,12 @@ use crate::args;
 use crate::config;
 pub fn build() -> config::Config {
     let args = args::parse_args();
-    config::Config {
+    let config = config::Config {
         mode: args.command,
         debug: args.debug,
+    };
+    if config.debug {
+        dbg!(&config);
     }
+    config
 }

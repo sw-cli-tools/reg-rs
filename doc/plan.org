@@ -10,14 +10,14 @@
 *** structopt2
 *** wdir2
 ** MVP
-*** create, discover, dry-run, run, report
+*** create, discover, dry-run, run, report, smart-diff?
 ** research
 *** template library for report
 ** physical design
 *** src: args, builder, config, db, error, lib, process, report, runner, status
 ** future
 *** serve web console, status (running tests), results (reports), graphs?
-*** smart diff
+*** smarter diff
 *** regex
 ** next
 *** DONE refactor db6, structopt2 to use structopt in rtt1 instead of clap
