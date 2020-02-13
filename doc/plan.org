@@ -22,8 +22,10 @@
 ** next
 *** DONE refactor db6, structopt2 to use structopt in rtt1 instead of clap
 *** DONE add debug flag from clap5 args in rtt1 instead 
-*** TODO refactor clap5 to support dry-run, report in rtt1
-*** TODO refactor wdir2 to support test discovery in rtt1
+*** DONE refactor clap5 to support dry-run, report in rtt1
+*** DONE refactor wdir2 to support test discovery in rtt1
 *** TODO run discovered tests
+*** TODO clean up
 *** TODO dogfood test tests
 *** TODO add template library to produce report in rtt1
+*** TODO add status server

@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 chrono = "0.4.10"
+lazy_static = "1.4.0"
 rusqlite = "0.21.0"
 structopt = "0.3.9"
 walkdir = "2.3.1"

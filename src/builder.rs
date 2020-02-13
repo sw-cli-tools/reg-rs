@@ -7,7 +7,7 @@ pub fn build() -> config::Config {
         debug: args.debug,
     };
     if config.debug {
-        dbg!(&config);
+        md!(&config);
     }
     config
 }

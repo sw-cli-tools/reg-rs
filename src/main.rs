@@ -6,7 +6,6 @@ use rtt1::runner;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = builder::build();
-    let tests = runner::discover(&config)?;
     match &config.mode {
         args::Subcommands::Create { test: _, command: _ } => {
             db::create(&config)?;
@@ -15,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             report::generate(&config)?;
         },
         args::Subcommands::Run{dry_run: _, pattern: _ } => {
-            runner::run_many(&config, &tests)?;
+            runner::run_many(&config)?;
         },
     }
     Ok(())

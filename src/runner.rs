@@ -1,15 +1,17 @@
+use chrono::Local;
 use walkdir::{DirEntry, Error, WalkDir};
 
 use crate::config;
 use crate::process;
+use crate::runner;
 
 #[derive(Debug)]
-pub struct Tests { // TODO rename TestNames
+pub struct TestNames { 
     found: Vec<String>,
 }
 
 #[derive(Debug)]
-pub struct Test { // TODO rename TestResults
+pub struct TestResults { 
     pub id: i32,
     pub name: String,
     pub command: String,
@@ -35,10 +37,10 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-fn subject() -> Result<Tests, Error> {
-    let mut tests = Tests { found: vec![] };
+fn subject() -> Result<TestNames, Error> {
+    let mut tests = TestNames { found: vec![] };
     let mut closure_variable = |acc: &mut Vec<String>, val: String| {
-        if val.contains(".tdb") {
+        if val.contains(".tdb") {  // TODO match pattern
             acc.push(val);
         }
     };
@@ -53,30 +55,40 @@ fn subject() -> Result<Tests, Error> {
     Ok(tests)
 }
 
-pub fn discover(config: &config::Config) -> Result<Tests, Box<dyn std::error::Error>> {
-    let tests = subject()?;
+pub fn discover(config: &config::Config) -> Result<TestNames, Box<dyn std::error::Error>> {
+    let tests = subject()?; // TODO pass pattern
     if config.debug {
-        dbg!(&tests);
+        md!(&tests);
     }
     Ok(tests)
 }
-pub fn run_many(config: &config::Config, tests: &Tests) -> Result<(), Box<dyn std::error::Error>> {
+
+pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+    let tests = runner::discover(&config)?; 
     if config.debug {
-        dbg!(&config);
-        dbg!(&tests);
+        md!(&config);
+        md!(&tests);
     }
+    // if dry-run, print summary
+    // else for each test, run it
     Ok(())
 }
-pub fn run_one(test_name: &String, command: &String) -> Result<Test, Box<dyn std::error::Error>> {
+
+pub fn run_one(test_name: &String, command: &String) -> Result<TestResults, Box<dyn std::error::Error>> {
     let (exit_code, stderr, stdout) = process::exec(command.to_string())?;
-    let test = Test {
+    let test = TestResults {
         id: 0,
         name: (&test_name).to_string(),
         command: (&command).to_string(),
-        time_created: "now".to_string(), // TODO timestamp
+        time_created: now(),
         exit_code,
         stderr,
         stdout,
     };
     Ok(test)
+}
+
+fn now() -> String {
+    let date = Local::now();
+    format!("{}", date.format("%Y-%m-%dT%H:%M:%S"))
 }
