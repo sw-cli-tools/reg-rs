@@ -23,6 +23,9 @@ pub enum Subcommands {
     },
     /// Reports results of previously run test(s)
     Report{
+        #[structopt(long, short)]
+        /// Reports on tests mathing this naming pattern
+        pattern: String,
     },
     /// Runs a test (or tests) based on a test name pattern
     Run{

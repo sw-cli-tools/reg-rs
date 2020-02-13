@@ -1,10 +1,22 @@
 use walkdir::{DirEntry, Error, WalkDir};
 
 use crate::config;
+use crate::process;
 
 #[derive(Debug)]
-pub struct Tests {
+pub struct Tests { // TODO rename TestNames
     found: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct Test { // TODO rename TestResults
+    pub id: i32,
+    pub name: String,
+    pub command: String,
+    pub time_created: String,
+    pub exit_code: i32,
+    pub stderr: String,
+    pub stdout: String,
 }
 
 fn execute_closure(
@@ -48,10 +60,23 @@ pub fn discover(config: &config::Config) -> Result<Tests, Box<dyn std::error::Er
     }
     Ok(tests)
 }
-pub fn run(config: &config::Config, tests: &Tests) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_many(config: &config::Config, tests: &Tests) -> Result<(), Box<dyn std::error::Error>> {
     if config.debug {
         dbg!(&config);
         dbg!(&tests);
     }
     Ok(())
+}
+pub fn run_one(test_name: &String, command: &String) -> Result<Test, Box<dyn std::error::Error>> {
+    let (exit_code, stderr, stdout) = process::exec(command.to_string())?;
+    let test = Test {
+        id: 0,
+        name: (&test_name).to_string(),
+        command: (&command).to_string(),
+        time_created: "now".to_string(), // TODO timestamp
+        exit_code,
+        stderr,
+        stdout,
+    };
+    Ok(test)
 }

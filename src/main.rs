@@ -11,11 +11,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args::Subcommands::Create { test: _, command: _ } => {
             db::create(&config)?;
         }
-        args::Subcommands::Report { } => {
+        args::Subcommands::Report { pattern: _ } => {
             report::generate(&config)?;
         },
         args::Subcommands::Run{dry_run: _, pattern: _ } => {
-            runner::run(&config, &tests)?;
+            runner::run_many(&config, &tests)?;
         },
     }
     Ok(())
