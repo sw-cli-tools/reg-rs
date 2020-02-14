@@ -28,11 +28,15 @@
 *** DONE refactor to use tinytemplate instead of string_template crate 
 *** TODO add more details to reports
 *** TODO run discovered tests
-*** TODO clean up
-*** TODO dogfood test tests
+*** TODO clean up, add unit-tests, doc tests,
+*** TODO dogfood test tests, rtt tests
+*** TODO add examples
 *** TODO handle bad test databases
 *** TODO time test execution (store in db)
 *** TODO watchdog timer thread to time-out test threads, main thread waits for done or time-out
 *** TODO store timeouts and results in db (enum Fail, Pass, TimedOut)
+*** TODO add timeouts and results to generated reports
 *** TODO add status server
-*** TODO run tests in parallel (timers in parallel, too)
+*** TODO add benchmarks
+*** TODO run tests in parallel (timers in parallel, too) - parallel flag? default parallel?
+*** TODO update benchmarks
