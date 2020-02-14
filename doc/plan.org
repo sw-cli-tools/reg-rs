@@ -25,7 +25,7 @@
 *** DONE refactor clap5 to support dry-run, report in rtt1
 *** DONE refactor wdir2 to support test discovery in rtt1
 *** DONE add string_template crate to produce reports
-*** TODO refactor to use tinytemplate instead of string_template crate 
+*** DONE refactor to use tinytemplate instead of string_template crate 
 *** TODO add more details to reports
 *** TODO run discovered tests
 *** TODO clean up
