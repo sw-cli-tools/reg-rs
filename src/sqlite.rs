@@ -2,13 +2,16 @@ use crate::runner::TestResults;
 use rusqlite::{params, Connection, Result};
 
 pub(crate) fn open_query(db_name: &str, _test_name: &str) -> Result<TestResults> {
-    // TODO use _test_name
+    // TODO use or eliminate _test_name?
     let conn = Connection::open(&db_name)?;
-    let mut stmt =
-        conn // TODO add where name = _test_name clause
-            .prepare(
-                "SELECT id, name, command, time_created, exit_code, stderr, stdout FROM test",
-            )?;
+    let mut stmt = conn 
+        .prepare( // TODO change table name to test_results
+            "
+ SELECT id, name, command, time_created, exit_code, stderr, stdout 
+ FROM test
+ ORDER BY time_created DESC
+",
+        )?;
     let mut test_iter = stmt.query_map(params![], |row| {
         Ok(TestResults {
             id: row.get(0)?,
@@ -22,12 +25,12 @@ pub(crate) fn open_query(db_name: &str, _test_name: &str) -> Result<TestResults>
     })?;
 
     let test = test_iter.next();
-    test.unwrap() // TODO return matching test or latest row not the first one
+    test.unwrap()
 }
 
 pub(crate) fn maybe_create_table(db_name: &str) -> Result<()> {
     let conn = Connection::open(&db_name)?;
-    conn.execute(
+    conn.execute( // TODO change table name to test_results
         "CREATE TABLE IF NOT EXISTS test (
                   id              INTEGER PRIMARY KEY,
                   name            TEXT NOT NULL,
@@ -44,7 +47,7 @@ pub(crate) fn maybe_create_table(db_name: &str) -> Result<()> {
 
 pub(crate) fn write(db_name: &str, test: TestResults) -> Result<()> {
     let conn = Connection::open(&db_name)?;
-    conn.execute(
+    conn.execute( // TODO change table name to test_results
         "INSERT INTO test (name, command, time_created, exit_code, stderr, stdout)
                   VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         params![

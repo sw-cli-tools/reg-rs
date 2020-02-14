@@ -1,9 +1,10 @@
 use std::process::Command;
 
 pub fn exec(command: String) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
-    let output = Command::new("sh").arg("-c")
-                     .arg(command)
-                     .output()
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .output()
         .expect("failed to execute process");
     let status_code = match output.status.code() {
         Some(n) => n,

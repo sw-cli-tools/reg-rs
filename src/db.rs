@@ -1,13 +1,12 @@
-use rusqlite::{Result};
+use rusqlite::Result;
 
 use crate::config;
 use crate::runner;
 use crate::sqlite;
 
-pub fn create(config: &config::Config)
-              -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub fn create(config: &config::Config) -> std::result::Result<(), Box<dyn std::error::Error>> {
     md!(&config);
-    let (test, command) = config::extract_test_and_command(config).unwrap();
+    let (test, command) = config.extract_test_and_command().unwrap();
     let test_result = runner::run_one(&test, &command)?;
     let db_name = test;
     open_maybe_create_write(&db_name, test_result)?;

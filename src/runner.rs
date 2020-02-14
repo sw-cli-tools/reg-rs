@@ -1,17 +1,18 @@
 use chrono::Local;
 use walkdir::{DirEntry, Error, WalkDir};
 
+use crate::args;
 use crate::config;
 use crate::process;
 use crate::runner;
 
 #[derive(Debug)]
-pub struct TestNames { 
-    found: Vec<String>,
+pub struct TestNames {
+    pub found: Vec<String>,
 }
 
 #[derive(Debug)]
-pub struct TestResults { 
+pub struct TestResults {
     pub id: i32,
     pub name: String,
     pub command: String,
@@ -33,14 +34,14 @@ fn is_hidden(entry: &DirEntry) -> bool {
     entry
         .file_name()
         .to_str()
-        .map(|s| s.starts_with("."))
+        .map(|s| s.starts_with('.'))
         .unwrap_or(false)
 }
 
-fn subject() -> Result<TestNames, Error> {
+fn subject(pattern: String) -> Result<TestNames, Error> {
     let mut tests = TestNames { found: vec![] };
     let mut closure_variable = |acc: &mut Vec<String>, val: String| {
-        if val.contains(".tdb") {  // TODO match pattern
+        if val.contains(&pattern) {
             acc.push(val);
         }
     };
@@ -49,14 +50,20 @@ fn subject() -> Result<TestNames, Error> {
         execute_closure(
             &mut closure_variable,
             &mut tests.found,
-            format!("{:?}", entry?.path().display()),
+            format!("{}", entry?.path().display()),
         );
     }
     Ok(tests)
 }
 
 pub fn discover(config: &config::Config) -> Result<TestNames, Box<dyn std::error::Error>> {
-    let tests = subject()?; // TODO pass pattern
+    let default_pattern = ".tdb";
+    let pattern = match &config.mode {
+        args::Subcommands::Report { pattern } => pattern,
+        args::Subcommands::Run { pattern, .. } => pattern,
+        _ => default_pattern,
+    };
+    let tests = subject(pattern.to_string())?;
     if config.debug {
         md!(&tests);
     }
@@ -64,7 +71,7 @@ pub fn discover(config: &config::Config) -> Result<TestNames, Box<dyn std::error
 }
 
 pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
-    let tests = runner::discover(&config)?; 
+    let tests = runner::discover(&config)?;
     if config.debug {
         md!(&config);
         md!(&tests);
@@ -74,12 +81,12 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
-pub fn run_one(test_name: &String, command: &String) -> Result<TestResults, Box<dyn std::error::Error>> {
+pub fn run_one(test_name: &str, command: &str) -> Result<TestResults, Box<dyn std::error::Error>> {
     let (exit_code, stderr, stdout) = process::exec(command.to_string())?;
     let test = TestResults {
         id: 0,
-        name: (&test_name).to_string(),
-        command: (&command).to_string(),
+        name: test_name.to_string(),
+        command: command.to_string(),
         time_created: now(),
         exit_code,
         stderr,

@@ -1,7 +1,7 @@
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(about="Regression Test Tool (first draft) - create, report, and run tests")]
+#[structopt(about = "Regression Test Tool (first draft) - create, report, and run tests")]
 pub struct Args {
     #[structopt(long, short)]
     /// Prints debugging info
@@ -22,18 +22,18 @@ pub enum Subcommands {
         command: String,
     },
     /// Reports results of previously run test(s)
-    Report{
+    Report {
         #[structopt(long, short)]
         /// Reports on tests mathing this naming pattern
         pattern: String,
     },
     /// Runs a test (or tests) based on a test name pattern
-    Run{
+    Run {
         #[structopt(long, short)]
         /// Discovers tests matching this naming pattern
         pattern: String,
         /// Prints steps instead of executing them
-        #[structopt(long, short="n")]
+        #[structopt(long, short = "n")]
         dry_run: bool,
     },
 }

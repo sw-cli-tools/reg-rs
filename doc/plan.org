@@ -24,8 +24,15 @@
 *** DONE add debug flag from clap5 args in rtt1 instead 
 *** DONE refactor clap5 to support dry-run, report in rtt1
 *** DONE refactor wdir2 to support test discovery in rtt1
+*** DONE add string_template crate to produce reports
+*** TODO refactor to use tinytemplate instead of string_template crate 
+*** TODO add more details to reports
 *** TODO run discovered tests
 *** TODO clean up
 *** TODO dogfood test tests
-*** TODO add template library to produce report in rtt1
+*** TODO handle bad test databases
+*** TODO time test execution (store in db)
+*** TODO watchdog timer thread to time-out test threads, main thread waits for done or time-out
+*** TODO store timeouts and results in db (enum Fail, Pass, TimedOut)
 *** TODO add status server
+*** TODO run tests in parallel (timers in parallel, too)

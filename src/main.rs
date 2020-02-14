@@ -7,15 +7,15 @@ use rtt1::runner;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = builder::build();
     match &config.mode {
-        args::Subcommands::Create { test: _, command: _ } => {
+        args::Subcommands::Create { .. } => {
             db::create(&config)?;
         }
-        args::Subcommands::Report { pattern: _ } => {
+        args::Subcommands::Report { .. } => {
             report::generate(&config)?;
-        },
-        args::Subcommands::Run{dry_run: _, pattern: _ } => {
+        }
+        args::Subcommands::Run { .. } => {
             runner::run_many(&config)?;
-        },
+        }
     }
     Ok(())
 }
