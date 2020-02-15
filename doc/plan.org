@@ -19,7 +19,7 @@
 *** serve web console, status (running tests), results (reports), graphs?
 *** smarter diff
 *** regex
-** next
+** completed
 *** DONE refactor db6, structopt2 to use structopt in rtt1 instead of clap
 *** DONE add debug flag from clap5 args in rtt1 instead 
 *** DONE refactor clap5 to support dry-run, report in rtt1
@@ -27,7 +27,8 @@
 *** DONE add string_template crate to produce reports
 *** DONE refactor to use tinytemplate instead of string_template crate 
 *** DONE move now to new time module
-*** TODO extract SQL strings to new queries module
+*** DONE extract SQL strings to new queries module
+** next
 *** TODO add more details to reports
 *** TODO refactor template(s) to separate module
 *** TODO implement dry_run

@@ -23,6 +23,7 @@ pub mod builder;
 pub mod config;
 pub mod db;
 pub mod process;
+pub mod queries;
 pub mod report;
 pub mod runner;
 pub mod sqlite;

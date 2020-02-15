@@ -1,10 +1,16 @@
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(about = "Regression Test Tool (first draft) - create, report, and run tests")]
+#[structopt(
+    about = "Regression Test Tool (first draft) - create, report, and run tests
+for more details:
+ rtt1 create --help
+ rtt1 run --help
+ rtt1 report --help"
+)]
 pub struct Args {
     #[structopt(long, short)]
-    /// Prints debugging info
+    /// Prints debugging info.  -d must preceed subcommands
     pub debug: bool,
     #[structopt(subcommand)]
     pub command: Subcommands,
