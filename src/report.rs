@@ -3,38 +3,46 @@ use tinytemplate::TinyTemplate;
 use crate::config;
 use crate::db;
 use crate::runner;
+use crate::templates;
 
 #[derive(Serialize)]
-struct Context {
+struct DetailsContext {
     heading: String,
-    tests: Vec<String>,
+    values: Vec<String>,
 }
 
-static TEMPLATE: &str = "
-{heading}
-===
-
-Test {{ for name in tests }} {name} {{ endfor }}
-";
+#[derive(Serialize)]
+struct ReportContext {
+    heading: String,
+    tests: Vec<String>,
+    details: DetailsContext,
+}
 
 pub fn generate(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     let tests = runner::discover(&config)?;
     if config.debug {
         md!(&config);
     }
-    let mut context = Context {
+    let details_context = DetailsContext {
+        heading: "Details".to_string(),
+        values: vec![],
+    };
+    let mut report_context = ReportContext {
         heading: "Regression Test Tool - test results report".to_string(),
         tests: vec![],
+        details: details_context,
     };
     for test in tests.found {
         md!(("found", &test));
         let result = db::open_read(&test)?;
         md!(&result);
-        context.tests.push(result.name);
+        report_context.tests.push(result.name);
+        report_context.details.values.push("blah".to_string());
     }
     let mut tt = TinyTemplate::new();
-    tt.add_template("report", TEMPLATE)?;
-    let rendered = tt.render("report", &context)?;
+    tt.add_template("report_template", templates::REPORT_TEMPLATE)?;
+    tt.add_template("details_template", templates::DETAILS_TEMPLATE)?;
+    let rendered = tt.render("report_template", &report_context)?;
     println!("{}", rendered);
     Ok(())
 }

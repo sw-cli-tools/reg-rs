@@ -28,11 +28,12 @@
 *** DONE refactor to use tinytemplate instead of string_template crate 
 *** DONE move now to new time module
 *** DONE extract SQL strings to new queries module
+*** DONE add more details to reports (nested contexts/templates)
+*** DONE refactor template(s) to separate module
 ** next
-*** TODO add more details to reports
-*** TODO refactor template(s) to separate module
 *** TODO implement dry_run
 *** TODO run discovered tests
+*** TODO complete test results report
 *** TODO clean up, add unit-tests, doc tests,
 *** TODO dogfood test tests, rtt tests
 *** TODO add examples
