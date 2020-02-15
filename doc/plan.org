@@ -26,17 +26,22 @@
 *** DONE refactor wdir2 to support test discovery in rtt1
 *** DONE add string_template crate to produce reports
 *** DONE refactor to use tinytemplate instead of string_template crate 
+*** DONE move now to new time module
+*** TODO extract SQL strings to new queries module
 *** TODO add more details to reports
+*** TODO refactor template(s) to separate module
+*** TODO implement dry_run
 *** TODO run discovered tests
 *** TODO clean up, add unit-tests, doc tests,
 *** TODO dogfood test tests, rtt tests
 *** TODO add examples
-*** TODO handle bad test databases
+*** TODO handle bad test databases and other errors (errors module)
 *** TODO time test execution (store in db)
 *** TODO watchdog timer thread to time-out test threads, main thread waits for done or time-out
 *** TODO store timeouts and results in db (enum Fail, Pass, TimedOut)
-*** TODO add timeouts and results to generated reports
-*** TODO add status server
+*** TODO add timestamps, times, timeouts and results to generated reports
+*** TODO add status server (status module)
 *** TODO add benchmarks
 *** TODO run tests in parallel (timers in parallel, too) - parallel flag? default parallel?
 *** TODO update benchmarks
+*** TODO update documentation

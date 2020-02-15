@@ -1,5 +1,3 @@
-extern crate tinytemplate;
-
 use tinytemplate::TinyTemplate;
 
 use crate::config;
@@ -25,7 +23,7 @@ pub fn generate(config: &config::Config) -> Result<(), Box<dyn std::error::Error
         md!(&config);
     }
     let mut context = Context {
-        heading: "Regression Test Tool - retst results report".to_string(),
+        heading: "Regression Test Tool - test results report".to_string(),
         tests: vec![],
     };
     for test in tests.found {

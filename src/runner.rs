@@ -1,10 +1,10 @@
-use chrono::Local;
 use walkdir::{DirEntry, Error, WalkDir};
 
 use crate::args;
 use crate::config;
 use crate::process;
 use crate::runner;
+use crate::time;
 
 #[derive(Debug)]
 pub struct TestNames {
@@ -87,7 +87,7 @@ pub fn run_one(test_name: &str, command: &str) -> Result<TestResults, Box<dyn st
         id: 0,
         name: test_name.to_string(),
         command: command.to_string(),
-        time_created: now(),
+        time_created: time::now(),
         exit_code,
         stderr,
         stdout,
@@ -95,7 +95,3 @@ pub fn run_one(test_name: &str, command: &str) -> Result<TestResults, Box<dyn st
     Ok(test)
 }
 
-fn now() -> String {
-    let date = Local::now();
-    format!("{}", date.format("%Y-%m-%dT%H:%M:%S"))
-}
