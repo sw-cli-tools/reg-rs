@@ -1,4 +1,3 @@
-use crate::args;
 use crate::config;
 use crate::db;
 use crate::diff;
@@ -22,13 +21,10 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
         md!(&config);
         md!(&tests);
     }
-    let dry_run = match &config.mode {
-        args::Subcommands::Run { dry_run, .. } => dry_run,
-        _ => &false,
-    };
     for test in tests.found {
         let prior_test_results = db::open_read(&test)?;
-        let maybe_regression = run_one(&test, &prior_test_results.command, *dry_run)?;
+        let maybe_regression = run_one(&test, &prior_test_results.command,
+                                       config.is_dry_run())?;
         if let Some(latest_test_results) = maybe_regression {
             // compare exit_code
             if prior_test_results.exit_code != latest_test_results.exit_code {

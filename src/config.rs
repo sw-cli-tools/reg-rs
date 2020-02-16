@@ -7,21 +7,28 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn extract_test_and_command(self: &Self) -> Option<(String, String)> {
-        if let args::Subcommands::Create { test, command } = &self.mode {
-            md!((&test, &command));
-            Some((test.to_string(), command.to_string()))
-        } else {
-            None
+    pub fn is_dry_run(self: &Self) -> bool {
+        match &self.mode {
+            args::Subcommands::Run { dry_run, .. } => *dry_run,
+            _ => false,
         }
     }
-
+    
     pub fn extract_pattern(self: &Self) -> &str {
         let default_pattern = ".tdb";
         match &self.mode {
             args::Subcommands::Report { pattern } => pattern,
             args::Subcommands::Run { pattern, .. } => pattern,
             _ => default_pattern,
+        }
+    }
+
+    pub fn extract_test_and_command(self: &Self) -> Option<(String, String)> {
+        if let args::Subcommands::Create { test, command } = &self.mode {
+            md!((&test, &command));
+            Some((test.to_string(), command.to_string()))
+        } else {
+            None
         }
     }
 }
