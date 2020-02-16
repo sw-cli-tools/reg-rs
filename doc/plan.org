@@ -32,11 +32,13 @@
 *** DONE refactor template(s) to separate module
 *** DONE implement dry_run
 *** DONE run discovered tests
-*** DONE check for regressions
+*** DONE check for regressions (stdout)
+*** DONE check for regressions (exit code, stderr)
 ** next
-*** TODO store regressions in database
+*** TODO store regressions in database using single row table joins
 *** TODO add exit codes
 *** TODO complete test results report
+*** TODO add verbosity levels to report
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
 *** TODO add examples

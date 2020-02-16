@@ -78,7 +78,18 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
     };
     for test in tests.found {
         let prior_test_results = db::open_read(&test)?;
-        if let Some(latest_test_results) = run_one(&test, &prior_test_results.command, *dry_run)? {
+        let maybe_regression = run_one(&test, &prior_test_results.command, *dry_run)?;
+        if let Some(latest_test_results) = maybe_regression {
+            // compare exit_code
+            if prior_test_results.exit_code != latest_test_results.exit_code {
+                md!((prior_test_results.exit_code,
+                     latest_test_results.exit_code));
+            }
+            if let Some(stderr_diff) =
+                diff::compare(&prior_test_results.stderr, &latest_test_results.stderr)
+            {
+                md!(stderr_diff);
+            }
             if let Some(stdout_diff) =
                 diff::compare(&prior_test_results.stdout, &latest_test_results.stdout)
             {

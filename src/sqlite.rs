@@ -25,7 +25,7 @@ pub(crate) fn open_query(db_name: &str, _test_name: &str) -> Result<TestResults>
 
 pub(crate) fn maybe_create_table(db_name: &str) -> Result<()> {
     let conn = Connection::open(&db_name)?;
-    conn.execute(queries::CREATE_TABLE,
+    conn.execute(queries::CREATE_TABLE_TEST_RESULTS,
         params![],
     )?;
     Ok(())
