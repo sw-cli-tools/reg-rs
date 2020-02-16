@@ -25,3 +25,21 @@ pub const SELECT_TEST_RESULTS_TEMPLATE: &str = "
 pub const DROP_TABLE_TEMPLATE: &str = "
  DROP TABLE IF EXISTS { table_name }
 ";
+
+pub const CREATE_DIFFERENCES_TABLE_TEMPLATE: &str = "
+ CREATE TABLE IF NOT EXISTS { table_name } (
+ id                INTEGER PRIMARY KEY,
+ type              TEXT NOT NULL,
+ chunk             TEXT
+)
+";
+
+pub const INSERT_DIFFERENCE_TEMPLATE: &str = "
+ INSERT INTO { table_name } (type, chunk)
+ VALUES (?1, ?2)
+";
+
+pub const SELECT_DIFFERENCES_TEMPLATE: &str = "
+ SELECT type, chunk
+ FROM { table_name }
+";

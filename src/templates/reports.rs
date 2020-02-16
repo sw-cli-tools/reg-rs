@@ -11,4 +11,3 @@ pub static REPORT_TEMPLATE: &str = "
 Test {{ for name in tests }} {name} {{ endfor }}
 {{ call details_template with details }}
 ";
-

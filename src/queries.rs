@@ -18,18 +18,20 @@ impl StatementContext {
             table_name: "latest_results_table".to_string(),
         }
     }
+    pub fn differences() -> Self {
+        StatementContext {
+            table_name: "differences_table".to_string(),
+        }
+    }
 }
 
-pub fn get_statement(statement_context: &StatementContext,
-                     statement_template: &str
-) -> String {
-    render(statement_context,
-           statement_template).unwrap()
+pub fn get_statement(statement_context: &StatementContext, statement_template: &str) -> String {
+    render(statement_context, statement_template).unwrap()
 }
 
 fn render(
     statement_context: &StatementContext,
-    statement_template: &str
+    statement_template: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut tt = TinyTemplate::new();
     tt.add_template("statement_template", statement_template)?;

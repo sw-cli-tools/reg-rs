@@ -39,8 +39,8 @@
 *** DONE use templates to generate sql statements (dry)
 *** DONE store latest results in database using single row table 
 *** DONE new subcommand: remove - removes original and results tables in one or more databases
+*** DONE store regressions (diff chunks with types) in database
 ** next
-*** TODO store regressions (diffs) in database
 *** TODO change sql statements from str to types? (so you can't pass a drop by accident)
 *** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
 *** TODO complete test results report to show regressions

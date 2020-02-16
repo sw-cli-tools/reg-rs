@@ -23,28 +23,15 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
         md!(&tests);
     }
     for test in tests.found {
-        let prior_test_results = db::read_original_results(&test)?;
-        let maybe_regression = run_one(&test, &prior_test_results.command, config.is_dry_run())?;
+        let prior_test_result = db::read_original_results(&test)?;
+        let maybe_regression = run_one(&test, &prior_test_result.command, config.is_dry_run())?;
         if let Some(latest_test_result) = maybe_regression {
             let db_name = &test;
-            // compare exit_code
-            if prior_test_results.exit_code != latest_test_result.exit_code {
-                md!((prior_test_results.exit_code, latest_test_result.exit_code));
-            }
-            if let Some(stderr_diff) =
-                diff::compare(&prior_test_results.stderr, &latest_test_result.stderr)
-            {
-                md!(stderr_diff);
-            }
-            if let Some(stdout_diff) =
-                diff::compare(&prior_test_results.stdout, &latest_test_result.stdout)
-            {
-                md!(stdout_diff);
-            }
+            diff::process_differences(&db_name, &prior_test_result, &latest_test_result)?;
             db::drop_latest_results(&db_name)?;
             db::store_results(
                 &db_name,
-                latest_test_result,
+                &latest_test_result,
                 queries::StatementContext::latest(),
             )?;
         }

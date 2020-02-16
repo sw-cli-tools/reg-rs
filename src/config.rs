@@ -13,7 +13,7 @@ impl Config {
             _ => false,
         }
     }
-    
+
     pub fn extract_pattern(self: &Self) -> &str {
         let default_pattern = ".tdb";
         match &self.mode {
@@ -32,4 +32,3 @@ impl Config {
         }
     }
 }
-

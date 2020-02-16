@@ -1,5 +1,8 @@
-use crate::runner::TestResults;
 use rusqlite::{params, Connection, Result};
+
+use crate::queries;
+use crate::runner::TestResults;
+use crate::templates::statements;
 
 pub(crate) fn read_results(db_name: &str, select_statement: &str) -> Result<TestResults> {
     let conn = Connection::open(&db_name)?;
@@ -27,7 +30,7 @@ pub(crate) fn create_table(db_name: &str, create_statement: &str) -> Result<()> 
 
 pub(crate) fn write_results(
     db_name: &str,
-    test: TestResults,
+    test: &TestResults,
     insert_statement: &str,
 ) -> Result<()> {
     let conn = Connection::open(&db_name)?;
@@ -49,5 +52,21 @@ pub(crate) fn write_results(
 pub(crate) fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
     let conn = Connection::open(&db_name)?;
     conn.execute(&drop_statement, params![])?;
+    Ok(())
+}
+
+pub fn write_difference(
+    db_name: &str,
+    difference_type: &str,
+    difference_chunk: &str,
+) -> Result<()> {
+    let conn = Connection::open(&db_name)?;
+    conn.execute(
+        &queries::get_statement(
+            &queries::StatementContext::differences(),
+            statements::INSERT_DIFFERENCE_TEMPLATE,
+        ),
+        params![difference_type, difference_chunk,],
+    )?;
     Ok(())
 }
