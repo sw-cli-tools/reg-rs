@@ -20,13 +20,14 @@ macro_rules! md {
 
 pub mod args;
 pub mod builder;
+pub mod command;
 pub mod config;
 pub mod db;
 pub mod diff;
 pub mod finder;
 pub mod process;
 pub mod queries;
-pub mod report;
+pub mod reporter;
 pub mod runner;
 pub mod sqlite;
 pub mod templates;

@@ -3,7 +3,7 @@ use tinytemplate::TinyTemplate;
 use crate::config;
 use crate::db;
 use crate::finder;
-use crate::templates;
+use crate::templates::reports;
 
 #[derive(Serialize)]
 struct DetailsContext {
@@ -34,14 +34,14 @@ pub fn generate(config: &config::Config) -> Result<(), Box<dyn std::error::Error
     };
     for test in tests.found {
         md!(("found", &test));
-        let result = db::open_read(&test)?;
+        let result = db::read_original_results(&test)?;
         md!(&result);
         report_context.tests.push(result.name);
         report_context.details.values.push("blah".to_string());
     }
     let mut tt = TinyTemplate::new();
-    tt.add_template("report_template", templates::REPORT_TEMPLATE)?;
-    tt.add_template("details_template", templates::DETAILS_TEMPLATE)?;
+    tt.add_template("report_template", reports::REPORT_TEMPLATE)?;
+    tt.add_template("details_template", reports::DETAILS_TEMPLATE)?;
     let rendered = tt.render("report_template", &report_context)?;
     println!("{}", rendered);
     Ok(())

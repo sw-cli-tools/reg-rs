@@ -1,25 +1,33 @@
 use rusqlite::Result;
 
-use crate::config;
+use crate::queries;
 use crate::runner;
 use crate::sqlite;
+use crate::templates::statements;
 
-pub fn create(config: &config::Config) -> std::result::Result<(), Box<dyn std::error::Error>> {
-    md!(&config);
-    let (test, command) = config.extract_test_and_command().unwrap();
-    if let Some(test_result) = runner::run_one(&test, &command, false)? {
-        let db_name = test;
-        open_maybe_create_write(&db_name, test_result)?;
-    }
+pub(crate) fn store_results(
+    db_name: &str,
+    test: runner::TestResults,
+    statement_context: queries::StatementContext
+) -> Result<()> {
+    sqlite::create_table(db_name,
+                         &queries::get_statement(&statement_context,
+                                                 &statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE))?;
+    sqlite::write_results(db_name, test,
+                          &queries::get_statement(&statement_context,
+                                                  &statements::INSERT_TEST_RESULTS_TEMPLATE))?;
     Ok(())
 }
 
-fn open_maybe_create_write(db_name: &str, test: runner::TestResults) -> Result<()> {
-    sqlite::maybe_create_table(db_name)?;
-    sqlite::write(db_name, test)?;
-    Ok(())
+pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
+    Ok(sqlite::read_results(&db_name,
+                            &queries::get_statement(&queries::StatementContext::original(),
+                                                    &statements::SELECT_TEST_RESULTS_TEMPLATE))?)
 }
 
-pub fn open_read(db_name: &str) -> Result<runner::TestResults> {
-    Ok(sqlite::open_query(&db_name, &db_name)?) // TODO separate db and test names
+pub fn drop_latest_results(db_name: &str) -> Result<()> {
+    sqlite::drop_table(&db_name,
+                 &queries::get_statement(&queries::StatementContext::latest(),
+                                         &statements::DROP_TABLE_TEMPLATE))?;
+    Ok(())
 }

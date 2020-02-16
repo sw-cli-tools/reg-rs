@@ -36,8 +36,12 @@
 *** DONE check for regressions (exit code, stderr)
 *** DONE split discover out of runner (into new finder module)
 *** DONE store created test results using original single row table
+*** DONE use templates to generate sql statements (dry)
+*** DONE store latest results in database using single row table 
 ** next
-*** TODO store regressions in database using regression results single row table 
+*** TODO new subcommand remove - removes tdb file so that create can be run again
+*** TODO store regressions (diffs) in database
+*** TODO change sql statements from str to types
 *** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
 *** TODO complete test results report to show regressions
 *** TODO add verbosity levels to report

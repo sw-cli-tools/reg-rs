@@ -1,12 +1,9 @@
-use crate::queries;
 use crate::runner::TestResults;
 use rusqlite::{params, Connection, Result};
 
-pub(crate) fn open_query(db_name: &str, _test_name: &str) -> Result<TestResults> {
-    // TODO use or eliminate _test_name?
+pub(crate) fn read_results(db_name: &str, select_statement: &str) -> Result<TestResults> {
     let conn = Connection::open(&db_name)?;
-    let mut stmt = conn 
-        .prepare(queries::SELECT_ORIGINAL_TEST_RESULTS)?;
+    let mut stmt = conn.prepare(&select_statement)?;
     let mut test_iter = stmt.query_map(params![], |row| {
         Ok(TestResults {
             name: row.get(0)?,
@@ -22,17 +19,20 @@ pub(crate) fn open_query(db_name: &str, _test_name: &str) -> Result<TestResults>
     test.unwrap()
 }
 
-pub(crate) fn maybe_create_table(db_name: &str) -> Result<()> {
+pub(crate) fn create_table(db_name: &str, create_statement: &str) -> Result<()> {
     let conn = Connection::open(&db_name)?;
-    conn.execute(queries::CREATE_ORIGINAL_TEST_RESULTS_TABLE,
-        params![],
-    )?;
+    conn.execute(&create_statement, params![])?;
     Ok(())
 }
 
-pub(crate) fn write(db_name: &str, test: TestResults) -> Result<()> {
+pub(crate) fn write_results(
+    db_name: &str,
+    test: TestResults,
+    insert_statement: &str,
+) -> Result<()> {
     let conn = Connection::open(&db_name)?;
-    conn.execute(queries::INSERT_ORIGINAL_TEST_RESULTS,
+    conn.execute(
+        &insert_statement,
         params![
             test.name,
             test.command,
@@ -43,5 +43,11 @@ pub(crate) fn write(db_name: &str, test: TestResults) -> Result<()> {
         ],
     )?;
 
+    Ok(())
+}
+
+pub(crate) fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
+    let conn = Connection::open(&db_name)?;
+    conn.execute(&drop_statement, params![])?;
     Ok(())
 }

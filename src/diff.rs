@@ -1,6 +1,6 @@
 use text_diff::{diff, Difference};
 
-pub fn compare(older: &String, new: &String) -> Option<String> {
+pub fn compare(older: &str, new: &str) -> Option<String> {
     let mut result = "".to_string();
     let differences = diff(older, new, "\n");
     md!(differences.0);
