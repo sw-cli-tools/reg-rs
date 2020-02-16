@@ -22,6 +22,7 @@ pub mod args;
 pub mod builder;
 pub mod config;
 pub mod db;
+pub mod diff;
 pub mod process;
 pub mod queries;
 pub mod report;

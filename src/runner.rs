@@ -3,6 +3,7 @@ use walkdir::{DirEntry, Error, WalkDir};
 use crate::args;
 use crate::config;
 use crate::db;
+use crate::diff;
 use crate::process;
 use crate::runner;
 use crate::time;
@@ -77,12 +78,22 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
     };
     for test in tests.found {
         let prior_test_results = db::open_read(&test)?;
-        run_one(&test, &prior_test_results.command, *dry_run)?;
+        if let Some(latest_test_results) = run_one(&test, &prior_test_results.command, *dry_run)? {
+            if let Some(stdout_diff) =
+                diff::compare(&prior_test_results.stdout, &latest_test_results.stdout)
+            {
+                md!(stdout_diff);
+            }
+        }
     }
     Ok(())
 }
 
-pub fn run_one(test_name: &str, command: &str, dry_run: bool) -> Result<Option<TestResults>, Box<dyn std::error::Error>> {
+pub fn run_one(
+    test_name: &str,
+    command: &str,
+    dry_run: bool,
+) -> Result<Option<TestResults>, Box<dyn std::error::Error>> {
     if dry_run {
         println!("dry-run: test name: {}, command: {}", test_name, command);
         Ok(None)
@@ -100,4 +111,3 @@ pub fn run_one(test_name: &str, command: &str, dry_run: bool) -> Result<Option<T
         Ok(Some(test))
     }
 }
-

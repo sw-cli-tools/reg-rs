@@ -32,8 +32,10 @@
 *** DONE refactor template(s) to separate module
 *** DONE implement dry_run
 *** DONE run discovered tests
+*** DONE check for regressions
 ** next
-*** TODO check for regressions
+*** TODO store regressions in database
+*** TODO add exit codes
 *** TODO complete test results report
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
