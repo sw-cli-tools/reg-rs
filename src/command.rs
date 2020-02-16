@@ -1,5 +1,6 @@
 use crate::config;
 use crate::db;
+use crate::finder;
 use crate::queries;
 use crate::reporter;
 use crate::runner;
@@ -23,6 +24,16 @@ pub fn update_latest(
     Ok(())
 }
 
+pub fn remove_all(
+    config: &config::Config
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let tests = finder::discover(&config)?;
+    for test in tests.found {
+        db::drop_all(&test)?;
+    }
+    Ok(())
+}
+        
 pub fn report_latest(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {

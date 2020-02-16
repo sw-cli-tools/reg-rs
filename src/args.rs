@@ -6,7 +6,9 @@ use structopt::StructOpt;
 for more details:
  rtt1 create --help
  rtt1 run --help
- rtt1 report --help"
+ rtt1 remove --help
+ rtt1 report --help
+"
 )]
 pub struct Args {
     #[structopt(long, short)]
@@ -27,10 +29,16 @@ pub enum Subcommands {
         /// Specifies a command to be executed
         command: String,
     },
+    /// Removes previously created test and run results if any.  Discards test and results!
+    Remove {
+        #[structopt(long, short)]
+        /// Removes tests and results matching this naming pattern.  
+        pattern: String,
+    },
     /// Reports results of previously run test(s)
     Report {
         #[structopt(long, short)]
-        /// Reports on tests mathing this naming pattern
+        /// Reports on tests matching this naming pattern
         pattern: String,
     },
     /// Runs a test (or tests) based on a test name pattern

@@ -31,3 +31,11 @@ pub fn drop_latest_results(db_name: &str) -> Result<()> {
                                          &statements::DROP_TABLE_TEMPLATE))?;
     Ok(())
 }
+
+pub fn drop_all(db_name: &str) -> Result<()> {
+    sqlite::drop_table(&db_name,
+                 &queries::get_statement(&queries::StatementContext::original(),
+                                         &statements::DROP_TABLE_TEMPLATE))?;
+    drop_latest_results(&db_name)?;
+    Ok(())
+}

@@ -8,6 +8,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args::Subcommands::Create { .. } => {
             command::create_original(&config)?;
         }
+        args::Subcommands::Remove { .. } => {
+            command::remove_all(&config)?;
+        }
         args::Subcommands::Report { .. } => {
             command::report_latest(&config)?;
         }
