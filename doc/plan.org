@@ -30,11 +30,12 @@
 *** DONE extract SQL strings to new queries module
 *** DONE add more details to reports (nested contexts/templates)
 *** DONE refactor template(s) to separate module
+*** DONE implement dry_run
+*** DONE run discovered tests
 ** next
-*** TODO implement dry_run
-*** TODO run discovered tests
+*** TODO check for regressions
 *** TODO complete test results report
-*** TODO clean up, add unit-tests, doc tests,
+*** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
 *** TODO add examples
 *** TODO handle bad test databases and other errors (errors module)

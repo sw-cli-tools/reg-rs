@@ -2,6 +2,7 @@ use walkdir::{DirEntry, Error, WalkDir};
 
 use crate::args;
 use crate::config;
+use crate::db;
 use crate::process;
 use crate::runner;
 use crate::time;
@@ -57,13 +58,7 @@ fn subject(pattern: String) -> Result<TestNames, Error> {
 }
 
 pub fn discover(config: &config::Config) -> Result<TestNames, Box<dyn std::error::Error>> {
-    let default_pattern = ".tdb";
-    let pattern = match &config.mode {
-        args::Subcommands::Report { pattern } => pattern,
-        args::Subcommands::Run { pattern, .. } => pattern,
-        _ => default_pattern,
-    };
-    let tests = subject(pattern.to_string())?;
+    let tests = subject(config.extract_pattern().to_string())?;
     if config.debug {
         md!(&tests);
     }
@@ -76,22 +71,33 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
         md!(&config);
         md!(&tests);
     }
-    // if dry-run, print summary
-    // else for each test, run it
+    let dry_run = match &config.mode {
+        args::Subcommands::Run { dry_run, .. } => dry_run,
+        _ => &false,
+    };
+    for test in tests.found {
+        let prior_test_results = db::open_read(&test)?;
+        run_one(&test, &prior_test_results.command, *dry_run)?;
+    }
     Ok(())
 }
 
-pub fn run_one(test_name: &str, command: &str) -> Result<TestResults, Box<dyn std::error::Error>> {
-    let (exit_code, stderr, stdout) = process::exec(command.to_string())?;
-    let test = TestResults {
-        id: 0,
-        name: test_name.to_string(),
-        command: command.to_string(),
-        time_created: time::now(),
-        exit_code,
-        stderr,
-        stdout,
-    };
-    Ok(test)
+pub fn run_one(test_name: &str, command: &str, dry_run: bool) -> Result<Option<TestResults>, Box<dyn std::error::Error>> {
+    if dry_run {
+        println!("dry-run: test name: {}, command: {}", test_name, command);
+        Ok(None)
+    } else {
+        let (exit_code, stderr, stdout) = process::exec(command.to_string())?;
+        let test = TestResults {
+            id: 0,
+            name: test_name.to_string(),
+            command: command.to_string(),
+            time_created: time::now(),
+            exit_code,
+            stderr,
+            stdout,
+        };
+        Ok(Some(test))
+    }
 }
 

@@ -15,4 +15,14 @@ impl Config {
             None
         }
     }
+
+    pub fn extract_pattern(self: &Self) -> &str {
+        let default_pattern = ".tdb";
+        match &self.mode {
+            args::Subcommands::Report { pattern } => pattern,
+            args::Subcommands::Run { pattern, .. } => pattern,
+            _ => default_pattern,
+        }
+    }
 }
+
