@@ -34,15 +34,17 @@
 *** DONE run discovered tests
 *** DONE check for regressions (stdout)
 *** DONE check for regressions (exit code, stderr)
+*** DONE split discover out of runner (into new finder module)
 ** next
 *** TODO store regressions in database using single row table joins
-*** TODO add exit codes
-*** TODO complete test results report
+*** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
+*** TODO complete test results report to show regressions
 *** TODO add verbosity levels to report
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
 *** TODO add examples
 *** TODO handle bad test databases and other errors (errors module)
+*** TODO add panics for internal logic errors? (code coverage unreachable paths?)
 *** TODO time test execution (store in db)
 *** TODO watchdog timer thread to time-out test threads, main thread waits for done or time-out
 *** TODO store timeouts and results in db (enum Fail, Pass, TimedOut)

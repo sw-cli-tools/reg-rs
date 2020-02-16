@@ -2,7 +2,7 @@ use tinytemplate::TinyTemplate;
 
 use crate::config;
 use crate::db;
-use crate::runner;
+use crate::finder;
 use crate::templates;
 
 #[derive(Serialize)]
@@ -19,7 +19,7 @@ struct ReportContext {
 }
 
 pub fn generate(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
-    let tests = runner::discover(&config)?;
+    let tests = finder::discover(&config)?;
     if config.debug {
         md!(&config);
     }
