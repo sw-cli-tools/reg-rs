@@ -35,8 +35,9 @@
 *** DONE check for regressions (stdout)
 *** DONE check for regressions (exit code, stderr)
 *** DONE split discover out of runner (into new finder module)
+*** DONE store created test results using original single row table
 ** next
-*** TODO store regressions in database using single row table joins
+*** TODO store regressions in database using regression results single row table 
 *** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
 *** TODO complete test results report to show regressions
 *** TODO add verbosity levels to report

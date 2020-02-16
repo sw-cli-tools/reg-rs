@@ -8,7 +8,6 @@ use crate::time;
 
 #[derive(Debug)]
 pub struct TestResults {
-    pub id: i32,
     pub name: String,
     pub command: String,
     pub time_created: String,
@@ -62,7 +61,6 @@ pub fn run_one(
     } else {
         let (exit_code, stderr, stdout) = process::exec(command.to_string())?;
         let test = TestResults {
-            id: 0,
             name: test_name.to_string(),
             command: command.to_string(),
             time_created: time::now(),
