@@ -3,7 +3,7 @@ use text_diff::{diff, Difference};
 pub fn compare(older: &String, new: &String) -> Option<String> {
     let mut result = "".to_string();
     let differences = diff(older, new, "\n");
-    dbg!(differences.0);
+    md!(differences.0);
     if differences.0 > 0 {
         for difference in differences.1 {
             match difference {
