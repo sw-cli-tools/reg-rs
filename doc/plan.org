@@ -40,22 +40,32 @@
 *** DONE store latest results in database using single row table 
 *** DONE new subcommand: remove - removes original and results tables in one or more databases
 *** DONE store regressions (diff chunks with types) in database
+*** DONE add differences template and context
 ** next
-*** TODO change sql statements from str to types? (so you can't pass a drop by accident)
-*** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
-*** TODO complete test results report to show regressions
-*** TODO add verbosity levels to report
+*** TODO report summary should show pass/fail (count of pasing tests, count of failing tests)
+*** TODO report detail should show list of failing tests 
+*** TODO report detail should show list of passing tests 
+*** TODO report differences should show differences per failing test
+*** TODO add verbosity levels to report (summary always, -v list failing, -vv list failing/passing -vvv show chunks)
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
 *** TODO add examples
+*** TODO add status server (status module) skeleton
 *** TODO handle bad test databases and other errors (errors module)
+*** TODO add error handling in main (try_main?)
+*** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
 *** TODO add panics for internal logic errors? (code coverage unreachable paths?)
 *** TODO time test execution (store in db)
 *** TODO watchdog timer thread to time-out test threads, main thread waits for done or time-out
 *** TODO store timeouts and results in db (enum Fail, Pass, TimedOut)
 *** TODO add timestamps, times, timeouts and results to generated reports
-*** TODO add status server (status module)
+*** TODO add time-based examples
+*** TODO add status server (status module) server sent events, wasm?
+*** TODO add graphics (color in tree of tests running, passing, failing; interactive nodes?)
 *** TODO add benchmarks
 *** TODO run tests in parallel (timers in parallel, too) - parallel flag? default parallel?
+*** TODO add parallel examples
 *** TODO update benchmarks
 *** TODO update documentation
+deferred
+*** TODO change sql statements from str to types? (so you can't pass a drop by accident)

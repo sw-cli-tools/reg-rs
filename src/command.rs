@@ -12,6 +12,7 @@ pub fn create_original(
     let (test, command) = config.extract_test_and_command().unwrap();
     if let Some(test_result) = runner::run_one(&test, &command, false)? {
         let db_name = test;
+        db::reset_differences(&db_name)?;
         db::store_results(
             &db_name,
             &test_result,

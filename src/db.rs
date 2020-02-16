@@ -89,3 +89,24 @@ pub fn store_difference(
     sqlite::write_difference(&db_name, &difference_type, &difference_chunk)?;
     Ok(())
 }
+
+pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
+    Ok(sqlite::read_results(
+        &db_name,
+        &queries::get_statement(
+            &queries::StatementContext::latest(),
+            &statements::SELECT_TEST_RESULTS_TEMPLATE,
+        ),
+    )?)
+}
+
+pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
+    Ok(sqlite::read_differences(
+        &db_name,
+        &queries::get_statement(
+            &queries::StatementContext::differences(),
+            &statements::SELECT_DIFFERENCES_TEMPLATE,
+        ),
+    )?)
+}
+

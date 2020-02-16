@@ -70,3 +70,18 @@ pub fn write_difference(
     )?;
     Ok(())
 }
+
+pub(crate) fn read_differences(db_name: &str, select_statement: &str) -> Result<Vec<(String, String)>> {
+    let conn = Connection::open(&db_name)?;
+    let mut stmt = conn.prepare(&select_statement)?;
+    let difference_iter = stmt.query_map(params![], |row| {
+        Ok((row.get(0)?, row.get(1)?,
+        ))
+    })?;
+
+    let mut result = vec![];
+    for difference in difference_iter {
+        result.push(difference.unwrap());
+    }
+    Ok(result)
+}
