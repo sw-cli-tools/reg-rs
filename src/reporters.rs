@@ -49,6 +49,5 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
         not_yet_run_test_names,
         passed_test_names,
     ))?;
-    differences::show_differences();
     Ok(())
 }

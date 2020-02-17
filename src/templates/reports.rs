@@ -1,11 +1,10 @@
-pub static DIFFERENCES_TEMPLATE: &str = "
-{heading}
-===
-
-{{ for diff in values }}
-{diff.type} - {diff.chunk}
+pub static DIFFERENCES_REPORT_TEMPLATE: &str = "
+** Differences **
+⍨ { failed_test_name } 
+{{ for difference in differences }}{ difference.type_name } - { difference.chunk }
 {{ endfor }}
 ";
+
 pub static SUMMARY_REPORT_TEMPLATE: &str = "RTT Summary Report { report_date }
 { pass_count } passed
 { fail_count } failed

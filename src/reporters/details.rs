@@ -2,6 +2,7 @@ use tinytemplate::TinyTemplate;
 
 use crate::db;
 use crate::diff;
+use crate::reporters::differences;
 use crate::reporters::failures;
 use crate::templates::reports;
 
@@ -86,6 +87,59 @@ fn show_failures(
             original_result.time_created.to_string(),
             latest_result.time_created.to_string(),
         ))?;
+        let mut display_differences = vec![];
+        for difference in differences {
+//            md!((&difference.0, format!("{}", diff::RegressionType::ActualCode as u8)));
+//            md!(difference.0 == format!("{}", diff::RegressionType::ActualCode as u8));
+            if difference.0 == format!("{}", diff::RegressionType::ActualCode as u8) {
+                display_differences.push(
+                    differences::DisplayDifference {
+                        type_name: format!("{:022}", "Actual exit code"),
+                        chunk: difference.1.to_string(),
+                    });
+            }
+            if difference.0 == format!("{}", diff::RegressionType::ExpectedCode as u8) {
+                display_differences.push(
+                    differences::DisplayDifference {
+                        type_name: format!("{:022}", "Expected exit code"),
+                        chunk: difference.1.to_string(),
+                    });
+            }
+            if difference.0 == format!("{}", diff::RegressionType::StderrAdd as u8) {
+                display_differences.push(
+                    differences::DisplayDifference {
+                        type_name: format!("{:022}", "stderr add"),
+                        chunk: difference.1.to_string(),
+                    });
+            }
+            if difference.0 == format!("{}", diff::RegressionType::StderrRemove as u8) {
+                display_differences.push(
+                    differences::DisplayDifference {
+                        type_name: format!("{:022}", "stderr remove"),
+                        chunk: difference.1.to_string(),
+                    });
+            }
+            if difference.0 == format!("{}", diff::RegressionType::StdoutAdd as u8) {
+                display_differences.push(
+                    differences::DisplayDifference {
+                        type_name: format!("{:022}", "stdout add"),
+                        chunk: difference.1.to_string(),
+                    });
+            }
+            if difference.0 == format!("{}", diff::RegressionType::StdoutRemove as u8) {
+                display_differences.push(
+                    differences::DisplayDifference {
+                        type_name: format!("{:022}","stdout remove"),
+                        chunk: difference.1.to_string(),
+                    });
+            }
+        }
+        md!(&display_differences);
+        differences::show_differences(&differences::DifferencesReportContext::new(
+            display_differences,
+            test.to_string(),
+        ))?;
+
     }
     Ok(())
 }
