@@ -28,8 +28,8 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
         }
     }
     let fail_count = failed_test_names.len() as u32;
-    let not_yet_run_count = failed_test_names.len() as u32;
-    let pass_count = total_count - fail_count - not_yet_run_count;
+    let not_yet_run_count = not_yet_run_test_names.len() as u32;
+    let pass_count = passed_test_names.len() as u32;
     summary::show_summary(&summary::SummaryReportContext::new(
         fail_count,
         not_yet_run_count,
