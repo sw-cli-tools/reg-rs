@@ -117,3 +117,21 @@ pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
     )?)
 }
 
+pub fn count_differences(db_name: &str) -> Result<u32> {
+    Ok(sqlite::count_rows(
+        &db_name,
+        &queries::get_statement(
+            &queries::StatementContext::differences(),
+            &statements::COUNT_TABLE_ROWS_TEMPLATE,
+        ),
+    )?)
+}
+pub fn latest_results_table_count(db_name: &str) -> Result<u32> {
+    Ok(sqlite::count_rows(
+        &db_name,
+        &queries::get_statement(
+            &queries::StatementContext::latest(),
+            &statements::TABLE_EXISTS_TEMPLATE,
+        ),
+    )?)
+}

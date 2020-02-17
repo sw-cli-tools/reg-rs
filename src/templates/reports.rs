@@ -28,9 +28,28 @@ Test {{ for name in tests }} {name} {{ endfor }}
 
 pub static SUMMARY_REPORT_TEMPLATE: &str = "
 RTT Summary Report { report_date }
-{ pass_count } tests have passed
-{ fail_count } tests have failed
-{ not_run_count } tests have not yet been run
+{ pass_count } passed
+{ fail_count } failed
+{ not_run_count } not yet run
  -----
-{ test_count } tests match pattern { test_pattern }
+{ test_count } matched pattern: { test_pattern }
+";
+
+pub static DETAILS_REPORT_TEMPLATE: &str = "
+Details
+===
+Failed tests: 
+{{ for failed_test in failed_test_names }} 
+  { failed_test } 
+{{ endfor }}
+
+Not Yet Run tests:
+{{ for not_yet_run_test in not_yet_run_test_names }} 
+  { not_yet_run_test } 
+{{ endfor }}
+
+Passed tests:
+{{ for passed_test in passed_test_names }} 
+  { passed_test } 
+{{ endfor }}
 ";

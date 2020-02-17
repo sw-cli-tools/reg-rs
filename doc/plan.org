@@ -42,10 +42,10 @@
 *** DONE store regressions (diff chunks with types) in database
 *** DONE add differences template and context
 *** DONE refactor reports into summary, detail, and differences reports
+*** DONE report summary should show pass/fail (count of pasing tests, count of failing tests)
+*** DONE report detail should show list of failing tests 
+*** DONE report detail should show list of passing tests 
 ** next
-*** TODO report summary should show pass/fail (count of pasing tests, count of failing tests)
-*** TODO report detail should show list of failing tests 
-*** TODO report detail should show list of passing tests 
 *** TODO report differences should show differences per failing test
 *** TODO add verbosity levels to report (summary always, -v list failing, -vv list failing/passing -vvv show chunks)
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)

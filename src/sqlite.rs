@@ -85,3 +85,25 @@ pub(crate) fn read_differences(db_name: &str, select_statement: &str) -> Result<
     }
     Ok(result)
 }
+
+pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
+    let conn = Connection::open(&db_name)?;
+    let mut stmt = conn.prepare(&count_statement)?;
+    let mut count_iter = stmt.query_map(params![], |row| {
+        Ok(row.get(0)?)
+    })?;
+
+    let count = count_iter.next();
+    count.unwrap()
+}
+
+pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> {
+    let conn = Connection::open(&db_name)?;
+    let mut stmt = conn.prepare(&table_exists_statement)?;
+    let mut count_iter = stmt.query_map(params![], |row| {
+        Ok(row.get(0)?)
+    })?;
+
+    let count = count_iter.next();
+    count.unwrap()
+}

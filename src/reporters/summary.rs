@@ -1,11 +1,10 @@
 use tinytemplate::TinyTemplate;
 
-use crate::config;
 use crate::templates::reports;
 use crate::time;
 
 #[derive(Serialize)]
-struct SummaryReportContext {
+pub struct SummaryReportContext {
     fail_count: String,
     not_run_count: String,
     pass_count: String,
@@ -13,21 +12,29 @@ struct SummaryReportContext {
     test_count: String,
     test_pattern: String,
 }
+impl SummaryReportContext {
+    pub fn new(fail_count: u32,
+               not_yet_run_count: u32,
+               pass_count: u32,
+               pattern: &str,
+               test_count: u32,
+    ) -> Self {
+        SummaryReportContext {
+            fail_count: format!(" {:05}", fail_count),
+            not_run_count: format!(" {:05}", not_yet_run_count),
+            pass_count: format!(" {:05}", pass_count),
+            report_date: time::now(),
+            test_count: format!(" {:05}", test_count),
+            test_pattern: pattern.to_string(),
+        }
+    }
+}
 
-pub fn show_summary(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
-    md!("incomplete");
+pub fn show_summary(summary_report_context: &SummaryReportContext
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut tt = TinyTemplate::new();
     tt.add_template("summary_report_template", reports::SUMMARY_REPORT_TEMPLATE)?;
-    let summary_report_context = SummaryReportContext {
-        fail_count: format!(" {:05}", 0),
-        not_run_count: format!(" {:05}", 0),
-        pass_count: format!(" {:05}", 0),
-        report_date: time::now(),
-        test_count: format!(" {:05}", 0),
-        test_pattern: config.extract_pattern().to_string(),
-    };
     let rendered = tt.render("summary_report_template", &summary_report_context)?;
     println!("{}", rendered);
     Ok(())
-
 }

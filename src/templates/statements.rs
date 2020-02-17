@@ -43,3 +43,11 @@ pub const SELECT_DIFFERENCES_TEMPLATE: &str = "
  SELECT type, chunk
  FROM { table_name }
 ";
+
+pub const COUNT_TABLE_ROWS_TEMPLATE: &str = "
+SELECT COUNT(*) AS c from { table_name }
+";
+
+pub const TABLE_EXISTS_TEMPLATE: &str = "
+SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{ table_name }'
+";
