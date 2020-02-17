@@ -39,12 +39,19 @@ pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
     )?)
 }
 
-pub fn drop_latest_results(db_name: &str) -> Result<()> {
+pub fn reset_latest_results(db_name: &str) -> Result<()> {
     sqlite::drop_table(
         &db_name,
         &queries::get_statement(
             &queries::StatementContext::latest(),
             &statements::DROP_TABLE_TEMPLATE,
+        ),
+    )?;
+    sqlite::create_table(
+        db_name,
+        &queries::get_statement(
+            &queries::StatementContext::latest(),
+            &statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
         ),
     )?;
     Ok(())
@@ -58,7 +65,7 @@ pub fn drop_all_results(db_name: &str) -> Result<()> {
             &statements::DROP_TABLE_TEMPLATE,
         ),
     )?;
-    drop_latest_results(&db_name)?;
+    reset_latest_results(&db_name)?;
     Ok(())
 }
 

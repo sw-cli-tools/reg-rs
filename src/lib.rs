@@ -12,7 +12,7 @@ lazy_static! {
 macro_rules! md {
     // maybe-debug
     ( $e:expr ) => {
-        if *super::DEBUG {
+        if *crate::DEBUG {
             dbg!($e);
         }
     };
@@ -27,7 +27,7 @@ pub mod diff;
 pub mod finder;
 pub mod process;
 pub mod queries;
-pub mod reporter;
+pub mod reporters;
 pub mod runner;
 pub mod sqlite;
 pub mod templates;

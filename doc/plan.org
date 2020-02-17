@@ -41,6 +41,7 @@
 *** DONE new subcommand: remove - removes original and results tables in one or more databases
 *** DONE store regressions (diff chunks with types) in database
 *** DONE add differences template and context
+*** DONE refactor reports into summary, detail, and differences reports
 ** next
 *** TODO report summary should show pass/fail (count of pasing tests, count of failing tests)
 *** TODO report detail should show list of failing tests 

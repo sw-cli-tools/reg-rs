@@ -28,7 +28,7 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
         if let Some(latest_test_result) = maybe_regression {
             let db_name = &test;
             diff::process_differences(&db_name, &prior_test_result, &latest_test_result)?;
-            db::drop_latest_results(&db_name)?;
+            db::reset_latest_results(&db_name)?;
             db::store_results(
                 &db_name,
                 &latest_test_result,

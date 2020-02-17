@@ -2,7 +2,7 @@ use crate::config;
 use crate::db;
 use crate::finder;
 use crate::queries;
-use crate::reporter;
+use crate::reporters::generate_reports;
 use crate::runner;
 
 pub fn create_original(
@@ -40,6 +40,6 @@ pub fn remove_all(config: &config::Config) -> std::result::Result<(), Box<dyn st
 pub fn report_latest(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
-    reporter::generate(&config)?;
+    generate_reports(&config)?;
     Ok(())
 }
