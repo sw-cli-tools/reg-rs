@@ -4,22 +4,32 @@ pub use crate::templates::statements;
 
 #[derive(Serialize)]
 pub struct StatementContext {
+    difference_type: u8,
     table_name: String,
 }
 
 impl StatementContext {
     pub fn original() -> Self {
         StatementContext {
+            difference_type: 0,
             table_name: "original_results_table".to_string(),
         }
     }
     pub fn latest() -> Self {
         StatementContext {
+            difference_type: 0,
             table_name: "latest_results_table".to_string(),
         }
     }
     pub fn differences() -> Self {
         StatementContext {
+            difference_type: 0,
+            table_name: "differences_table".to_string(),
+        }
+    }
+    pub fn difference_count_by_type(difference_type: u8) -> Self {
+        StatementContext {
+            difference_type,
             table_name: "differences_table".to_string(),
         }
     }

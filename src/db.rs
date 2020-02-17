@@ -135,3 +135,13 @@ pub fn latest_results_table_count(db_name: &str) -> Result<u32> {
         ),
     )?)
 }
+
+pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u32> {
+    Ok(sqlite::count_differences_by_type(
+        &db_name,
+        &queries::get_statement(
+            &queries::StatementContext::difference_count_by_type(difference_type),
+            &statements::COUNT_DIFF_TYPE_TEMPLATE,
+        ),
+    )?)
+}

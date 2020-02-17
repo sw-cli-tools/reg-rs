@@ -71,13 +71,13 @@ pub fn write_difference(
     Ok(())
 }
 
-pub(crate) fn read_differences(db_name: &str, select_statement: &str) -> Result<Vec<(String, String)>> {
+pub(crate) fn read_differences(
+    db_name: &str,
+    select_statement: &str,
+) -> Result<Vec<(String, String)>> {
     let conn = Connection::open(&db_name)?;
     let mut stmt = conn.prepare(&select_statement)?;
-    let difference_iter = stmt.query_map(params![], |row| {
-        Ok((row.get(0)?, row.get(1)?,
-        ))
-    })?;
+    let difference_iter = stmt.query_map(params![], |row| Ok((row.get(0)?, row.get(1)?)))?;
 
     let mut result = vec![];
     for difference in difference_iter {
@@ -89,9 +89,7 @@ pub(crate) fn read_differences(db_name: &str, select_statement: &str) -> Result<
 pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
     let conn = Connection::open(&db_name)?;
     let mut stmt = conn.prepare(&count_statement)?;
-    let mut count_iter = stmt.query_map(params![], |row| {
-        Ok(row.get(0)?)
-    })?;
+    let mut count_iter = stmt.query_map(params![], |row| Ok(row.get(0)?))?;
 
     let count = count_iter.next();
     count.unwrap()
@@ -100,9 +98,16 @@ pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
 pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> {
     let conn = Connection::open(&db_name)?;
     let mut stmt = conn.prepare(&table_exists_statement)?;
-    let mut count_iter = stmt.query_map(params![], |row| {
-        Ok(row.get(0)?)
-    })?;
+    let mut count_iter = stmt.query_map(params![], |row| Ok(row.get(0)?))?;
+
+    let count = count_iter.next();
+    count.unwrap()
+}
+
+pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str) -> Result<u32> {
+    let conn = Connection::open(&db_name)?;
+    let mut stmt = conn.prepare(&count_diff_type_statement)?;
+    let mut count_iter = stmt.query_map(params![], |row| Ok(row.get(0)?))?;
 
     let count = count_iter.next();
     count.unwrap()

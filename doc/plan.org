@@ -45,8 +45,8 @@
 *** DONE report summary should show pass/fail (count of pasing tests, count of failing tests)
 *** DONE report detail should show list of failing tests 
 *** DONE report detail should show list of passing tests 
+*** DONE add more details (e.g. date created, date last ran, kind of failure, number of differences detected)
 ** next
-*** TODO add more details (e.g. date created, date last ran, kind of failure, number of differences detected)
 *** TODO report differences should show differences per failing test
 *** TODO add verbosity levels to report (summary always, -v list failing, -vv list failing/passing -vvv show chunks)
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)

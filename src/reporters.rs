@@ -4,6 +4,7 @@ use crate::finder;
 
 pub mod details;
 pub mod differences;
+pub mod failures;
 pub mod summary;
 
 pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -37,8 +38,14 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
         &config.extract_pattern().to_string(),
         total_count,
     ))?;
+    let no_failed_tests = 0 == *&failed_test_names.len();
+    let no_not_yet_run_tests = 0 == *&not_yet_run_test_names.len();
+    let no_passed_tests = 0 == *&passed_test_names.len();
     details::show_details(&details::DetailsReportContext::new(
         failed_test_names,
+        no_failed_tests,
+        no_not_yet_run_tests,
+        no_passed_tests,
         not_yet_run_test_names,
         passed_test_names,
     ))?;

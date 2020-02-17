@@ -51,3 +51,7 @@ SELECT COUNT(*) AS c from { table_name }
 pub const TABLE_EXISTS_TEMPLATE: &str = "
 SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{ table_name }'
 ";
+
+pub const COUNT_DIFF_TYPE_TEMPLATE: &str = "
+SELECT COUNT(*) FROM { table_name } WHERE type = '{ difference_type }'
+";
