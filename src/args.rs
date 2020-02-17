@@ -35,12 +35,14 @@ pub enum Subcommands {
         /// Removes tests and results matching this naming pattern.  
         pattern: String,
     },
-    /// Reports results of previously run test(s)
+    /// Reports counts/summary of specified test(s)
     Report {
         #[structopt(long, short)]
-        /// Reports on tests matching this naming pattern
+        /// name pattern to report on.  Can match zero, one, or more tests.
         pattern: String,
-    },
+        /// Verbosity: -v adds names. -vv adds failure info. -vvv adds differences info.
+        #[structopt(short, parse(from_occurrences))]
+        verbosity: u8,    },
     /// Runs a test (or tests) based on a test name pattern
     Run {
         #[structopt(long, short)]

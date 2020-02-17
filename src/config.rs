@@ -17,7 +17,7 @@ impl Config {
     pub fn extract_pattern(self: &Self) -> &str {
         let default_pattern = ".tdb";
         match &self.mode {
-            args::Subcommands::Report { pattern } => pattern,
+            args::Subcommands::Report { pattern, .. } => pattern,
             args::Subcommands::Run { pattern, .. } => pattern,
             _ => default_pattern,
         }
@@ -29,6 +29,15 @@ impl Config {
             Some((test.to_string(), command.to_string()))
         } else {
             None
+        }
+    }
+
+    pub fn verbosity_level(self: &Self) -> u8 {
+        if let args::Subcommands::Report { verbosity, .. } = &self.mode {
+            md!(verbosity);
+            *verbosity
+        } else {
+            0
         }
     }
 }

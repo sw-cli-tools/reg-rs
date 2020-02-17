@@ -1,5 +1,5 @@
 pub static DIFFERENCES_REPORT_TEMPLATE: &str = "
-** Differences **
+** Differences ** (-vvv)
 ⍨ { failed_test_name } 
 {{ for difference in differences }}{ difference.type_name } - { difference.chunk }
 {{ endfor }}
@@ -13,7 +13,7 @@ pub static SUMMARY_REPORT_TEMPLATE: &str = "RTT Summary Report { report_date }
 { test_count } matched pattern: { test_pattern }";
 
 pub static DETAILS_REPORT_TEMPLATE: &str ="
-* Details *{{ if no_failed_tests }}
+* Details * (-v){{ if no_failed_tests }}
 No Failed Tests{{ else }}
 ⍨ Failures: {{ for failed_test in failed_test_names }}{ failed_test }{{ if not @last }}, {{ endif }}{{ endfor }}{{ endif }}
 {{- if no_not_yet_run_tests }}{{ else }}

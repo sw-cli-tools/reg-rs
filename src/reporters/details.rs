@@ -38,21 +38,25 @@ impl DetailsReportContext {
 
 pub fn show_details(
     details_report_context: &DetailsReportContext,
+    verbosity_level: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut tt = TinyTemplate::new();
     tt.add_template("details_report_template", reports::DETAILS_REPORT_TEMPLATE)?;
     let rendered = tt.render("details_report_template", &details_report_context)?;
     println!("{}", rendered);
-    show_failures(&details_report_context)?;
+    if verbosity_level > 1 {
+        show_failures(&details_report_context, verbosity_level)?;
+    }
     Ok(())
 }
 
 fn show_failures(
     details_report_context: &DetailsReportContext,
+    verbosity_level: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let failed_test_names = &details_report_context.failed_test_names;
     if 0 < *&failed_test_names.len() {
-        println!("Failures:");
+        println!("Failures: (-vv)");
     }
     for test in failed_test_names {
         md!(&test);
@@ -67,18 +71,26 @@ fn show_failures(
             db::difference_count_by_type(&test, diff::RegressionType::StderrSame as u8)?
                 + db::difference_count_by_type(&test, diff::RegressionType::StdoutSame as u8)?;
         let differences_count = *&differences.len() as u32 - same_count;
-        if 0 < db::difference_count_by_type(&test, diff::RegressionType::ActualCode as u8)? {
-            difference_types.push("exit_code".to_string());
-        }
-        if 0 < db::difference_count_by_type(&test, diff::RegressionType::StderrAdd as u8)?
-            || 0 < db::difference_count_by_type(&test, diff::RegressionType::StderrRemove as u8)?
-        {
-            difference_types.push("stderr".to_string());
-        }
-        if 0 < db::difference_count_by_type(&test, diff::RegressionType::StdoutAdd as u8)?
-            || 0 < db::difference_count_by_type(&test, diff::RegressionType::StdoutRemove as u8)?
-        {
-            difference_types.push("stdout".to_string());
+        if verbosity_level > 2 {
+            if 0 < db::difference_count_by_type(&test, diff::RegressionType::ActualCode as u8)? {
+                difference_types.push("exit_code".to_string());
+            }
+            if 0 < db::difference_count_by_type(&test, diff::RegressionType::StderrAdd as u8)?
+                || 0 < db::difference_count_by_type(
+                    &test,
+                    diff::RegressionType::StderrRemove as u8,
+                )?
+            {
+                difference_types.push("stderr".to_string());
+            }
+            if 0 < db::difference_count_by_type(&test, diff::RegressionType::StdoutAdd as u8)?
+                || 0 < db::difference_count_by_type(
+                    &test,
+                    diff::RegressionType::StdoutRemove as u8,
+                )?
+            {
+                difference_types.push("stdout".to_string());
+            }
         }
         failures::show_failure(&failures::FailuresReportContext::new(
             difference_types,
@@ -87,59 +99,55 @@ fn show_failures(
             original_result.time_created.to_string(),
             latest_result.time_created.to_string(),
         ))?;
-        let mut display_differences = vec![];
-        for difference in differences {
-//            md!((&difference.0, format!("{}", diff::RegressionType::ActualCode as u8)));
-//            md!(difference.0 == format!("{}", diff::RegressionType::ActualCode as u8));
-            if difference.0 == format!("{}", diff::RegressionType::ActualCode as u8) {
-                display_differences.push(
-                    differences::DisplayDifference {
+        if verbosity_level > 2 {
+            let mut display_differences = vec![];
+            for difference in differences {
+                if difference.0 == format!("{}", diff::RegressionType::ActualCode as u8) {
+                    display_differences.push(differences::DisplayDifference {
                         type_name: format!("{:022}", "Actual exit code"),
                         chunk: difference.1.to_string(),
                     });
-            }
-            if difference.0 == format!("{}", diff::RegressionType::ExpectedCode as u8) {
-                display_differences.push(
-                    differences::DisplayDifference {
+                }
+                if difference.0 == format!("{}", diff::RegressionType::ExpectedCode as u8) {
+                    display_differences.push(differences::DisplayDifference {
                         type_name: format!("{:022}", "Expected exit code"),
                         chunk: difference.1.to_string(),
                     });
-            }
-            if difference.0 == format!("{}", diff::RegressionType::StderrAdd as u8) {
-                display_differences.push(
-                    differences::DisplayDifference {
+                }
+                if difference.0 == format!("{}", diff::RegressionType::StderrAdd as u8) {
+                    display_differences.push(differences::DisplayDifference {
                         type_name: format!("{:022}", "stderr add"),
                         chunk: difference.1.to_string(),
                     });
-            }
-            if difference.0 == format!("{}", diff::RegressionType::StderrRemove as u8) {
-                display_differences.push(
-                    differences::DisplayDifference {
+                }
+                if difference.0 == format!("{}", diff::RegressionType::StderrRemove as u8) {
+                    display_differences.push(differences::DisplayDifference {
                         type_name: format!("{:022}", "stderr remove"),
                         chunk: difference.1.to_string(),
                     });
-            }
-            if difference.0 == format!("{}", diff::RegressionType::StdoutAdd as u8) {
-                display_differences.push(
-                    differences::DisplayDifference {
+                }
+                if difference.0 == format!("{}", diff::RegressionType::StdoutAdd as u8) {
+                    display_differences.push(differences::DisplayDifference {
                         type_name: format!("{:022}", "stdout add"),
                         chunk: difference.1.to_string(),
                     });
-            }
-            if difference.0 == format!("{}", diff::RegressionType::StdoutRemove as u8) {
-                display_differences.push(
-                    differences::DisplayDifference {
-                        type_name: format!("{:022}","stdout remove"),
+                }
+                if difference.0 == format!("{}", diff::RegressionType::StdoutRemove as u8) {
+                    display_differences.push(differences::DisplayDifference {
+                        type_name: format!("{:022}", "stdout remove"),
                         chunk: difference.1.to_string(),
                     });
+                }
             }
+            md!(&display_differences);
+            differences::show_differences(&differences::DifferencesReportContext::new(
+                display_differences,
+                test.to_string(),
+            ))?;
         }
-        md!(&display_differences);
-        differences::show_differences(&differences::DifferencesReportContext::new(
-            display_differences,
-            test.to_string(),
-        ))?;
-
+        if verbosity_level > 3 {
+            println!("*warning* verbosity level {} exceeds max", verbosity_level);
+        }
     }
     Ok(())
 }
