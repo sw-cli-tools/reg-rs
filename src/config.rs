@@ -41,3 +41,75 @@ impl Config {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO test is_dry_run
+    // TODO test extract_test_and_command
+    
+    #[test]
+    fn test_extract_report_pattern() {
+        let args = args::Args {
+            command: args::Subcommands::Report {
+                pattern: "foo".to_string(),
+                verbosity: 0
+            },
+            debug: false,
+        };
+        assert_eq!("foo".to_string(),
+                   Config {
+                       mode: args.command,
+                       debug: false,
+                   }.extract_pattern());
+    }
+
+    #[test]
+    fn test_extract_run_pattern() {
+        let args = args::Args {
+            command: args::Subcommands::Run {
+                dry_run: false,
+                pattern: "bar".to_string(),
+            },
+            debug: false,
+        };
+        assert_eq!("bar".to_string(),
+                   Config {
+                       mode: args.command,
+                       debug: false,
+                   }.extract_pattern());
+    }
+
+    #[test]
+    fn test_default_verbosity_level() {
+        let args = args::Args {
+            command: args::Subcommands::Report {
+                pattern: "foo".to_string(),
+                verbosity: 0
+            },
+            debug: false,
+        };
+        assert_eq!(0,
+                   Config {
+                       mode: args.command,
+                       debug: false,
+                   }.verbosity_level());
+    }
+
+    #[test]
+    fn test_non_default_verbosity_level() {
+        let args = args::Args {
+            command: args::Subcommands::Report {
+                pattern: "foo".to_string(),
+                verbosity: 3
+            },
+            debug: false,
+        };
+        assert_eq!(3,
+                   Config {
+                       mode: args.command,
+                       debug: false,
+                   }.verbosity_level());
+    }
+}
