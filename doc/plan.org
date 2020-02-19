@@ -49,8 +49,9 @@
 *** DONE report differences should show differences per failing test
 *** DONE add verbosity levels to report (summary always, -v list failing, -vv list failing/passing -vvv show chunks)
 *** DONE add some unit tests
+*** DONE add an integration test
 ** next
-*** TODO add an integration test
+*** TODO run rtt tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
 *** TODO add examples
@@ -60,7 +61,7 @@
 *** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
 *** TODO add panics for internal logic errors? (code coverage unreachable paths?)
 *** TODO time test execution (store in db)
-*** TODO watchdog timer thread to time-out test threads, main thread waits for done or time-out
+*** TODO watchdog time-out: per-test watchdog thread waits for test thread completion or time-out
 *** TODO store timeouts and results in db (enum Fail, Pass, TimedOut)
 *** TODO add timestamps, times, timeouts and results to generated reports
 *** TODO add time-based examples
