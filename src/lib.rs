@@ -9,6 +9,7 @@ use std::env;
 lazy_static! {
     static ref DEBUG: bool = env::args().any(|s| s.starts_with("-d"));
 }
+
 macro_rules! md {
     // maybe-debug
     ( $e:expr ) => {
@@ -32,3 +33,4 @@ pub mod runner;
 pub mod sqlite;
 pub mod templates;
 pub mod time;
+pub mod util;

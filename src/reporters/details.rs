@@ -5,6 +5,7 @@ use crate::diff;
 use crate::reporters::differences;
 use crate::reporters::failures;
 use crate::templates::reports;
+use crate::util::warn;
 
 #[derive(Serialize)]
 pub struct DetailsReportContext {
@@ -13,6 +14,7 @@ pub struct DetailsReportContext {
     no_not_yet_run_tests: bool,
     no_passed_tests: bool,
     not_yet_run_test_names: Vec<String>,
+    passed_symbol: String,
     passed_test_names: Vec<String>,
 }
 
@@ -23,6 +25,7 @@ impl DetailsReportContext {
         no_not_yet_run_tests: bool,
         no_passed_tests: bool,
         not_yet_run_test_names: Vec<String>,
+        passed_symbol: String,
         passed_test_names: Vec<String>,
     ) -> Self {
         DetailsReportContext {
@@ -31,6 +34,7 @@ impl DetailsReportContext {
             no_not_yet_run_tests,
             no_passed_tests,
             not_yet_run_test_names,
+            passed_symbol,
             passed_test_names,
         }
     }
@@ -145,9 +149,9 @@ fn show_failures(
                 test.to_string(),
             ))?;
         }
-        if verbosity_level > 3 {
-            println!("*warning* verbosity level {} exceeds max", verbosity_level);
-        }
+    }
+    if verbosity_level > 3 {
+        println!("{} verbosity level {} exceeds max", warn("*warning*"), verbosity_level);
     }
     Ok(())
 }

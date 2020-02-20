@@ -50,6 +50,7 @@
 *** DONE add verbosity levels to report (summary always, -v list failing, -vv list failing/passing -vvv show chunks)
 *** DONE add some unit tests
 *** DONE add an integration test
+*** DONE add colors and indenting to output; fix redundant warnings
 ** next
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)

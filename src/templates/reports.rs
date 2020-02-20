@@ -1,7 +1,6 @@
 pub static DIFFERENCES_REPORT_TEMPLATE: &str = "
-** Differences ** (-vvv)
-⍨ { failed_test_name } 
-{{ for difference in differences }}{ difference.type_name } - { difference.chunk }
+ ** Differences ** (-vvv)
+{{ for difference in differences }}  { difference.type_name } - { difference.chunk }
 {{ endfor }}
 ";
 
@@ -20,7 +19,7 @@ No Failed Tests{{ else }}
 ? Not Yet Run: {{ for not_yet_run_test in not_yet_run_test_names }}{ not_yet_run_test }{{ if not @last }}, {{ endif }}{{ endfor }}{{ endif -}}
 {{ if no_passed_tests }}
 No Passed Tests{{ else }}
-✓ Passed: {{ for passed_test in passed_test_names }}{ passed_test }{{ if not @last }}, {{ endif }}{{ endfor }}{{ endif }}
+{ passed_symbol } Passed: {{ for passed_test in passed_test_names }}{ passed_test }{{ if not @last }}, {{ endif }}{{ endfor }}{{ endif }}
 ";
 
 pub static FAILURES_REPORT_TEMPLATE: &str =

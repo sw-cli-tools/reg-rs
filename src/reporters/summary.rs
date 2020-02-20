@@ -2,6 +2,7 @@ use tinytemplate::TinyTemplate;
 
 use crate::templates::reports;
 use crate::time;
+use crate::util::{fail, pass, warn};
 
 #[derive(Serialize)]
 pub struct SummaryReportContext {
@@ -21,9 +22,9 @@ impl SummaryReportContext {
         test_count: u32,
     ) -> Self {
         SummaryReportContext {
-            fail_count: format!(" {:05}", fail_count),
-            not_run_count: format!(" {:05}", not_yet_run_count),
-            pass_count: format!(" {:05}", pass_count),
+            fail_count: fail(&format!(" {:05}", fail_count)),
+            not_run_count: warn(&format!(" {:05}", not_yet_run_count)),
+            pass_count: pass(&format!(" {:05}", pass_count)),
             report_date: time::now(),
             test_count: format!(" {:05}", test_count),
             test_pattern: pattern.to_string(),

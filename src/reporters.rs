@@ -1,6 +1,7 @@
 use crate::config;
 use crate::db;
 use crate::finder;
+use crate::util::pass_symbol;
 
 pub mod details;
 pub mod differences;
@@ -48,6 +49,7 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
             no_not_yet_run_tests,
             no_passed_tests,
             not_yet_run_test_names,
+            pass_symbol(),
             passed_test_names,
         ), config.verbosity_level())?;
     }
