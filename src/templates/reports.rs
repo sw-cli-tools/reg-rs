@@ -1,8 +1,7 @@
 pub static DIFFERENCES_REPORT_TEMPLATE: &str = "
  ** Differences ** (-vvv)
 {{ for difference in differences }}  { difference.type_name } - { difference.chunk }
-{{ endfor }}
-";
+{{ endfor }}";
 
 pub static SUMMARY_REPORT_TEMPLATE: &str = "RTT Summary Report { report_date }
 { fail_count } failed
