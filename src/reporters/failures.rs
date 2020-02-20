@@ -6,6 +6,7 @@ use crate::templates::reports;
 pub struct FailuresReportContext {
     difference_types: Vec<String>,
     differences_count: u32,
+    fail_symbol: String,
     failed_test_name: String,
     required_blank: String,
     time_created: String,
@@ -16,6 +17,7 @@ impl FailuresReportContext {
     pub fn new(
         difference_types: Vec<String>,
         differences_count: u32,
+        fail_symbol: String,
         failed_test_name: String,
         time_created: String,
         time_last_ran: String,
@@ -23,6 +25,7 @@ impl FailuresReportContext {
         FailuresReportContext {
             difference_types,
             differences_count,
+            fail_symbol,
             failed_test_name,
             required_blank: " ".to_string(),
             time_created,

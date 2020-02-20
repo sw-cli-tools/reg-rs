@@ -22,13 +22,21 @@ impl SummaryReportContext {
         test_count: u32,
     ) -> Self {
         SummaryReportContext {
-            fail_count: fail(&format!(" {:05}", fail_count)),
-            not_run_count: warn(&format!(" {:05}", not_yet_run_count)),
-            pass_count: pass(&format!(" {:05}", pass_count)),
+            fail_count: maybe_color(fail_count > 0, &fail, fail_count),
+            not_run_count: maybe_color(not_yet_run_count > 0, &warn, not_yet_run_count),
+            pass_count: maybe_color(pass_count > 0, &pass, pass_count),
             report_date: time::now(),
-            test_count: format!(" {:05}", test_count),
+            test_count: maybe_color(test_count == 0, &warn, test_count),
             test_pattern: pattern.to_string(),
         }
+    }
+}
+fn maybe_color(condition: bool, cb: &dyn Fn(&str) -> String, count: u32) -> String {
+    let s = format!(" {:05}", count);
+    if condition {
+        cb(&s)
+    } else {
+        s
     }
 }
 

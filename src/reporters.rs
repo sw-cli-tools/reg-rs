@@ -1,11 +1,12 @@
 use crate::config;
 use crate::db;
 use crate::finder;
-use crate::util::pass_symbol;
+use crate::util::{fail_symbol, pass_symbol, warn_symbol};
 
 pub mod details;
 pub mod differences;
 pub mod failures;
+pub mod passes;
 pub mod summary;
 
 pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -44,6 +45,7 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
         let no_not_yet_run_tests = 0 == *&not_yet_run_test_names.len();
         let no_passed_tests = 0 == *&passed_test_names.len();
         details::show_details(&details::DetailsReportContext::new(
+            fail_symbol(),
             failed_test_names,
             no_failed_tests,
             no_not_yet_run_tests,
@@ -51,6 +53,7 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
             not_yet_run_test_names,
             pass_symbol(),
             passed_test_names,
+            warn_symbol(),
         ), config.verbosity_level())?;
     }
     Ok(())

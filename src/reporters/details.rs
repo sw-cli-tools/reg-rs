@@ -4,38 +4,45 @@ use crate::db;
 use crate::diff;
 use crate::reporters::differences;
 use crate::reporters::failures;
+use crate::reporters::passes;
 use crate::templates::reports;
-use crate::util::warn;
+use crate::util::{fail_symbol, pass_symbol, warn};
 
 #[derive(Serialize)]
 pub struct DetailsReportContext {
+    fail_symbol: String,
     failed_test_names: Vec<String>,
     no_failed_tests: bool,
     no_not_yet_run_tests: bool,
     no_passed_tests: bool,
     not_yet_run_test_names: Vec<String>,
-    passed_symbol: String,
+    pass_symbol: String,
     passed_test_names: Vec<String>,
+    warn_symbol: String,
 }
 
 impl DetailsReportContext {
     pub fn new(
+        fail_symbol: String,
         failed_test_names: Vec<String>,
         no_failed_tests: bool,
         no_not_yet_run_tests: bool,
         no_passed_tests: bool,
         not_yet_run_test_names: Vec<String>,
-        passed_symbol: String,
+        pass_symbol: String,
         passed_test_names: Vec<String>,
+        warn_symbol: String,
     ) -> Self {
         DetailsReportContext {
+            fail_symbol,
             failed_test_names,
             no_failed_tests,
             no_not_yet_run_tests,
             no_passed_tests,
             not_yet_run_test_names,
-            passed_symbol,
+            pass_symbol,
             passed_test_names,
+            warn_symbol,
         }
     }
 }
@@ -50,6 +57,9 @@ pub fn show_details(
     println!("{}", rendered);
     if verbosity_level > 1 {
         show_failures(&details_report_context, verbosity_level)?;
+    }
+    if verbosity_level > 1 {
+        show_passes(&details_report_context, verbosity_level)?;
     }
     Ok(())
 }
@@ -99,6 +109,7 @@ fn show_failures(
         failures::show_failure(&failures::FailuresReportContext::new(
             difference_types,
             differences_count,
+            fail_symbol(),
             test.to_string(),
             original_result.time_created.to_string(),
             latest_result.time_created.to_string(),
@@ -150,6 +161,31 @@ fn show_failures(
             ))?;
         }
     }
+    Ok(())
+}
+
+fn show_passes(
+    details_report_context: &DetailsReportContext,
+    verbosity_level: u8,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let passed_test_names = &details_report_context.passed_test_names;
+    if 0 < *&passed_test_names.len() {
+        println!("Passes:");
+    }
+    for test in passed_test_names {
+        md!(&test);
+        let original_result = db::read_original_results(&test)?;
+        md!(&original_result);
+        let latest_result = db::read_latest_results(&test)?;
+        md!(&latest_result);
+        passes::show_passes(&passes::PassesReportContext::new(
+            pass_symbol(),
+            test.to_string(),
+            original_result.time_created.to_string(),
+            latest_result.time_created.to_string(),
+        ))?;
+    }
+
     if verbosity_level > 3 {
         println!("{} verbosity level {} exceeds max", warn("*warning*"), verbosity_level);
     }

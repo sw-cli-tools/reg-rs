@@ -51,12 +51,13 @@
 *** DONE add some unit tests
 *** DONE add an integration test
 *** DONE add colors and indenting to output; fix redundant warnings
+*** DONE add more colors and passed test template/report 
 ** next
+*** TODO add status server (status module) skeleton
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
 *** TODO add examples
-*** TODO add status server (status module) skeleton
 *** TODO handle bad test databases and other errors (errors module)
 *** TODO add error handling in main (try_main?)
 *** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
