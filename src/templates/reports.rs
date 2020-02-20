@@ -30,4 +30,4 @@ pub static FAILURES_REPORT_TEMPLATE: &str =
 ";
 
 pub static PASSES_REPORT_TEMPLATE: &str =
-    "{ pass_symbol } { passed_test_name } - created: { time_created }, last ran: { time_last_ran }";
+    "{ pass_symbol } { passed_test_name } - created: { time_created }, passed: { time_last_ran }";
