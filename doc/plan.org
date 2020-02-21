@@ -52,8 +52,11 @@
 *** DONE add an integration test
 *** DONE add colors and indenting to output; fix redundant warnings
 *** DONE add more colors and passed test template/report 
+*** DONE add iron-based status server (status module) skeleton static summary
 ** next
-*** TODO add status server (status module) skeleton
+*** TODO switch from iron to gotham status server (still static view)
+*** TODO update status from monitor thread (dynamic status)
+*** TODO monitor tests running under different rtt1 process(es)
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
