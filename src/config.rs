@@ -19,6 +19,7 @@ impl Config {
         match &self.mode {
             args::Subcommands::Report { pattern, .. } => pattern,
             args::Subcommands::Run { pattern, .. } => pattern,
+            args::Subcommands::Status { pattern, .. } => pattern,
             _ => default_pattern,
         }
     }
@@ -40,6 +41,14 @@ impl Config {
             0
         }
     }
+
+    pub fn status_port(self: &Self) -> u16 {
+        match &self.mode {
+            args::Subcommands::Status { localhost_port, .. } => *localhost_port,
+            _ => crate::DEFAULT_STATUS_PORT,
+        }
+    }
+
 }
 
 #[cfg(test)]
@@ -112,4 +121,5 @@ mod tests {
                        debug: false,
                    }.verbosity_level());
     }
+    
 }

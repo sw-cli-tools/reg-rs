@@ -8,6 +8,7 @@ for more details:
  rtt1 run --help
  rtt1 remove --help
  rtt1 report --help
+ rtt1 status --help
 "
 )]
 pub struct Args {
@@ -53,6 +54,15 @@ pub enum Subcommands {
         #[structopt(long, short = "n")]
         dry_run: bool,
     },
+    /// Starts a status server to monitor long running tests and/or show results
+    Status {
+        #[structopt(long, short)]
+        /// Monitors tests matching this naming pattern
+        pattern: String,
+        #[structopt(default_value="4111", long, short)]
+        /// optional port number
+        localhost_port: u16,
+    }
 }
 pub fn parse_args() -> Args {
     Args::from_args()

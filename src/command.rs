@@ -4,6 +4,7 @@ use crate::finder;
 use crate::queries;
 use crate::reporters::generate_reports;
 use crate::runner;
+use crate::status;
 
 pub fn create_original(
     config: &config::Config,
@@ -43,3 +44,10 @@ pub fn report_latest(
     generate_reports(&config)?;
     Ok(())
 }
+pub fn status_server(
+    config: &config::Config,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    status::start_client(&config)?; 
+    status::start_server(&config)?; // loops
+    Ok(())
+}    

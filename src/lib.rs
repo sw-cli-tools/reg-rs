@@ -19,6 +19,9 @@ macro_rules! md {
     };
 }
 
+pub const DEFAULT_STATUS_PORT: u16 = 4111;
+pub const STATUS_BANNER: &str = "RTT1 Status Server";
+
 pub mod args;
 pub mod builder;
 pub mod command;
@@ -31,6 +34,7 @@ pub mod queries;
 pub mod reporters;
 pub mod runner;
 pub mod sqlite;
+pub mod status;
 pub mod templates;
 pub mod time;
 pub mod util;

@@ -17,6 +17,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args::Subcommands::Run { .. } => {
             command::update_latest(&config)?;
         }
+        args::Subcommands::Status { .. } => {
+            command::status_server(&config)?;
+        }
     }
     Ok(())
 }
