@@ -7,17 +7,6 @@ pub struct TestNames {
     pub found: Vec<String>,
 }
 
-#[derive(Debug)]
-pub struct TestResults {
-    pub id: i32,
-    pub name: String,
-    pub command: String,
-    pub time_created: String,
-    pub exit_code: i32,
-    pub stderr: String,
-    pub stdout: String,
-}
-
 fn execute_closure(
     closure_argument: &mut dyn FnMut(&mut Vec<String>, String),
     acc: &mut Vec<String>,
