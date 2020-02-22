@@ -54,8 +54,8 @@
 *** DONE add more colors and passed test template/report 
 *** DONE add iron-based status server (status module) skeleton static summary
 *** DONE switch from iron to gotham status server (still static view, add some details)
+*** DONE refactor status view (simplify logic, add failures, differences)
 ** next
-*** TODO refactor status view (simplify logic, add failures, differences)
 *** TODO update status from monitor thread (dynamic status)
 *** TODO monitor tests running under different rtt1 process(es)
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
