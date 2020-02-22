@@ -57,8 +57,9 @@
 *** DONE refactor status view (simplify logic, add failures, differences)
 *** DONE update status from monitor thread (dynamic status)
 *** DONE add aliases for create, run, and report subcommands (c, r, p); update int test
+*** DONE fix created TBD bug
 ** next
-*** TODO monitor tests running under different rtt1 process(es)
+*** TODO monitor tests running under different rtt1 process(es) (using notify)
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests

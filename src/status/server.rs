@@ -115,7 +115,7 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
                 });
             } else {
                 test_runs.push(TestDetails {
-                    created: "TBD".to_string(),
+                    created: original_result.time_created,
                     diffs: None,
                     name: test_name.to_string(),
                     last_ran: Some(latest_result.time_created),
