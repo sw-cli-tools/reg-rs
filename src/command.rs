@@ -31,7 +31,7 @@ pub fn update_latest(
 }
 
 pub fn remove_all(config: &config::Config) -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let tests = finder::discover(&config)?;
+    let tests = finder::discover(config.extract_pattern().to_string())?;
     for test in tests.found {
         db::drop_all_results(&test)?;
     }

@@ -6,20 +6,25 @@ use mime;
 use crate::config;
 use crate::db;
 use crate::finder;
+use crate::status::monitor;
 use crate::status::views::status;
 use crate::time;
 
 lazy_static! {
-    static ref STATE_DATA: Mutex<StateData> = Mutex::new(StateData {
+    pub static ref STATE_DATA: Mutex<StateData> = Mutex::new(StateData {
         pattern: "".to_string(),
         runs: vec![],
+        server_started: time::now(),
+        state_updated: "".to_string(),
     });
 }
 
 #[derive(Debug)]
-struct StateData {
-    pattern: String,
-    runs: Vec<TestDetails>,
+pub struct StateData {
+    pub pattern: String,
+    pub runs: Vec<TestDetails>,
+    server_started: String,
+    pub state_updated: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -32,15 +37,21 @@ pub struct TestDetails {
 
 pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     let status_port = config.status_port();
-    set_test_runs(&config)?;
+    let pattern = config.extract_pattern().to_string();
+    set_test_runs(pattern.to_string())?;
+    let handles = monitor::launch_monitor(pattern.to_string());
     let addr = format!("localhost:{}", status_port);
     println!("Listening at {}.  Ctrl-C to terminate server", addr);
     gotham::start(addr, || Ok(serve_status_view)); // loops until Ctrl-C kills process
+    for handle in handles {
+        handle.join().unwrap();
+    }
     Ok(())
 }
 
 fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
     let state_data = &STATE_DATA.lock().unwrap();
+    md!(&state_data.state_updated);
     let mut failed_test_names = vec![];
     let mut not_yet_run_test_names = vec![];
     let mut passed_test_names = vec![];
@@ -68,7 +79,8 @@ fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
         passed_test_names.len() == 0 as usize,
         not_yet_run_test_names.len() as u32,
         passed_test_names.len() as u32,
-        time::now(),
+        state_data.server_started.clone(),
+        state_data.state_updated.clone(),
         state_data.runs.len() as u32,
         state_data.pattern.to_string(),
         copied_runs,
@@ -78,9 +90,9 @@ fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
     (state, (mime::TEXT_HTML, response_str.to_string()))
 }
 
-fn set_test_runs(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> {
     let mut test_runs = vec![];
-    let test_names = finder::discover(&config)?;
+    let test_names = finder::discover(pattern.to_string())?;
     for test_name in &test_names.found {
         let original_result = db::read_original_results(&test_name)?;
         let latest_results_table_count = db::latest_results_table_count(&test_name)?;
@@ -112,8 +124,9 @@ fn set_test_runs(config: &config::Config) -> Result<(), Box<dyn std::error::Erro
         }
     }
     let mut state_data = STATE_DATA.lock().unwrap();
-    state_data.pattern = config.extract_pattern().to_string();
+    state_data.pattern = pattern.to_string();
     state_data.runs = test_runs;
+    state_data.state_updated = time::now();
     Ok(())
 }
 

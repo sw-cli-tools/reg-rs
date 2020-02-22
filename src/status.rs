@@ -1,6 +1,7 @@
 use crate::config;
 
 pub mod client;
+pub mod monitor;
 pub mod server;
 pub mod views;
 

@@ -1,4 +1,5 @@
 pub static STATUS_VIEW_TEMPLATE: &str = "<small>(server started { server_started })</small>
+<small>(state updated { state_updated })</small>
 <h2>RTT Status Server</h2>
 <br />
 

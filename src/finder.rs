@@ -1,7 +1,5 @@
 use walkdir::{DirEntry, Error, WalkDir};
 
-use crate::config;
-
 #[derive(Debug)]
 pub struct TestNames {
     pub found: Vec<String>,
@@ -41,10 +39,8 @@ fn subject(pattern: String) -> Result<TestNames, Error> {
     Ok(tests)
 }
 
-pub fn discover(config: &config::Config) -> Result<TestNames, Box<dyn std::error::Error>> {
-    let tests = subject(config.extract_pattern().to_string())?;
-    if config.debug {
-        md!(&tests);
-    }
+pub fn discover(pattern: String) -> Result<TestNames, Box<dyn std::error::Error>> {
+    let tests = subject(pattern)?;
+    md!(&tests);
     Ok(tests)
 }

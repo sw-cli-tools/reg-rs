@@ -17,7 +17,7 @@ pub struct TestResults {
 }
 
 pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
-    let tests = finder::discover(&config)?;
+    let tests = finder::discover(config.extract_pattern().to_string())?;
     if config.debug {
         md!(&config);
         md!(&tests);

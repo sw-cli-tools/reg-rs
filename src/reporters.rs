@@ -11,7 +11,7 @@ pub mod summary;
 
 pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     md!("generate_report");
-    let test_names = finder::discover(&config)?;
+    let test_names = finder::discover(config.extract_pattern().to_string())?;
     let total_count = *&test_names.found.len() as u32;
     let mut failed_test_names = vec![];
     let mut passed_test_names = vec![];
