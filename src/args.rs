@@ -21,7 +21,8 @@ pub struct Args {
 
 #[derive(Debug, PartialEq, StructOpt)]
 pub enum Subcommands {
-    /// Creates a new test of a specified command
+    /// Creates a new test of a specified command (alias c)
+    #[structopt(name = "create", alias = "c")]
     Create {
         #[structopt(long, short)]
         /// Names the test (a database file to be created)
@@ -36,7 +37,8 @@ pub enum Subcommands {
         /// Removes tests and results matching this naming pattern.  
         pattern: String,
     },
-    /// Reports counts/summary of specified test(s)
+    /// Reports counts/summary of specified test(s) (alias p)
+    #[structopt(name = "report", alias = "p")]
     Report {
         #[structopt(long, short)]
         /// name pattern to report on.  Can match zero, one, or more tests.
@@ -45,7 +47,8 @@ pub enum Subcommands {
         #[structopt(short, parse(from_occurrences))]
         verbosity: u8,
     },
-    /// Runs a test (or tests) based on a test name pattern
+    /// Runs a test (or tests) based on a test name pattern (alias r)
+    #[structopt(name = "run", alias = "r")]
     Run {
         #[structopt(long, short)]
         /// Discovers tests matching this naming pattern
@@ -54,7 +57,8 @@ pub enum Subcommands {
         #[structopt(long, short = "n")]
         dry_run: bool,
     },
-    /// Starts a status server to monitor long running tests and/or show results
+    /// Starts a server to monitor long running tests and/or show results (alias s)
+    #[structopt(name = "status", alias = "s")]
     Status {
         #[structopt(long, short)]
         /// Monitors tests matching this naming pattern

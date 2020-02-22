@@ -35,12 +35,12 @@ FLAGS:
     -V, --version    Prints version information
 
 SUBCOMMANDS:
-    create    Creates a new test of a specified command
+    create    Creates a new test of a specified command (alias c)
     help      Prints this message or the help of the given subcommand(s)
     remove    Removes previously created test and run results if any.  Discards test and results!
-    report    Reports counts/summary of specified test(s)
-    run       Runs a test (or tests) based on a test name pattern
-    status    Starts a status server to monitor long running tests and/or show results
+    report    Reports counts/summary of specified test(s) (alias p)
+    run       Runs a test (or tests) based on a test name pattern (alias r)
+    status    Starts a server to monitor long running tests and/or show results (alias s)
 ",
         String::from_utf8_lossy(&output.stdout).to_string());
 }

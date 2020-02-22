@@ -56,6 +56,7 @@
 *** DONE switch from iron to gotham status server (still static view, add some details)
 *** DONE refactor status view (simplify logic, add failures, differences)
 *** DONE update status from monitor thread (dynamic status)
+*** DONE add aliases for create, run, and report subcommands (c, r, p); update int test
 ** next
 *** TODO monitor tests running under different rtt1 process(es)
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
@@ -64,7 +65,7 @@
 *** TODO add examples
 *** TODO add mechanism to ignore allowed diffs
 *** TODO handle bad test databases and other errors (errors module)
-*** TODO add error handling in main (try_main?)
+*** TODO add error handling in main (try_main?) see watchexec/watchexec/src/error.rs
 *** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
 *** TODO add panics for internal logic errors? (code coverage unreachable paths?)
 *** TODO time test execution (store in db)
