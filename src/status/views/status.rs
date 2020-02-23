@@ -1,3 +1,4 @@
+use log;
 use tinytemplate::TinyTemplate;
 
 use crate::status::server;
@@ -56,6 +57,7 @@ impl StatusViewContext {
 
 pub fn render(status_view_context: &StatusViewContext
 ) -> Result<String, Box<dyn std::error::Error>> {
+    log::info!("status/render");
     let mut tt = TinyTemplate::new();
     tt.add_template("status_view_template", views::STATUS_VIEW_TEMPLATE)?;
     let rendered = tt.render("status_view_template", &status_view_context)?;

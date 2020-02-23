@@ -1,3 +1,4 @@
+use log;
 use tinytemplate::TinyTemplate;
 
 use crate::templates::reports;
@@ -31,6 +32,7 @@ impl PassesReportContext {
 pub fn show_passes(
     passes_report_context: &PassesReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("passes/show_passes");
     md!("testing");
     let mut tt = TinyTemplate::new();
     tt.add_template(

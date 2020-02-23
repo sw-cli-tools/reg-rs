@@ -1,3 +1,4 @@
+use log;
 use tinytemplate::TinyTemplate;
 
 use crate::templates::reports;
@@ -30,6 +31,7 @@ impl DifferencesReportContext {
 pub fn show_differences(
     differences_report_context: &DifferencesReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("differences/show_differences");
     md!("testing");
     let mut tt = TinyTemplate::new();
     tt.add_template(

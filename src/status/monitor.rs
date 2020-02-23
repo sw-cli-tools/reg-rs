@@ -1,27 +1,47 @@
+use std::sync::mpsc::channel;
 use std::thread;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
+
+use log;
+use notify::{Watcher, RecursiveMode, watcher};
 
 use crate::status::server;
 use crate::time;
 
 pub fn launch_monitor(pattern: String) -> Vec<std::thread::JoinHandle<()>> {
+    log::info!("monitor/launch_monitor pattern: {}", &pattern);
     let state_data = &server::STATE_DATA.lock().unwrap();
     md!(&state_data);
     let mut handles = vec![];
     handles.push({
-        let now = SystemTime::now();
         thread::spawn(move || {
-            for index in 1..=15 {
-                thread::sleep(Duration::from_secs(5));
-                println!("awake #{}, elapsed: {}", index, now.elapsed().unwrap().as_secs());
-                {
-                    let mut state_data = server::STATE_DATA.lock().unwrap();
-                    state_data.state_updated = time::now();
-                    md!(&state_data.state_updated);
-                }
-                server::set_test_runs(pattern.to_string()).unwrap();
-            }
+            watch(&pattern);
         })
     });
     handles
+}
+
+fn watch(pattern: &String) ->! {
+    log::info!("monitor/watch pattern: {}", &pattern);
+    let (tx, rx) = channel();
+    let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
+    watcher.watch("/home/mike/github/wrightmikea/rtt1/data", RecursiveMode::Recursive).unwrap();
+
+    let mut index = 0;
+    loop {
+        index += 1;
+        match rx.recv() {
+           Ok(event) => println!("monitor.rs {:?}", event),
+           Err(e) => println!("watch error: {:?}", e),
+        }
+        {
+            let mut state_data = server::STATE_DATA.lock().unwrap();
+            state_data.state_updated = time::now();
+            log::info!("monitor/watch state_data.state_updated: {}", &state_data.state_updated);
+
+            md!(&state_data.state_updated);
+        }
+        server::set_test_runs(pattern.to_string()).unwrap();
+        md!(format!("loop {}", index));
+    }
 }

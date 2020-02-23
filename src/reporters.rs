@@ -1,3 +1,5 @@
+use log;
+
 use crate::config;
 use crate::db;
 use crate::finder;
@@ -10,6 +12,7 @@ pub mod passes;
 pub mod summary;
 
 pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("reporters/generate_reports");
     md!("generate_report");
     let test_names = finder::discover(config.extract_pattern().to_string())?;
     let total_count = *&test_names.found.len() as u32;

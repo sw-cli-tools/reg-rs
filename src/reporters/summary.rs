@@ -1,3 +1,4 @@
+use log;
 use tinytemplate::TinyTemplate;
 
 use crate::templates::reports;
@@ -43,6 +44,7 @@ fn maybe_color(condition: bool, cb: &dyn Fn(&str) -> String, count: u32) -> Stri
 pub fn show_summary(
     summary_report_context: &SummaryReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("summary/show_summary");
     let mut tt = TinyTemplate::new();
     tt.add_template("summary_report_template", reports::SUMMARY_REPORT_TEMPLATE)?;
     let rendered = tt.render("summary_report_template", &summary_report_context)?;

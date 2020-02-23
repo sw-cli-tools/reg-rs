@@ -16,12 +16,16 @@ impl Config {
 
     pub fn extract_pattern(self: &Self) -> &str {
         let default_pattern = ".tdb";
-        match &self.mode {
+        md!(&self.mode);
+        let p = match &self.mode {
+            args::Subcommands::Remove { pattern, .. } => pattern,
             args::Subcommands::Report { pattern, .. } => pattern,
             args::Subcommands::Run { pattern, .. } => pattern,
             args::Subcommands::Status { pattern, .. } => pattern,
             _ => default_pattern,
-        }
+        };
+        md!(&p);
+        p
     }
 
     pub fn extract_test_and_command(self: &Self) -> Option<(String, String)> {

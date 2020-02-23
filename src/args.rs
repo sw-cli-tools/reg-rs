@@ -15,6 +15,9 @@ pub struct Args {
     #[structopt(long, short)]
     /// Prints debugging info.  -d must preceed subcommands
     pub debug: bool,
+    #[structopt(long, short)]
+    /// Logs to a log file.  -l must preceed subcommands
+    pub logging: bool,
     #[structopt(subcommand)]
     pub command: Subcommands,
 }

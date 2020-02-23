@@ -1,3 +1,4 @@
+use log;
 use walkdir::{DirEntry, Error, WalkDir};
 
 #[derive(Debug)]
@@ -24,7 +25,10 @@ fn is_hidden(entry: &DirEntry) -> bool {
 fn subject(pattern: String) -> Result<TestNames, Error> {
     let mut tests = TestNames { found: vec![] };
     let mut closure_variable = |acc: &mut Vec<String>, val: String| {
-        if val.contains(&pattern) {
+        if val.contains(&pattern)
+        && val.ends_with(".tdb"){
+            md!(&val);
+            md!(&pattern);
             acc.push(val);
         }
     };
@@ -40,6 +44,7 @@ fn subject(pattern: String) -> Result<TestNames, Error> {
 }
 
 pub fn discover(pattern: String) -> Result<TestNames, Box<dyn std::error::Error>> {
+    log::info!("finder/discover pattern {}", &pattern);
     let tests = subject(pattern)?;
     md!(&tests);
     Ok(tests)

@@ -1,3 +1,4 @@
+use log;
 use rusqlite::Result;
 
 use crate::diff;
@@ -11,6 +12,7 @@ pub(crate) fn store_results(
     test_results: &runner::TestResults,
     statement_context: queries::StatementContext,
 ) -> Result<()> {
+    log::info!("db/store_results {}", &db_name);
     sqlite::create_table(
         db_name,
         &queries::get_statement(
@@ -30,6 +32,10 @@ pub(crate) fn store_results(
 }
 
 pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
+    log::info!("db/read_original_results {}", &db_name);
+    md!(&db_name);
+    md!(&queries::StatementContext::original());
+    md!(&statements::SELECT_TEST_RESULTS_TEMPLATE);
     Ok(sqlite::read_results(
         &db_name,
         &queries::get_statement(
@@ -40,6 +46,7 @@ pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
 }
 
 pub fn reset_latest_results(db_name: &str) -> Result<()> {
+    log::info!("db/reset_latest_results {}", &db_name);
     sqlite::drop_table(
         &db_name,
         &queries::get_statement(
@@ -58,6 +65,7 @@ pub fn reset_latest_results(db_name: &str) -> Result<()> {
 }
 
 pub fn drop_all_results(db_name: &str) -> Result<()> {
+    log::info!("db/drop_all_results {}", &db_name);
     sqlite::drop_table(
         &db_name,
         &queries::get_statement(
@@ -70,6 +78,7 @@ pub fn drop_all_results(db_name: &str) -> Result<()> {
 }
 
 pub fn reset_differences(db_name: &str) -> Result<()> {
+    log::info!("db/reset_differences {}", &db_name);
     sqlite::drop_table(
         &db_name,
         &queries::get_statement(
@@ -92,12 +101,14 @@ pub fn store_difference(
     difference_type: diff::RegressionType,
     difference_chunk: &str,
 ) -> Result<()> {
+    log::info!("db/store_difference {}", &db_name);
     let difference_type = (difference_type as usize).to_string();
     sqlite::write_difference(&db_name, &difference_type, &difference_chunk)?;
     Ok(())
 }
 
 pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
+    log::info!("db/read_latest_results {}", &db_name);
     Ok(sqlite::read_results(
         &db_name,
         &queries::get_statement(
@@ -108,6 +119,7 @@ pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
 }
 
 pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
+    log::info!("db/read_differences {}", &db_name);
     Ok(sqlite::read_differences(
         &db_name,
         &queries::get_statement(
@@ -118,6 +130,7 @@ pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
 }
 
 pub fn count_differences(db_name: &str) -> Result<u32> {
+    log::info!("db/count_differences {}", &db_name);
     Ok(sqlite::count_rows(
         &db_name,
         &queries::get_statement(
@@ -127,6 +140,7 @@ pub fn count_differences(db_name: &str) -> Result<u32> {
     )?)
 }
 pub fn latest_results_table_count(db_name: &str) -> Result<u32> {
+    log::info!("db/latest_results_table_count {}", &db_name);
     Ok(sqlite::count_rows(
         &db_name,
         &queries::get_statement(
@@ -137,6 +151,7 @@ pub fn latest_results_table_count(db_name: &str) -> Result<u32> {
 }
 
 pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u32> {
+    log::info!("db/difference_count_by_type {}", &db_name);
     Ok(sqlite::count_differences_by_type(
         &db_name,
         &queries::get_statement(

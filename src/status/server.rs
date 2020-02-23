@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 use gotham::state::State;
+use log;
 use mime;
 
 use crate::config;
@@ -36,6 +37,7 @@ pub struct TestDetails {
 }
 
 pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("server/start");
     let status_port = config.status_port();
     let pattern = config.extract_pattern().to_string();
     set_test_runs(pattern.to_string())?;
@@ -50,6 +52,7 @@ pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> 
 }
 
 fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
+    log::info!("server/serve_status_view");
     let state_data = &STATE_DATA.lock().unwrap();
     md!(&state_data.state_updated);
     let mut failed_test_names = vec![];
@@ -91,6 +94,7 @@ fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
 }
 
 pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("server/set_test_runs pattern: {}", &pattern);
     let mut test_runs = vec![];
     let test_names = finder::discover(pattern.to_string())?;
     for test_name in &test_names.found {
@@ -131,6 +135,7 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
 }
 
 fn get_diffs(test_name: &String) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    log::info!("server/get_diffs test_name {}", &test_name);
     let differences = db::read_differences(&test_name)?;
     let mut diffs = vec![];
     for difference in differences {

@@ -1,3 +1,5 @@
+use log;
+
 use crate::config;
 use crate::db;
 use crate::diff;
@@ -17,6 +19,7 @@ pub struct TestResults {
 }
 
 pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("runner/run_many");
     let tests = finder::discover(config.extract_pattern().to_string())?;
     if config.debug {
         md!(&config);
@@ -44,6 +47,7 @@ pub fn run_one(
     command: &str,
     dry_run: bool,
 ) -> Result<Option<TestResults>, Box<dyn std::error::Error>> {
+    log::info!("runner/run_one test_name {}, dry_run {}", &test_name, dry_run);
     if dry_run {
         println!("dry-run: test name: {}, command: {}", test_name, command);
         Ok(None)

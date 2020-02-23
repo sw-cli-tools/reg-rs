@@ -28,6 +28,7 @@ pub mod config;
 pub mod db;
 pub mod diff;
 pub mod finder;
+pub mod logging;
 pub mod process;
 pub mod queries;
 pub mod reporters;

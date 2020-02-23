@@ -1,3 +1,4 @@
+use log;
 use tinytemplate::TinyTemplate;
 
 use crate::db;
@@ -51,6 +52,7 @@ pub fn show_details(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("details/show_details");
     let mut tt = TinyTemplate::new();
     tt.add_template("details_report_template", reports::DETAILS_REPORT_TEMPLATE)?;
     let rendered = tt.render("details_report_template", &details_report_context)?;
@@ -68,6 +70,7 @@ fn show_failures(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("details/show_failures");
     let failed_test_names = &details_report_context.failed_test_names;
     if 0 < *&failed_test_names.len() {
         println!("Failures: (-vv)");
@@ -168,6 +171,7 @@ fn show_passes(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("details/show_passes");
     let passed_test_names = &details_report_context.passed_test_names;
     if 0 < *&passed_test_names.len() {
         println!("Passes:");
