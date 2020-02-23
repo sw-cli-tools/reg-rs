@@ -15,14 +15,13 @@ impl Config {
     }
 
     pub fn extract_pattern(self: &Self) -> &str {
-        let default_pattern = ".tdb";
         md!(&self.mode);
         let p = match &self.mode {
+            args::Subcommands::Create { .. } => unreachable!(),
             args::Subcommands::Remove { pattern, .. } => pattern,
             args::Subcommands::Report { pattern, .. } => pattern,
             args::Subcommands::Run { pattern, .. } => pattern,
             args::Subcommands::Status { pattern, .. } => pattern,
-            _ => default_pattern,
         };
         md!(&p);
         p
@@ -47,12 +46,12 @@ impl Config {
     }
 
     pub fn status_port(self: &Self) -> u16 {
-        match &self.mode {
-            args::Subcommands::Status { localhost_port, .. } => *localhost_port,
-            _ => crate::DEFAULT_STATUS_PORT,
+        if let args::Subcommands::Status { localhost_port, .. } = &self.mode {
+            *localhost_port
+        } else {
+            crate::DEFAULT_STATUS_PORT
         }
     }
-
 }
 
 #[cfg(test)]

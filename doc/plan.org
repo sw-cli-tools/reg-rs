@@ -62,6 +62,7 @@
 *** DONE monitor tests running under different rtt1 process(es) (using notify)
 ** next
 *** TODO fix timing bug that corrupts database (or handle unexpected None)
+*** TODO add recovery to restart monitor thread after panic
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
