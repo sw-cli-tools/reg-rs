@@ -69,6 +69,7 @@ mod tests {
                 verbosity: 0
             },
             debug: false,
+            logging: false,
         };
         assert_eq!("foo".to_string(),
                    Config {
@@ -85,6 +86,7 @@ mod tests {
                 pattern: "bar".to_string(),
             },
             debug: false,
+            logging: false,
         };
         assert_eq!("bar".to_string(),
                    Config {
@@ -101,6 +103,7 @@ mod tests {
                 verbosity: 0
             },
             debug: false,
+            logging: false,
         };
         assert_eq!(0,
                    Config {
@@ -117,6 +120,7 @@ mod tests {
                 verbosity: 3
             },
             debug: false,
+            logging: false,
         };
         assert_eq!(3,
                    Config {

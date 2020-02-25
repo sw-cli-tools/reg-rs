@@ -32,6 +32,7 @@ USAGE:
 FLAGS:
     -d, --debug      Prints debugging info.  -d must preceed subcommands
     -h, --help       Prints help information
+    -l, --logging    Logs to a log file.  -l must preceed subcommands
     -V, --version    Prints version information
 
 SUBCOMMANDS:

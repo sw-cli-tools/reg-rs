@@ -87,6 +87,7 @@ mod tests {
                     command: "pwd".to_string(),
                 },
                 debug: false,
+                logging: false,
             },
             Args::from_iter(&["test", "create", "-t", "pat001", "-c", "pwd"])
         );
@@ -101,6 +102,7 @@ mod tests {
                     command: "pwd".to_string(),
                 },
                 debug: true,
+                logging: false,
             },
             Args::from_iter(&["test", "-d", "create", "-t", "pat001", "-c", "pwd"])
         );
@@ -114,6 +116,7 @@ mod tests {
                     pattern: "pat001".to_string(),
                 },
                 debug: false,
+                logging: false,
             },
             Args::from_iter(&["test", "remove", "-p", "pat001"])
         );
@@ -127,6 +130,7 @@ mod tests {
                     pattern: "pat001".to_string(),
                 },
                 debug: true,
+                logging: false,
             },
             Args::from_iter(&["test", "-d", "remove", "-p", "pat001"])
         );
@@ -141,6 +145,7 @@ mod tests {
                     verbosity: 0,
                 },
                 debug: false,
+                logging: false,
             },
             Args::from_iter(&["test", "report", "-p", "pat001"])
         );
@@ -155,6 +160,7 @@ mod tests {
                     verbosity: 3,
                 },
                 debug: true,
+                logging: false,
             },
             Args::from_iter(&["test", "-d", "report", "-p", "pat001", "-vvv"])
         );
@@ -169,6 +175,7 @@ mod tests {
                     pattern: "pat001".to_string(),
                 },
                 debug: false,
+                logging: false,
             },
             Args::from_iter(&["test", "run", "-p", "pat001"])
         );
@@ -183,6 +190,7 @@ mod tests {
                     pattern: "pat001".to_string(),
                 },
                 debug: true,
+                logging: false,
             },
             Args::from_iter(&["test", "-d", "run", "-p", "pat001", "-n"])
         );
