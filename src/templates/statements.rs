@@ -26,6 +26,10 @@ pub const DROP_TABLE_TEMPLATE: &str = "
  DROP TABLE IF EXISTS { table_name }
 ";
 
+pub const DELETE_ALL_ROWS_TEMPLATE: &str = "
+ DELETE FROM { table_name }
+";
+
 pub const CREATE_DIFFERENCES_TABLE_TEMPLATE: &str = "
  CREATE TABLE IF NOT EXISTS { table_name } (
  id                INTEGER PRIMARY KEY,
@@ -46,10 +50,6 @@ pub const SELECT_DIFFERENCES_TEMPLATE: &str = "
 
 pub const COUNT_TABLE_ROWS_TEMPLATE: &str = "
 SELECT COUNT(*) AS c from { table_name }
-";
-
-pub const TABLE_EXISTS_TEMPLATE: &str = "
-SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{ table_name }'
 ";
 
 pub const COUNT_DIFF_TYPE_TEMPLATE: &str = "

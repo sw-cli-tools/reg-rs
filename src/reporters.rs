@@ -20,8 +20,8 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
     let mut passed_test_names = vec![];
     let mut not_yet_run_test_names = vec![];
     for test_name in &test_names.found {
-        let latest_results_table_count = db::latest_results_table_count(&test_name)?;
-        if latest_results_table_count == 0 {
+        let latest_results_row_count = db::count_latest_results(&test_name)?;
+        if latest_results_row_count == 0 {
             not_yet_run_test_names.push(format!("{}", &test_name));
         } else {
             let difference_count = db::count_differences(&test_name)?;

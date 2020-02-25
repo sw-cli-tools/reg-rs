@@ -101,8 +101,8 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
     let test_names = finder::discover(pattern.to_string())?;
     for test_name in &test_names.found {
         let original_result = db::read_original_results(&test_name)?;
-        let latest_results_table_count = db::latest_results_table_count(&test_name)?;
-        if latest_results_table_count == 0 {
+        let latest_results_row_count = db::count_latest_results(&test_name)?;
+        if latest_results_row_count == 0 {
             test_runs.push(TestDetails {
                 created: original_result.time_created,
                 diffs: None,

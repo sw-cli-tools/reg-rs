@@ -33,7 +33,7 @@ pub fn process_differences(
     latest_test_result: &runner::TestResults,
 ) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("diff/process_differences {}", &db_name);
-    db::reset_differences(&db_name)?;
+    db::clear_differences(&db_name)?;
     maybe_store_exit_code_differences(&db_name, &prior_test_result, &latest_test_result)?;
     maybe_store_stderr_differences(&db_name, &prior_test_result, &latest_test_result)?;
     maybe_store_stdout_differences(&db_name, &prior_test_result, &latest_test_result)?;

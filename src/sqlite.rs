@@ -1,4 +1,3 @@
-use file_lock::FileLock;
 use log;
 use rusqlite::{params, Connection, Result};
 
@@ -6,13 +5,9 @@ use crate::queries;
 use crate::runner::TestResults;
 use crate::templates::statements;
 
-const BLOCKING: bool = true;
-const WRITING: bool = true;
-
 pub(crate) fn read_results(db_name: &str, select_statement: &str) -> Result<TestResults> {
     log::info!("sqlite/read_results {} {}", &db_name, &select_statement);
     let test;
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let conn = Connection::open(&db_name)?;
     {
         let mut stmt = conn.prepare(&select_statement)?;
@@ -29,13 +24,12 @@ pub(crate) fn read_results(db_name: &str, select_statement: &str) -> Result<Test
         test = test_iter.next();
     }
     &conn.close();
-    filelock.unlock().unwrap();
+    dbg!(&test);
     test.unwrap()
 }
 
 pub(crate) fn create_table(db_name: &str, create_statement: &str) -> Result<()> {
     log::info!("sqlite/create_table {} {}", &db_name, &create_statement);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let mut conn = Connection::open(&db_name)?;
     {
         let tx = conn.transaction()?;
@@ -43,7 +37,6 @@ pub(crate) fn create_table(db_name: &str, create_statement: &str) -> Result<()> 
         tx.commit()?;
     }
     &conn.close();
-    filelock.unlock().unwrap();
     Ok(())
 }
 
@@ -53,7 +46,6 @@ pub(crate) fn write_results(
     insert_statement: &str,
 ) -> Result<()> {
     log::info!("sqlite/write_results {} {}", &db_name, &insert_statement);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let mut conn = Connection::open(&db_name)?;
     {
         let tx = conn.transaction()?;
@@ -71,13 +63,11 @@ pub(crate) fn write_results(
         tx.commit()?;
     }
     &conn.close();
-    filelock.unlock().unwrap();
     Ok(())
 }
 
 pub(crate) fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
     log::info!("sqlite/drop_table {} {}", &db_name, &drop_statement);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let mut conn = Connection::open(&db_name)?;
     {
         let tx = conn.transaction()?;
@@ -85,7 +75,18 @@ pub(crate) fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
         tx.commit()?;
     }
     &conn.close();
-    filelock.unlock().unwrap();
+    Ok(())
+}
+
+pub(crate) fn delete_all_rows(db_name: &str, delete_statement: &str) -> Result<()> {
+    log::info!("sqlite/remove_rows {} {}", &db_name, &delete_statement);
+    let mut conn = Connection::open(&db_name)?;
+    {
+        let tx = conn.transaction()?;
+        tx.execute(&delete_statement, params![])?;
+        tx.commit()?;
+    }
+    &conn.close();
     Ok(())
 }
 
@@ -95,7 +96,6 @@ pub fn write_difference(
     difference_chunk: &str,
 ) -> Result<()> {
     log::info!("sqlite/write_difference {} {}", &db_name, &difference_type);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let mut conn = Connection::open(&db_name)?;
     {
         let tx = conn.transaction()?;
@@ -109,7 +109,6 @@ pub fn write_difference(
         tx.commit()?;
     }
     &conn.close();
-    filelock.unlock().unwrap();
     Ok(())
 }
 
@@ -119,7 +118,6 @@ pub(crate) fn read_differences(
 ) -> Result<Vec<(String, String)>> {
     log::info!("sqlite/read_differences {} {}", &db_name, &select_statement);
     let mut result = vec![];
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let conn = Connection::open(&db_name)?;
     {
         let mut stmt = conn.prepare(&select_statement)?;
@@ -130,14 +128,12 @@ pub(crate) fn read_differences(
         }
     }
     &conn.close();
-    filelock.unlock().unwrap();
     Ok(result)
 }
 
 pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
     log::info!("sqlite/count_rows {} {}", &db_name, &count_statement);
     let count;
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let conn = Connection::open(&db_name)?;
     {
         let mut stmt = conn.prepare(&count_statement)?;
@@ -146,14 +142,16 @@ pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
         count = count_iter.next();
     }
     &conn.close();
-    filelock.unlock().unwrap();
     count.unwrap()
 }
 
 pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> {
-    log::info!("sqlite/table_exists {} {}", &db_name, &table_exists_statement);
+    log::info!(
+        "sqlite/table_exists {} {}",
+        &db_name,
+        &table_exists_statement
+    );
     let count;
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let conn = Connection::open(&db_name)?;
     {
         let mut stmt = conn.prepare(&table_exists_statement)?;
@@ -161,14 +159,16 @@ pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> 
         count = count_iter.next();
     }
     &conn.close();
-    filelock.unlock().unwrap();
     count.unwrap()
 }
 
 pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str) -> Result<u32> {
-    log::info!("sqlite/count_differences_by_type {} {}", &db_name, &count_diff_type_statement);
+    log::info!(
+        "sqlite/count_differences_by_type {} {}",
+        &db_name,
+        &count_diff_type_statement
+    );
     let count;
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
     let conn = Connection::open(&db_name)?;
     {
         let mut stmt = conn.prepare(&count_diff_type_statement)?;
@@ -176,7 +176,5 @@ pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str)
         count = count_iter.next();
     }
     &conn.close();
-    filelock.unlock().unwrap();
     count.unwrap()
 }
-
