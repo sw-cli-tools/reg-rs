@@ -24,7 +24,6 @@ pub(crate) fn read_results(db_name: &str, select_statement: &str) -> Result<Test
         test = test_iter.next();
     }
     &conn.close();
-    dbg!(&test);
     test.unwrap()
 }
 

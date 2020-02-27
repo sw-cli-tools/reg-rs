@@ -60,12 +60,16 @@
 *** DONE fix created TBD bug
 *** DONE add logging
 *** DONE monitor tests running under different rtt1 process(es) (using notify)
+*** DONE fix timing bug that corrupts database (or handle unexpected None)
+*** DONE add build script that updates the -V version with each build timestamp
 ** next
-*** TODO fix timing bug that corrupts database (or handle unexpected None)
+*** TODO add version to status view
 *** TODO add recovery to restart monitor thread after panic
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
 *** TODO dogfood test tests, rtt tests
+*** TODO stress test (for parallel execution, potential db inconsistent state issues)
+*** TODO add more safeguards, if needed (modify copy of db, overlay original with changes?)
 *** TODO add examples
 *** TODO add mechanism to ignore allowed diffs
 *** TODO handle bad test databases and other errors (errors module)

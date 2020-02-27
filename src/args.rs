@@ -1,4 +1,8 @@
+use std::env;
+
 use structopt::StructOpt;
+
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 #[derive(Debug, PartialEq, StructOpt)]
 #[structopt(
@@ -9,8 +13,8 @@ for more details:
  rtt1 remove --help
  rtt1 report --help
  rtt1 status --help
-"
-)]
+",
+version = generated_version())]
 pub struct Args {
     #[structopt(long, short)]
     /// Prints debugging info.  -d must preceed subcommands
@@ -66,10 +70,10 @@ pub enum Subcommands {
         #[structopt(long, short)]
         /// Monitors tests matching this naming pattern
         pattern: String,
-        #[structopt(default_value="4111", long, short)]
+        #[structopt(default_value = "4111", long, short)]
         /// optional port number
         localhost_port: u16,
-    }
+    },
 }
 pub fn parse_args() -> Args {
     Args::from_args()
