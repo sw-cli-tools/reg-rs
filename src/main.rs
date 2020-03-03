@@ -1,6 +1,4 @@
-use rtt1::args;
-use rtt1::builder;
-use rtt1::command;
+use rtt1::{args, builder, command};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = builder::build();

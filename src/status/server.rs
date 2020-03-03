@@ -2,8 +2,6 @@ use std::net;
 use std::sync::Mutex;
 
 use gotham::state::State;
-use log;
-use mime;
 
 use crate::config;
 use crate::db;
@@ -42,7 +40,7 @@ pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> 
     let status_port = config.status_port();
     let pattern = config.extract_pattern().to_string();
     set_test_runs(pattern.to_string())?;
-    let handles = monitor::launch_monitor(pattern.to_string());
+    let handles = monitor::launch_monitor(pattern);
     let addr = format!("{}:{}", net::Ipv4Addr::LOCALHOST.to_string(), status_port);
 
     println!("Listening at {}.  Ctrl-C to terminate server", addr);
@@ -77,22 +75,28 @@ fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
             failed_test_names.push(run.name.clone());
         }
     }
+    let status_counts = status::StatusCounts {
+        fail_count: format!(" {:05}", failed_test_names.len()),
+        not_run_count: format!(" {:05}", not_yet_run_test_names.len()),
+        pass_count: format!(" {:05}", passed_test_names.len()),
+        test_count: format!(" {:05}", state_data.runs.len()),
+    };
+    let status_flags = status::StatusFlags {
+        no_failed_tests: failed_test_names.is_empty(),
+        no_not_yet_run_tests: not_yet_run_test_names.is_empty(),
+        no_passed_tests: passed_test_names.is_empty(),
+    };
     let status_view = status::render(&status::StatusViewContext::new(
-        failed_test_names.len() as u32,
-        failed_test_names.len() == 0 as usize,
-        not_yet_run_test_names.len() == 0 as usize,
-        passed_test_names.len() == 0 as usize,
-        not_yet_run_test_names.len() as u32,
-        passed_test_names.len() as u32,
         state_data.server_started.clone(),
         state_data.state_updated.clone(),
-        state_data.runs.len() as u32,
+        status_counts,
+        status_flags,
         state_data.pattern.to_string(),
         copied_runs,
     ))
     .unwrap();
     let response_str = format!("<div>{}</div>", status_view);
-    (state, (mime::TEXT_HTML, response_str.to_string()))
+    (state, (mime::TEXT_HTML, response_str))
 }
 
 pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> {
@@ -130,13 +134,13 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
         }
     }
     let mut state_data = STATE_DATA.lock().unwrap();
-    state_data.pattern = pattern.to_string();
+    state_data.pattern = pattern;
     state_data.runs = test_runs;
     state_data.state_updated = time::now();
     Ok(())
 }
 
-fn get_diffs(test_name: &String) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+fn get_diffs(test_name: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     log::info!("server/get_diffs test_name {}", &test_name);
     let differences = db::read_differences(&test_name)?;
     let mut diffs = vec![];

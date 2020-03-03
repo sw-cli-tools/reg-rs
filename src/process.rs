@@ -1,7 +1,5 @@
 use std::process::Command;
 
-use log;
-
 pub fn exec(command: String) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
     log::info!("process/exec command: {}", &command);
     let output = Command::new("sh")

@@ -1,5 +1,4 @@
 use file_lock::FileLock;
-use log;
 use rusqlite::Result;
 
 use crate::diff;

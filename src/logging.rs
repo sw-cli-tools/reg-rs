@@ -1,6 +1,4 @@
-use log;
 use std::process;
-
 
 use crate::time;
 

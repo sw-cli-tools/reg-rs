@@ -1,4 +1,3 @@
-use log;
 use walkdir::{DirEntry, Error, WalkDir};
 
 #[derive(Debug)]
@@ -32,6 +31,7 @@ fn subject(pattern: String) -> Result<TestNames, Error> {
             acc.push(val);
         }
     };
+    // TODO use cwd
     let walker = WalkDir::new("data").into_iter();
     for entry in walker.filter_entry(|e| !is_hidden(e)) {
         execute_closure(

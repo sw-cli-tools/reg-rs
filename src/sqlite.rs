@@ -1,4 +1,3 @@
-use log;
 use rusqlite::{params, Connection, Result};
 
 use crate::queries;
@@ -23,7 +22,7 @@ pub(crate) fn read_results(db_name: &str, select_statement: &str) -> Result<Test
         })?;
         test = test_iter.next();
     }
-    &conn.close();
+    conn.close().unwrap();
     test.unwrap()
 }
 
@@ -35,7 +34,7 @@ pub(crate) fn create_table(db_name: &str, create_statement: &str) -> Result<()> 
         tx.execute(&create_statement, params![])?;
         tx.commit()?;
     }
-    &conn.close();
+    conn.close().unwrap();
     Ok(())
 }
 
@@ -61,7 +60,7 @@ pub(crate) fn write_results(
         )?;
         tx.commit()?;
     }
-    &conn.close();
+    conn.close().unwrap();
     Ok(())
 }
 
@@ -73,7 +72,7 @@ pub(crate) fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
         tx.execute(&drop_statement, params![])?;
         tx.commit()?;
     }
-    &conn.close();
+    conn.close().unwrap();
     Ok(())
 }
 
@@ -85,7 +84,7 @@ pub(crate) fn delete_all_rows(db_name: &str, delete_statement: &str) -> Result<(
         tx.execute(&delete_statement, params![])?;
         tx.commit()?;
     }
-    &conn.close();
+    conn.close().unwrap();
     Ok(())
 }
 
@@ -107,7 +106,7 @@ pub fn write_difference(
         )?;
         tx.commit()?;
     }
-    &conn.close();
+    conn.close().unwrap();
     Ok(())
 }
 
@@ -126,7 +125,7 @@ pub(crate) fn read_differences(
             result.push(difference.unwrap());
         }
     }
-    &conn.close();
+    conn.close().unwrap();
     Ok(result)
 }
 
@@ -140,7 +139,7 @@ pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
 
         count = count_iter.next();
     }
-    &conn.close();
+    conn.close().unwrap();
     count.unwrap()
 }
 
@@ -157,7 +156,7 @@ pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> 
         let mut count_iter = stmt.query_map(params![], |row| Ok(row.get(0)?))?;
         count = count_iter.next();
     }
-    &conn.close();
+    conn.close().unwrap();
     count.unwrap()
 }
 
@@ -174,6 +173,6 @@ pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str)
         let mut count_iter = stmt.query_map(params![], |row| Ok(row.get(0)?))?;
         count = count_iter.next();
     }
-    &conn.close();
+    conn.close().unwrap();
     count.unwrap()
 }

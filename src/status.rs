@@ -1,4 +1,3 @@
-use log;
 use crate::config;
 
 pub mod client;

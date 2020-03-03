@@ -1,5 +1,3 @@
-use log;
-
 use crate::args;
 use crate::config;
 use crate::logging;

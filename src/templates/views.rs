@@ -4,20 +4,20 @@ pub static STATUS_VIEW_TEMPLATE: &str = "<small>(server started { server_started
 <br />
 
 <div><h3>Summary</h3>
-<div><span>{ fail_count }<span> failed</div>
-<div>{ not_run_count } not yet run</div>
-<div>{ pass_count } passed</div>
+<div><span>{ status_counts.fail_count }<span> failed</div>
+<div>{ status_counts.not_run_count } not yet run</div>
+<div>{ status_counts.pass_count } passed</div>
 <div>=====</div>
-<div>{ test_count } matched pattern: { test_pattern }</div>
+<div>{ status_counts.test_count } matched pattern: { test_pattern }</div>
 </div>
 
 <div><h3>Details</h3>
-<div>{{ if no_failed_tests }}
+<div>{{ if status_flags.no_failed_tests }}
 No Failed Tests{{ else }}
 { fail_symbol } Failures: <ul>{{ for run in test_runs }}{{ if run.diffs }}<li>{ run.name }</li>{{ endif }}{{ endfor }}</ul>{{ endif }}</div>
-<div>{{- if no_not_yet_run_tests }}{{ else }}
+<div>{{- if status_flags.no_not_yet_run_tests }}{{ else }}
 { warn_symbol } Not Yet Run: <ul>{{ for run in test_runs }}{{ if not run.last_ran }}<li>{ run.name }</li>{{ endif }}{{ endfor }}</ul>{{ endif -}}</div>
-<div>{{ if no_passed_tests }}
+<div>{{ if status_flags.no_passed_tests }}
 No Passed Tests{{ else }}
 { pass_symbol } Passed: <ul>{{ for run in test_runs }}{{ if run.last_ran }}{{ if not run.diffs }}<li>{ run.name }</li>{{ endif }}{{ endif }}{{ endfor }}</ul>{{ endif }}</div>
 

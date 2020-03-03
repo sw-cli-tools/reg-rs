@@ -60,10 +60,12 @@
 *** DONE fix created TBD bug
 *** DONE add logging
 *** DONE monitor tests running under different rtt1 process(es) (using notify)
-*** DONE fix timing bug that corrupts database (or handle unexpected None)
 *** DONE add build script that updates the -V version with each build timestamp
+*** DONE refactor to fix clippy warnings
 ** next
 *** TODO add version to status view
+*** TODO fix timing bug that corrupts database (or handle unexpected None)
+*** TODO remove hardcoded paths (e.g. "data", "wrightmikea/rtt1")
 *** TODO add recovery to restart monitor thread after panic
 *** TODO run rtt tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)

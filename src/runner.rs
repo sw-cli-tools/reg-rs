@@ -1,5 +1,3 @@
-use log;
-
 use crate::config;
 use crate::db;
 use crate::diff;

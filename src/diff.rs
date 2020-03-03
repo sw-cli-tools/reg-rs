@@ -1,4 +1,3 @@
-use log;
 use text_diff::{diff, Difference};
 
 use crate::db;

@@ -2,7 +2,6 @@ use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
 
-use log;
 use notify::{Watcher, RecursiveMode, watcher};
 
 use crate::status::server;
@@ -21,10 +20,11 @@ pub fn launch_monitor(pattern: String) -> Vec<std::thread::JoinHandle<()>> {
     handles
 }
 
-fn watch(pattern: &String) ->! {
+fn watch(pattern: &str) ->! {
     log::info!("monitor/watch pattern: {}", &pattern);
     let (tx, rx) = channel();
     let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
+    // TODO use cwd
     watcher.watch("/home/mike/github/wrightmikea/rtt1/data", RecursiveMode::Recursive).unwrap();
 
     let mut index = 0;

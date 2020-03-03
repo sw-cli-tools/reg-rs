@@ -1,4 +1,3 @@
-use log;
 use tinytemplate::TinyTemplate;
 
 use crate::db;
@@ -7,7 +6,7 @@ use crate::reporters::differences;
 use crate::reporters::failures;
 use crate::reporters::passes;
 use crate::templates::reports;
-use crate::util::{fail_symbol, pass_symbol, warn};
+use crate::util::{fail_symbol, pass_symbol, warn, warn_symbol};
 
 #[derive(Serialize)]
 pub struct DetailsReportContext {
@@ -24,26 +23,23 @@ pub struct DetailsReportContext {
 
 impl DetailsReportContext {
     pub fn new(
-        fail_symbol: String,
         failed_test_names: Vec<String>,
         no_failed_tests: bool,
         no_not_yet_run_tests: bool,
         no_passed_tests: bool,
         not_yet_run_test_names: Vec<String>,
-        pass_symbol: String,
         passed_test_names: Vec<String>,
-        warn_symbol: String,
     ) -> Self {
         DetailsReportContext {
-            fail_symbol,
+            fail_symbol: fail_symbol(),
             failed_test_names,
             no_failed_tests,
             no_not_yet_run_tests,
             no_passed_tests,
             not_yet_run_test_names,
-            pass_symbol,
+            pass_symbol: pass_symbol(),
             passed_test_names,
-            warn_symbol,
+            warn_symbol: warn_symbol(),
         }
     }
 }
@@ -72,7 +68,7 @@ fn show_failures(
 ) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("details/show_failures");
     let failed_test_names = &details_report_context.failed_test_names;
-    if 0 < *&failed_test_names.len() {
+    if failed_test_names.is_empty() {
         println!("Failures: (-vv)");
     }
     for test in failed_test_names {
@@ -87,7 +83,7 @@ fn show_failures(
         let same_count =
             db::difference_count_by_type(&test, diff::RegressionType::StderrSame as u8)?
                 + db::difference_count_by_type(&test, diff::RegressionType::StdoutSame as u8)?;
-        let differences_count = *&differences.len() as u32 - same_count;
+        let differences_count = differences.len() as u32 - same_count;
         if verbosity_level > 2 {
             if 0 < db::difference_count_by_type(&test, diff::RegressionType::ActualCode as u8)? {
                 difference_types.push("exit_code".to_string());
@@ -173,7 +169,7 @@ fn show_passes(
 ) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("details/show_passes");
     let passed_test_names = &details_report_context.passed_test_names;
-    if 0 < *&passed_test_names.len() {
+    if passed_test_names.is_empty() {
         println!("Passes:");
     }
     for test in passed_test_names {

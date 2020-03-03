@@ -8,8 +8,8 @@ pub fn fail_symbol() -> String {
     "⍨".red().to_string()
 }
 
-pub fn pass(error: &str) -> String {
-    error.green().to_string()
+pub fn pass(info: &str) -> String {
+    info.green().to_string()
 }
 
 pub fn pass_symbol() -> String {

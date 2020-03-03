@@ -1,4 +1,3 @@
-use log;
 use tinytemplate::TinyTemplate;
 
 use crate::templates::reports;
