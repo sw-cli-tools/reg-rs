@@ -44,14 +44,17 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
         let no_failed_tests = failed_test_names.is_empty();
         let no_not_yet_run_tests = not_yet_run_test_names.is_empty();
         let no_passed_tests = passed_test_names.is_empty();
-        details::show_details(&details::DetailsReportContext::new(
-            failed_test_names,
-            no_failed_tests,
-            no_not_yet_run_tests,
-            no_passed_tests,
-            not_yet_run_test_names,
-            passed_test_names,
-        ), config.verbosity_level())?;
+        details::show_details(
+            &details::DetailsReportContext::new(
+                failed_test_names,
+                no_failed_tests,
+                no_not_yet_run_tests,
+                no_passed_tests,
+                not_yet_run_test_names,
+                passed_test_names,
+            ),
+            config.verbosity_level(),
+        )?;
     }
     Ok(())
 }

@@ -24,8 +24,7 @@ fn is_hidden(entry: &DirEntry) -> bool {
 fn subject(pattern: String) -> Result<TestNames, Error> {
     let mut tests = TestNames { found: vec![] };
     let mut closure_variable = |acc: &mut Vec<String>, val: String| {
-        if val.contains(&pattern)
-        && val.ends_with(".tdb"){
+        if val.contains(&pattern) && val.ends_with(".tdb") {
             md!(&val);
             md!(&pattern);
             acc.push(val);

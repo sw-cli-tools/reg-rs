@@ -56,7 +56,7 @@ pub fn status_server(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/status_server");
-    status::start_client(&config)?; 
+    status::start_client(&config)?;
     status::start_server(&config)?; // loops
     Ok(())
-}    
+}

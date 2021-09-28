@@ -60,22 +60,25 @@ mod tests {
 
     // TODO test is_dry_run
     // TODO test extract_test_and_command
-    
+
     #[test]
     fn test_extract_report_pattern() {
         let args = args::Args {
             command: args::Subcommands::Report {
                 pattern: "foo".to_string(),
-                verbosity: 0
+                verbosity: 0,
             },
             debug: false,
             logging: false,
         };
-        assert_eq!("foo".to_string(),
-                   Config {
-                       mode: args.command,
-                       debug: false,
-                   }.extract_pattern());
+        assert_eq!(
+            "foo".to_string(),
+            Config {
+                mode: args.command,
+                debug: false,
+            }
+            .extract_pattern()
+        );
     }
 
     #[test]
@@ -88,11 +91,14 @@ mod tests {
             debug: false,
             logging: false,
         };
-        assert_eq!("bar".to_string(),
-                   Config {
-                       mode: args.command,
-                       debug: false,
-                   }.extract_pattern());
+        assert_eq!(
+            "bar".to_string(),
+            Config {
+                mode: args.command,
+                debug: false,
+            }
+            .extract_pattern()
+        );
     }
 
     #[test]
@@ -100,16 +106,19 @@ mod tests {
         let args = args::Args {
             command: args::Subcommands::Report {
                 pattern: "foo".to_string(),
-                verbosity: 0
+                verbosity: 0,
             },
             debug: false,
             logging: false,
         };
-        assert_eq!(0,
-                   Config {
-                       mode: args.command,
-                       debug: false,
-                   }.verbosity_level());
+        assert_eq!(
+            0,
+            Config {
+                mode: args.command,
+                debug: false,
+            }
+            .verbosity_level()
+        );
     }
 
     #[test]
@@ -117,16 +126,18 @@ mod tests {
         let args = args::Args {
             command: args::Subcommands::Report {
                 pattern: "foo".to_string(),
-                verbosity: 3
+                verbosity: 3,
             },
             debug: false,
             logging: false,
         };
-        assert_eq!(3,
-                   Config {
-                       mode: args.command,
-                       debug: false,
-                   }.verbosity_level());
+        assert_eq!(
+            3,
+            Config {
+                mode: args.command,
+                debug: false,
+            }
+            .verbosity_level()
+        );
     }
-    
 }

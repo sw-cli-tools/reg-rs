@@ -15,14 +15,10 @@ pub struct DifferencesReportContext {
 }
 
 impl DifferencesReportContext {
-    pub fn new(
-        differences: Vec<DisplayDifference>,
-        failed_test_name: String,
-    ) -> Self {
+    pub fn new(differences: Vec<DisplayDifference>, failed_test_name: String) -> Self {
         DifferencesReportContext {
             differences,
             failed_test_name,
-
         }
     }
 }
@@ -41,5 +37,3 @@ pub fn show_differences(
     println!("{}", rendered);
     Ok(())
 }
-
-

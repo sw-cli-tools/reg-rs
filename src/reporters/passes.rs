@@ -34,10 +34,7 @@ pub fn show_passes(
     log::info!("passes/show_passes");
     md!("testing");
     let mut tt = TinyTemplate::new();
-    tt.add_template(
-        "passes_report_template",
-        reports::PASSES_REPORT_TEMPLATE,
-    )?;
+    tt.add_template("passes_report_template", reports::PASSES_REPORT_TEMPLATE)?;
     let rendered = tt.render("passes_report_template", &passes_report_context)?;
     println!("{}", rendered);
     Ok(())

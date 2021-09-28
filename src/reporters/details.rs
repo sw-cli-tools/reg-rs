@@ -187,7 +187,11 @@ fn show_passes(
     }
 
     if verbosity_level > 3 {
-        println!("{} verbosity level {} exceeds max", warn("*warning*"), verbosity_level);
+        println!(
+            "{} verbosity level {} exceeds max",
+            warn("*warning*"),
+            verbosity_level
+        );
     }
     Ok(())
 }

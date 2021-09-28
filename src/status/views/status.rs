@@ -54,7 +54,8 @@ impl StatusViewContext {
     }
 }
 
-pub fn render(status_view_context: &StatusViewContext
+pub fn render(
+    status_view_context: &StatusViewContext,
 ) -> Result<String, Box<dyn std::error::Error>> {
     log::info!("status/render");
     let mut tt = TinyTemplate::new();

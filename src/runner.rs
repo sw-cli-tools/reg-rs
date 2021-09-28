@@ -45,7 +45,11 @@ pub fn run_one(
     command: &str,
     dry_run: bool,
 ) -> Result<Option<TestResults>, Box<dyn std::error::Error>> {
-    log::info!("runner/run_one test_name {}, dry_run {}", &test_name, dry_run);
+    log::info!(
+        "runner/run_one test_name {}, dry_run {}",
+        &test_name,
+        dry_run
+    );
     if dry_run {
         println!("dry-run: test name: {}, command: {}", test_name, command);
         Ok(None)
