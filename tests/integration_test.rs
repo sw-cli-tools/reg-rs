@@ -18,8 +18,7 @@ fn integration_test_rtt1_help() {
     assert_eq!(0, status_code);
     assert_eq!("", String::from_utf8_lossy(&output.stderr));
     assert_eq!(
-        "rtt1 0.1.0
-Regression Test Tool (first draft) - create, report, and run tests
+        "Regression Test Tool (first draft) - create, report, and run tests
 for more details:
  rtt1 create --help
  rtt1 run --help
@@ -44,6 +43,6 @@ SUBCOMMANDS:
     run       Runs a test (or tests) based on a test name pattern (alias r)
     status    Starts a server to monitor long running tests and/or show results (alias s)
 ",
-        String::from_utf8_lossy(&output.stdout).to_string()
+        String::from_utf8_lossy(&output.stdout).to_string().lines().skip(1).map(|s|format!("{}\n", s)).collect::<String>()
     );
 }
