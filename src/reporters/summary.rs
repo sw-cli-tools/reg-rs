@@ -4,6 +4,7 @@ use crate::templates::reports;
 use crate::time;
 use crate::util::{fail, pass, warn};
 
+/// data for test summary report template
 #[derive(Serialize)]
 pub struct SummaryReportContext {
     fail_count: String,
@@ -14,6 +15,7 @@ pub struct SummaryReportContext {
     test_pattern: String,
 }
 impl SummaryReportContext {
+    /// build data for test summary report template
     pub fn new(
         fail_count: u32,
         not_yet_run_count: u32,
@@ -31,6 +33,8 @@ impl SummaryReportContext {
         }
     }
 }
+
+/// conditionally color output
 fn maybe_color(condition: bool, cb: &dyn Fn(&str) -> String, count: u32) -> String {
     let s = format!(" {:05}", count);
     if condition {
@@ -40,6 +44,7 @@ fn maybe_color(condition: bool, cb: &dyn Fn(&str) -> String, count: u32) -> Stri
     }
 }
 
+/// show summary template rendered output
 pub fn show_summary(
     summary_report_context: &SummaryReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {

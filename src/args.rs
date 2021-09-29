@@ -4,16 +4,10 @@ use structopt::StructOpt;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
+/// Argument processing configuration
 #[derive(Debug, PartialEq, StructOpt)]
 #[structopt(
-    about = "Regression Test Tool (first draft) - create, report, and run tests
-for more details:
- rtt1 create --help
- rtt1 run --help
- rtt1 remove --help
- rtt1 report --help
- rtt1 status --help
-",
+    name = "rtt1",
 version = generated_version())]
 pub struct Args {
     #[structopt(long, short)]
@@ -22,10 +16,13 @@ pub struct Args {
     #[structopt(long, short)]
     /// Logs to a log file.  -l must preceed subcommands
     pub logging: bool,
+    /// Subcommands
     #[structopt(subcommand)]
     pub command: Subcommands,
 }
 
+/// Regression Test Tool (first draft) - create and manage tests
+/// - for more details: rtt1 <subcommand> -h
 #[derive(Debug, PartialEq, StructOpt)]
 pub enum Subcommands {
     /// Creates a new test of a specified command (alias c)
@@ -75,6 +72,7 @@ pub enum Subcommands {
         localhost_port: u16,
     },
 }
+/// Parse arguments
 pub fn parse_args() -> Args {
     Args::from_args()
 }

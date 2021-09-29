@@ -1,3 +1,4 @@
+/// status view template
 pub static STATUS_VIEW_TEMPLATE: &str = "<small>(server started { server_started })</small>
 <small>(state updated { state_updated })</small><small>(version TBD)</small>
 <h2>RTT Status Server</h2>

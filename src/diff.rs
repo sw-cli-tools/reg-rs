@@ -3,17 +3,27 @@ use text_diff::{diff, Difference};
 use crate::db;
 use crate::runner;
 
+/// test result regression types
 pub enum RegressionType {
+    /// The latest test result exit code
     ActualCode = 1,
+    /// The reference test result exit code
     ExpectedCode,
+    /// The latest test result stderr additions
     StderrAdd,
+    /// The latest test result stderr removals
     StderrRemove,
+    /// The latest test result stderr matches
     StderrSame,
+    /// The latest test result stdout additions
     StdoutAdd,
+    /// The latest test result stdout removals
     StdoutRemove,
+    /// The latest test result stdout matches
     StdoutSame,
 }
 
+/// determine test result differences
 pub fn get_differences(older: &str, newer: &str) -> Option<Vec<Difference>> {
     log::info!("diff/get_differences");
     let differences = diff(older, newer, "\n");
@@ -26,6 +36,7 @@ pub fn get_differences(older: &str, newer: &str) -> Option<Vec<Difference>> {
     }
 }
 
+/// store test result differences
 pub fn process_differences(
     db_name: &str,
     prior_test_result: &runner::TestResults,
@@ -39,6 +50,7 @@ pub fn process_differences(
     Ok(())
 }
 
+/// store test result exit code differences
 fn maybe_store_exit_code_differences(
     db_name: &str,
     prior_test_result: &runner::TestResults,
@@ -61,6 +73,7 @@ fn maybe_store_exit_code_differences(
     Ok(())
 }
 
+/// store test result standard error differences
 fn maybe_store_stderr_differences(
     db_name: &str,
     prior_test_result: &runner::TestResults,
@@ -89,6 +102,7 @@ fn maybe_store_stderr_differences(
     Ok(())
 }
 
+/// store test result standard output differences
 fn maybe_store_stdout_differences(
     db_name: &str,
     prior_test_result: &runner::TestResults,

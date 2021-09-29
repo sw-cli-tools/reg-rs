@@ -2,6 +2,7 @@ use tinytemplate::TinyTemplate;
 
 use crate::templates::reports;
 
+/// data for test passes report template
 #[derive(Serialize)]
 pub struct PassesReportContext {
     pass_symbol: String,
@@ -12,6 +13,7 @@ pub struct PassesReportContext {
 }
 
 impl PassesReportContext {
+    /// build data for test passes report template
     pub fn new(
         pass_symbol: String,
         passed_test_name: String,
@@ -28,6 +30,7 @@ impl PassesReportContext {
     }
 }
 
+/// show test passes rendered template output
 pub fn show_passes(
     passes_report_context: &PassesReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {

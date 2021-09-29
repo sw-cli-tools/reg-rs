@@ -1,10 +1,13 @@
 use walkdir::{DirEntry, Error, WalkDir};
 
+/// Test Names data
 #[derive(Debug)]
 pub struct TestNames {
+    /// Names that matched pattern
     pub found: Vec<String>,
 }
 
+/// execute a closure
 fn execute_closure(
     closure_argument: &mut dyn FnMut(&mut Vec<String>, String),
     acc: &mut Vec<String>,
@@ -13,6 +16,7 @@ fn execute_closure(
     closure_argument(acc, value);
 }
 
+/// determine if a directory entry is a hidden file
 fn is_hidden(entry: &DirEntry) -> bool {
     entry
         .file_name()
@@ -21,6 +25,7 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
+/// find subject tests
 fn subject(pattern: String) -> Result<TestNames, Error> {
     let mut tests = TestNames { found: vec![] };
     let mut closure_variable = |acc: &mut Vec<String>, val: String| {
@@ -42,6 +47,7 @@ fn subject(pattern: String) -> Result<TestNames, Error> {
     Ok(tests)
 }
 
+/// discover tests that match a naming pattern
 pub fn discover(pattern: String) -> Result<TestNames, Box<dyn std::error::Error>> {
     log::info!("finder/discover pattern {}", &pattern);
     let tests = subject(pattern)?;

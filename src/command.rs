@@ -6,6 +6,7 @@ use crate::reporters::generate_reports;
 use crate::runner;
 use crate::status;
 
+/// Create a test result
 pub fn create_original(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -25,6 +26,7 @@ pub fn create_original(
     Ok(())
 }
 
+/// Update a test result
 pub fn update_latest(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -33,6 +35,7 @@ pub fn update_latest(
     Ok(())
 }
 
+/// remove test results
 pub fn remove_all(config: &config::Config) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/remove_all");
     let tests = finder::discover(config.extract_pattern().to_string())?;
@@ -44,6 +47,7 @@ pub fn remove_all(config: &config::Config) -> std::result::Result<(), Box<dyn st
     Ok(())
 }
 
+/// report latest test results
 pub fn report_latest(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -52,6 +56,8 @@ pub fn report_latest(
     log::info!("command/report_latest done");
     Ok(())
 }
+
+/// start status client and server
 pub fn status_server(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {

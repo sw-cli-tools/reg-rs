@@ -39,6 +39,7 @@ pub(crate) fn store_results(
     Ok(())
 }
 
+/// read first time test results
 pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
     log::info!("db/read_original_results {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -56,6 +57,7 @@ pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
     Ok(results)
 }
 
+/// reset latest test results
 pub fn reset_latest_results(db_name: &str) -> Result<()> {
     log::info!("db/reset_latest_results {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -77,6 +79,7 @@ pub fn reset_latest_results(db_name: &str) -> Result<()> {
     Ok(())
 }
 
+/// drop all test results
 pub fn drop_all_results(db_name: &str) -> Result<()> {
     log::info!("db/drop_all_results {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -92,6 +95,7 @@ pub fn drop_all_results(db_name: &str) -> Result<()> {
     Ok(())
 }
 
+/// reset test result differences
 pub fn reset_differences(db_name: &str) -> Result<()> {
     log::info!("db/reset_differences {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -113,6 +117,7 @@ pub fn reset_differences(db_name: &str) -> Result<()> {
     Ok(())
 }
 
+/// store test result differences
 pub fn store_difference(
     db_name: &str,
     difference_type: diff::RegressionType,
@@ -126,6 +131,7 @@ pub fn store_difference(
     Ok(())
 }
 
+/// read latest test results
 pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
     log::info!("db/read_latest_results {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -140,6 +146,7 @@ pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
     Ok(results)
 }
 
+/// read test result differences
 pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
     log::info!("db/read_differences {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -154,6 +161,7 @@ pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
     Ok(result)
 }
 
+/// count test result differences
 pub fn count_differences(db_name: &str) -> Result<u32> {
     log::info!("db/count_differences {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -168,6 +176,7 @@ pub fn count_differences(db_name: &str) -> Result<u32> {
     Ok(result)
 }
 
+/// count latest test results
 pub fn count_latest_results(db_name: &str) -> Result<u32> {
     log::info!("db/count_latest_results {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -182,6 +191,7 @@ pub fn count_latest_results(db_name: &str) -> Result<u32> {
     Ok(result)
 }
 
+/// count test differences by type
 pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u32> {
     log::info!("db/difference_count_by_type {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -196,6 +206,7 @@ pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u3
     Ok(results)
 }
 
+/// clear test result differences
 pub fn clear_differences(db_name: &str) -> Result<()> {
     log::info!("db/clear_differences {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
@@ -210,6 +221,7 @@ pub fn clear_differences(db_name: &str) -> Result<()> {
     Ok(())
 }
 
+/// clear latest test results
 pub fn clear_latest_results(db_name: &str) -> Result<()> {
     log::info!("db/clear_results {}", &db_name);
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();

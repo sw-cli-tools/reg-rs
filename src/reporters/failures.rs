@@ -2,6 +2,7 @@ use tinytemplate::TinyTemplate;
 
 use crate::templates::reports;
 
+/// Data for test failures report template
 #[derive(Serialize)]
 pub struct FailuresReportContext {
     difference_types: Vec<String>,
@@ -14,6 +15,7 @@ pub struct FailuresReportContext {
 }
 
 impl FailuresReportContext {
+    /// build data fir test failures report template
     pub fn new(
         difference_types: Vec<String>,
         differences_count: u32,
@@ -34,6 +36,7 @@ impl FailuresReportContext {
     }
 }
 
+/// show test failures template output
 pub fn show_failure(
     failures_report_context: &FailuresReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {

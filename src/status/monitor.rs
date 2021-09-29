@@ -7,6 +7,7 @@ use notify::{watcher, RecursiveMode, Watcher};
 use crate::status::server;
 use crate::time;
 
+/// launch monitor thread
 pub fn launch_monitor(pattern: String) -> Vec<std::thread::JoinHandle<()>> {
     log::info!("monitor/launch_monitor pattern: {}", &pattern);
     let state_data = &server::STATE_DATA.lock().unwrap();
@@ -20,6 +21,7 @@ pub fn launch_monitor(pattern: String) -> Vec<std::thread::JoinHandle<()>> {
     handles
 }
 
+/// watch for test results
 fn watch(pattern: &str) -> ! {
     log::info!("monitor/watch pattern: {}", &pattern);
     let (tx, rx) = channel();
@@ -27,7 +29,7 @@ fn watch(pattern: &str) -> ! {
     // TODO use cwd
     watcher
         .watch(
-            "/home/mike/github/wrightmikea/rtt1/data",
+            "/home/mike/github/wrightmikea/rtt1/data", // TODO fixme
             RecursiveMode::Recursive,
         )
         .unwrap();

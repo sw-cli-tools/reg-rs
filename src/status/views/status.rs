@@ -3,21 +3,31 @@ use tinytemplate::TinyTemplate;
 use crate::status::server;
 use crate::templates::views;
 
+/// Status Counts Data
 #[derive(Serialize)]
 pub struct StatusCounts {
+    /// Fail count
     pub fail_count: String,
+    /// Not-run count
     pub not_run_count: String,
+    /// Pass count
     pub pass_count: String,
+    /// Test count
     pub test_count: String,
 }
 
+/// Status flags
 #[derive(Serialize)]
 pub struct StatusFlags {
+    /// No failed tests
     pub no_failed_tests: bool,
+    /// No not-yet-run tests
     pub no_not_yet_run_tests: bool,
+    /// No passed tests
     pub no_passed_tests: bool,
 }
 
+/// Status view template data
 #[derive(Serialize)]
 pub struct StatusViewContext {
     fail_symbol: String,
@@ -32,6 +42,7 @@ pub struct StatusViewContext {
 }
 
 impl StatusViewContext {
+    /// build Status view template data
     pub fn new(
         server_started: String,
         state_updated: String,
@@ -54,6 +65,7 @@ impl StatusViewContext {
     }
 }
 
+/// Render status view template
 pub fn render(
     status_view_context: &StatusViewContext,
 ) -> Result<String, Box<dyn std::error::Error>> {

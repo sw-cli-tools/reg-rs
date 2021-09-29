@@ -1,12 +1,16 @@
 use crate::args;
 
+/// Configuration data
 #[derive(Debug)]
 pub struct Config {
+    /// subcommands
     pub mode: args::Subcommands,
+    /// debugging flag
     pub debug: bool,
 }
 
 impl Config {
+    /// determines if dry-run flag was specified
     pub fn is_dry_run(&self) -> bool {
         match &self.mode {
             args::Subcommands::Run { dry_run, .. } => *dry_run,
@@ -14,6 +18,7 @@ impl Config {
         }
     }
 
+    /// extracts the test name pattern
     pub fn extract_pattern(&self) -> &str {
         md!(&self.mode);
         let p = match &self.mode {
@@ -27,6 +32,7 @@ impl Config {
         p
     }
 
+    /// extract test and command
     pub fn extract_test_and_command(&self) -> Option<(String, String)> {
         if let args::Subcommands::Create { test, command } = &self.mode {
             md!((&test, &command));
@@ -36,6 +42,7 @@ impl Config {
         }
     }
 
+    /// determines how verbose the output should be
     pub fn verbosity_level(&self) -> u8 {
         if let args::Subcommands::Report { verbosity, .. } = &self.mode {
             md!(verbosity);
@@ -45,6 +52,7 @@ impl Config {
         }
     }
 
+    /// determines which port to use for web server
     pub fn status_port(&self) -> u16 {
         if let args::Subcommands::Status { localhost_port, .. } = &self.mode {
             *localhost_port

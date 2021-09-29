@@ -2,19 +2,26 @@ use tinytemplate::TinyTemplate;
 
 use crate::templates::reports;
 
+/// Describe a difference
 #[derive(Debug, Serialize)]
 pub struct DisplayDifference {
+    /// difference type
     pub type_name: String,
+    /// difference data
     pub chunk: String,
 }
 
+/// data for a differences report template
 #[derive(Debug, Serialize)]
 pub struct DifferencesReportContext {
+    /// list of differences
     differences: Vec<DisplayDifference>,
+    /// failed test name
     failed_test_name: String,
 }
 
 impl DifferencesReportContext {
+    /// build new difference report template data
     pub fn new(differences: Vec<DisplayDifference>, failed_test_name: String) -> Self {
         DifferencesReportContext {
             differences,
@@ -23,6 +30,7 @@ impl DifferencesReportContext {
     }
 }
 
+/// show test result differences
 pub fn show_differences(
     differences_report_context: &DifferencesReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {

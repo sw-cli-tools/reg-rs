@@ -1,8 +1,10 @@
+/// Test result differences report template
 pub static DIFFERENCES_REPORT_TEMPLATE: &str = "
  ** Differences ** (-vvv)
 {{ for difference in differences }}  { difference.type_name } - { difference.chunk }
 {{ endfor }}";
 
+/// Test result summary report template
 pub static SUMMARY_REPORT_TEMPLATE: &str = "RTT Summary Report { report_date }
 { fail_count } failed
 { not_run_count } not yet run
@@ -10,6 +12,7 @@ pub static SUMMARY_REPORT_TEMPLATE: &str = "RTT Summary Report { report_date }
  -----
 { test_count } matched pattern: { test_pattern }";
 
+/// Test result details report template
 pub static DETAILS_REPORT_TEMPLATE: &str ="
 * Details * (-v){{ if no_failed_tests }}
 No Failed Tests{{ else }}
@@ -21,6 +24,7 @@ No Passed Tests{{ else }}
 { pass_symbol } Passed: {{ for passed_test in passed_test_names }}{ passed_test }{{ if not @last }}, {{ endif }}{{ endfor }}{{ endif }}
 ";
 
+/// Test result failures report template
 pub static FAILURES_REPORT_TEMPLATE: &str =
     "{ fail_symbol } { failed_test_name } - created: { time_created }, failed: { time_last_ran }, differences count: { differences_count }
 {{- for difference in difference_types }}
@@ -28,5 +32,6 @@ pub static FAILURES_REPORT_TEMPLATE: &str =
 {{- if not @last }},{{ endif -}}{{ endfor -}}
 ";
 
+/// Test result passes report template
 pub static PASSES_REPORT_TEMPLATE: &str =
     "{ pass_symbol } { passed_test_name } - created: { time_created }, passed: { time_last_ran }";

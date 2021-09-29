@@ -11,6 +11,7 @@ use crate::status::views::status;
 use crate::time;
 
 lazy_static! {
+    /// initialize static Shared State Data
     pub static ref STATE_DATA: Mutex<StateData> = Mutex::new(StateData {
         pattern: "".to_string(),
         runs: vec![],
@@ -19,22 +20,32 @@ lazy_static! {
     });
 }
 
+/// Shared State Data
 #[derive(Debug)]
 pub struct StateData {
+    /// Test name pattern
     pub pattern: String,
+    /// List of test results
     pub runs: Vec<TestDetails>,
     server_started: String,
+    /// updated time
     pub state_updated: String,
 }
 
+/// Test details
 #[derive(Debug, Serialize)]
 pub struct TestDetails {
+    /// When test was first run
     pub created: String,
+    /// Test results differences from last run (if any)
     pub diffs: Option<Vec<String>>,
+    /// When test was last run (if more than once)
     pub last_ran: Option<String>,
+    /// Test name
     pub name: String,
 }
 
+/// start status server
 pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("server/start");
     let status_port = config.status_port();
@@ -51,6 +62,7 @@ pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+/// Serve the status view
 fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
     log::info!("server/serve_status_view");
     let state_data = &STATE_DATA.lock().unwrap();
@@ -99,6 +111,7 @@ fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
     (state, (mime::TEXT_HTML, response_str))
 }
 
+/// update shared state with test run data
 pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("server/set_test_runs pattern: {}", &pattern);
     let mut test_runs = vec![];
@@ -140,6 +153,7 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+/// get test result differences
 fn get_diffs(test_name: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     log::info!("server/get_diffs test_name {}", &test_name);
     let differences = db::read_differences(test_name)?;

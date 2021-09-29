@@ -2,6 +2,7 @@ use crate::args;
 use crate::config;
 use crate::logging;
 
+/// Build configuration based on arguments
 pub fn build() -> config::Config {
     let args = args::parse_args();
     if args.logging {

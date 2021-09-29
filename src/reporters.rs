@@ -2,12 +2,18 @@ use crate::config;
 use crate::db;
 use crate::finder;
 
+/// test reporting details
 pub mod details;
+/// test differences
 pub mod differences;
+/// test failures
 pub mod failures;
+/// test passes
 pub mod passes;
+/// test summary
 pub mod summary;
 
+/// generate reports
 pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("reporters/generate_reports");
     md!("generate_report");

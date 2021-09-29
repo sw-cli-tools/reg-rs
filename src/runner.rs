@@ -6,16 +6,24 @@ use crate::process;
 use crate::queries;
 use crate::time;
 
+/// Test Results data
 #[derive(Debug)]
 pub struct TestResults {
+    /// Test Name
     pub name: String,
+    /// Subject command
     pub command: String,
+    /// test results creation time
     pub time_created: String,
+    /// test exit code
     pub exit_code: i32,
+    /// test captured stderr
     pub stderr: String,
+    /// test captured stdout
     pub stdout: String,
 }
 
+/// Run many tests
 pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("runner/run_many");
     let tests = finder::discover(config.extract_pattern().to_string())?;
@@ -40,6 +48,7 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
+/// Run one test
 pub fn run_one(
     test_name: &str,
     command: &str,

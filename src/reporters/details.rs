@@ -8,6 +8,7 @@ use crate::reporters::passes;
 use crate::templates::reports;
 use crate::util::{fail_symbol, pass_symbol, warn, warn_symbol};
 
+/// Data for details report template
 #[derive(Serialize)]
 pub struct DetailsReportContext {
     fail_symbol: String,
@@ -22,6 +23,7 @@ pub struct DetailsReportContext {
 }
 
 impl DetailsReportContext {
+    /// generate new data for a details report template
     pub fn new(
         failed_test_names: Vec<String>,
         no_failed_tests: bool,
@@ -44,6 +46,7 @@ impl DetailsReportContext {
     }
 }
 
+/// show test result report details
 pub fn show_details(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
@@ -62,6 +65,7 @@ pub fn show_details(
     Ok(())
 }
 
+/// show test result failures
 fn show_failures(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
@@ -163,6 +167,7 @@ fn show_failures(
     Ok(())
 }
 
+/// show test result passes
 fn show_passes(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,

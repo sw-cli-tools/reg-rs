@@ -1,3 +1,4 @@
+/// create test results table SQL statement template
 pub const CREATE_TEST_RESULTS_TABLE_TEMPLATE: &str = "
  CREATE TABLE IF NOT EXISTS { table_name } (
  name              TEXT NOT NULL,
@@ -11,25 +12,31 @@ pub const CREATE_TEST_RESULTS_TABLE_TEMPLATE: &str = "
  CONSTRAINT locked CHECK (lock='L')
 )
 ";
+
+/// insert test results SQL statement template
 pub const INSERT_TEST_RESULTS_TEMPLATE: &str = "
  INSERT INTO { table_name } (
  name, command, time_created, exit_code, stderr, stdout)
  VALUES (?1, ?2, ?3, ?4, ?5, ?6)
 ";
 
+/// select test results SQL statement template
 pub const SELECT_TEST_RESULTS_TEMPLATE: &str = "
  SELECT name, command, time_created, exit_code, stderr, stdout 
  FROM { table_name }
 ";
 
+/// drop test results table (if exists) SQL statement template
 pub const DROP_TABLE_TEMPLATE: &str = "
  DROP TABLE IF EXISTS { table_name }
 ";
 
+/// delete all rows from a table SQL statement template
 pub const DELETE_ALL_ROWS_TEMPLATE: &str = "
  DELETE FROM { table_name }
 ";
 
+/// create differences table SQL statement template
 pub const CREATE_DIFFERENCES_TABLE_TEMPLATE: &str = "
  CREATE TABLE IF NOT EXISTS { table_name } (
  id                INTEGER PRIMARY KEY,
@@ -38,20 +45,24 @@ pub const CREATE_DIFFERENCES_TABLE_TEMPLATE: &str = "
 )
 ";
 
+/// insert test difference SQL statement template
 pub const INSERT_DIFFERENCE_TEMPLATE: &str = "
  INSERT INTO { table_name } (type, chunk)
  VALUES (?1, ?2)
 ";
 
+/// select test differences SQL statement template
 pub const SELECT_DIFFERENCES_TEMPLATE: &str = "
  SELECT type, chunk
  FROM { table_name }
 ";
 
+/// count table rows SQL statement template
 pub const COUNT_TABLE_ROWS_TEMPLATE: &str = "
 SELECT COUNT(*) AS c from { table_name }
 ";
 
+/// count differences by type SQL statement template
 pub const COUNT_DIFF_TYPE_TEMPLATE: &str = "
 SELECT COUNT(*) FROM { table_name } WHERE type = '{ difference_type }'
 ";

@@ -88,6 +88,7 @@ pub(crate) fn delete_all_rows(db_name: &str, delete_statement: &str) -> Result<(
     Ok(())
 }
 
+/// write difference to DB
 pub fn write_difference(
     db_name: &str,
     difference_type: &str,
@@ -110,6 +111,7 @@ pub fn write_difference(
     Ok(())
 }
 
+/// read test result differences
 pub(crate) fn read_differences(
     db_name: &str,
     select_statement: &str,
@@ -129,6 +131,7 @@ pub(crate) fn read_differences(
     Ok(result)
 }
 
+/// count rows in a table
 pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
     log::info!("sqlite/count_rows {} {}", &db_name, &count_statement);
     let count;
@@ -143,6 +146,7 @@ pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
     count.unwrap()
 }
 
+/// check that a table exists
 pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> {
     log::info!(
         "sqlite/table_exists {} {}",
@@ -160,6 +164,7 @@ pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> 
     count.unwrap()
 }
 
+/// count differences by type
 pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str) -> Result<u32> {
     log::info!(
         "sqlite/count_differences_by_type {} {}",
