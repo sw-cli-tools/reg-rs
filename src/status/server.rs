@@ -104,8 +104,8 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
     let mut test_runs = vec![];
     let test_names = finder::discover(pattern.to_string())?;
     for test_name in &test_names.found {
-        let original_result = db::read_original_results(&test_name)?;
-        let latest_results_row_count = db::count_latest_results(&test_name)?;
+        let original_result = db::read_original_results(test_name)?;
+        let latest_results_row_count = db::count_latest_results(test_name)?;
         if latest_results_row_count == 0 {
             test_runs.push(TestDetails {
                 created: original_result.time_created,
@@ -114,12 +114,12 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
                 last_ran: None,
             });
         } else {
-            let latest_result = db::read_latest_results(&test_name)?;
-            let difference_count = db::count_differences(&test_name)?;
+            let latest_result = db::read_latest_results(test_name)?;
+            let difference_count = db::count_differences(test_name)?;
             if difference_count > 0 {
                 test_runs.push(TestDetails {
                     created: original_result.time_created,
-                    diffs: Some(get_diffs(&test_name)?),
+                    diffs: Some(get_diffs(test_name)?),
                     name: test_name.to_string(),
                     last_ran: Some(latest_result.time_created),
                 });
@@ -142,7 +142,7 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
 
 fn get_diffs(test_name: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     log::info!("server/get_diffs test_name {}", &test_name);
-    let differences = db::read_differences(&test_name)?;
+    let differences = db::read_differences(test_name)?;
     let mut diffs = vec![];
     for difference in differences {
         match difference.0.as_ref() {

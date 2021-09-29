@@ -32,10 +32,10 @@ pub fn process_differences(
     latest_test_result: &runner::TestResults,
 ) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("diff/process_differences {}", &db_name);
-    db::clear_differences(&db_name)?;
-    maybe_store_exit_code_differences(&db_name, &prior_test_result, &latest_test_result)?;
-    maybe_store_stderr_differences(&db_name, &prior_test_result, &latest_test_result)?;
-    maybe_store_stdout_differences(&db_name, &prior_test_result, &latest_test_result)?;
+    db::clear_differences(db_name)?;
+    maybe_store_exit_code_differences(db_name, prior_test_result, latest_test_result)?;
+    maybe_store_stderr_differences(db_name, prior_test_result, latest_test_result)?;
+    maybe_store_stdout_differences(db_name, prior_test_result, latest_test_result)?;
     Ok(())
 }
 
@@ -48,12 +48,12 @@ fn maybe_store_exit_code_differences(
     if prior_test_result.exit_code != latest_test_result.exit_code {
         md!((prior_test_result.exit_code, latest_test_result.exit_code));
         db::store_difference(
-            &db_name,
+            db_name,
             RegressionType::ExpectedCode,
             &prior_test_result.exit_code.to_string(),
         )?;
         db::store_difference(
-            &db_name,
+            db_name,
             RegressionType::ActualCode,
             &latest_test_result.exit_code.to_string(),
         )?;
@@ -75,13 +75,13 @@ fn maybe_store_stderr_differences(
             md!(difference);
             match difference {
                 Difference::Add(add) => {
-                    db::store_difference(&db_name, RegressionType::StderrAdd, add)?;
+                    db::store_difference(db_name, RegressionType::StderrAdd, add)?;
                 }
                 Difference::Rem(rem) => {
-                    db::store_difference(&db_name, RegressionType::StderrRemove, rem)?;
+                    db::store_difference(db_name, RegressionType::StderrRemove, rem)?;
                 }
                 Difference::Same(same) => {
-                    db::store_difference(&db_name, RegressionType::StderrSame, same)?;
+                    db::store_difference(db_name, RegressionType::StderrSame, same)?;
                 }
             }
         }
@@ -103,13 +103,13 @@ fn maybe_store_stdout_differences(
             md!(difference);
             match difference {
                 Difference::Add(add) => {
-                    db::store_difference(&db_name, RegressionType::StdoutAdd, add)?;
+                    db::store_difference(db_name, RegressionType::StdoutAdd, add)?;
                 }
                 Difference::Rem(rem) => {
-                    db::store_difference(&db_name, RegressionType::StdoutRemove, rem)?;
+                    db::store_difference(db_name, RegressionType::StdoutRemove, rem)?;
                 }
                 Difference::Same(same) => {
-                    db::store_difference(&db_name, RegressionType::StdoutSame, same)?;
+                    db::store_difference(db_name, RegressionType::StdoutSame, same)?;
                 }
             }
         }

@@ -28,10 +28,10 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
         let maybe_regression = run_one(&test, &prior_test_result.command, config.is_dry_run())?;
         if let Some(latest_test_result) = maybe_regression {
             let db_name = &test;
-            diff::process_differences(&db_name, &prior_test_result, &latest_test_result)?;
-            db::clear_latest_results(&db_name)?;
+            diff::process_differences(db_name, &prior_test_result, &latest_test_result)?;
+            db::clear_latest_results(db_name)?;
             db::store_results(
-                &db_name,
+                db_name,
                 &latest_test_result,
                 queries::StatementContext::latest(),
             )?;

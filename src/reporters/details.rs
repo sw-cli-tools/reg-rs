@@ -54,10 +54,10 @@ pub fn show_details(
     let rendered = tt.render("details_report_template", &details_report_context)?;
     println!("{}", rendered);
     if verbosity_level > 1 {
-        show_failures(&details_report_context, verbosity_level)?;
+        show_failures(details_report_context, verbosity_level)?;
     }
     if verbosity_level > 1 {
-        show_passes(&details_report_context, verbosity_level)?;
+        show_passes(details_report_context, verbosity_level)?;
     }
     Ok(())
 }
@@ -73,32 +73,32 @@ fn show_failures(
     }
     for test in failed_test_names {
         md!(&test);
-        let original_result = db::read_original_results(&test)?;
+        let original_result = db::read_original_results(test)?;
         md!(&original_result);
-        let latest_result = db::read_latest_results(&test)?;
+        let latest_result = db::read_latest_results(test)?;
         md!(&latest_result);
-        let differences = db::read_differences(&test)?;
+        let differences = db::read_differences(test)?;
         md!(&differences);
         let mut difference_types = vec![];
         let same_count =
-            db::difference_count_by_type(&test, diff::RegressionType::StderrSame as u8)?
-                + db::difference_count_by_type(&test, diff::RegressionType::StdoutSame as u8)?;
+            db::difference_count_by_type(test, diff::RegressionType::StderrSame as u8)?
+                + db::difference_count_by_type(test, diff::RegressionType::StdoutSame as u8)?;
         let differences_count = differences.len() as u32 - same_count;
         if verbosity_level > 2 {
-            if 0 < db::difference_count_by_type(&test, diff::RegressionType::ActualCode as u8)? {
+            if 0 < db::difference_count_by_type(test, diff::RegressionType::ActualCode as u8)? {
                 difference_types.push("exit_code".to_string());
             }
-            if 0 < db::difference_count_by_type(&test, diff::RegressionType::StderrAdd as u8)?
+            if 0 < db::difference_count_by_type(test, diff::RegressionType::StderrAdd as u8)?
                 || 0 < db::difference_count_by_type(
-                    &test,
+                    test,
                     diff::RegressionType::StderrRemove as u8,
                 )?
             {
                 difference_types.push("stderr".to_string());
             }
-            if 0 < db::difference_count_by_type(&test, diff::RegressionType::StdoutAdd as u8)?
+            if 0 < db::difference_count_by_type(test, diff::RegressionType::StdoutAdd as u8)?
                 || 0 < db::difference_count_by_type(
-                    &test,
+                    test,
                     diff::RegressionType::StdoutRemove as u8,
                 )?
             {
@@ -174,9 +174,9 @@ fn show_passes(
     }
     for test in passed_test_names {
         md!(&test);
-        let original_result = db::read_original_results(&test)?;
+        let original_result = db::read_original_results(test)?;
         md!(&original_result);
-        let latest_result = db::read_latest_results(&test)?;
+        let latest_result = db::read_latest_results(test)?;
         md!(&latest_result);
         passes::show_passes(&passes::PassesReportContext::new(
             pass_symbol(),

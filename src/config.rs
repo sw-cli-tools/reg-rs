@@ -7,14 +7,14 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn is_dry_run(self: &Self) -> bool {
+    pub fn is_dry_run(&self) -> bool {
         match &self.mode {
             args::Subcommands::Run { dry_run, .. } => *dry_run,
             _ => false,
         }
     }
 
-    pub fn extract_pattern(self: &Self) -> &str {
+    pub fn extract_pattern(&self) -> &str {
         md!(&self.mode);
         let p = match &self.mode {
             args::Subcommands::Create { .. } => unreachable!(),
@@ -27,7 +27,7 @@ impl Config {
         p
     }
 
-    pub fn extract_test_and_command(self: &Self) -> Option<(String, String)> {
+    pub fn extract_test_and_command(&self) -> Option<(String, String)> {
         if let args::Subcommands::Create { test, command } = &self.mode {
             md!((&test, &command));
             Some((test.to_string(), command.to_string()))
@@ -36,7 +36,7 @@ impl Config {
         }
     }
 
-    pub fn verbosity_level(self: &Self) -> u8 {
+    pub fn verbosity_level(&self) -> u8 {
         if let args::Subcommands::Report { verbosity, .. } = &self.mode {
             md!(verbosity);
             *verbosity
@@ -45,7 +45,7 @@ impl Config {
         }
     }
 
-    pub fn status_port(self: &Self) -> u16 {
+    pub fn status_port(&self) -> u16 {
         if let args::Subcommands::Status { localhost_port, .. } = &self.mode {
             *localhost_port
         } else {

@@ -9,7 +9,7 @@ pub(crate) fn read_results(db_name: &str, select_statement: &str) -> Result<Test
     let test;
     let conn = Connection::open(&db_name)?;
     {
-        let mut stmt = conn.prepare(&select_statement)?;
+        let mut stmt = conn.prepare(select_statement)?;
         let mut test_iter = stmt.query_map(params![], |row| {
             Ok(TestResults {
                 name: row.get(0)?,
@@ -31,7 +31,7 @@ pub(crate) fn create_table(db_name: &str, create_statement: &str) -> Result<()> 
     let mut conn = Connection::open(&db_name)?;
     {
         let tx = conn.transaction()?;
-        tx.execute(&create_statement, params![])?;
+        tx.execute(create_statement, params![])?;
         tx.commit()?;
     }
     conn.close().unwrap();
@@ -48,7 +48,7 @@ pub(crate) fn write_results(
     {
         let tx = conn.transaction()?;
         tx.execute(
-            &insert_statement,
+            insert_statement,
             params![
                 test.name,
                 test.command,
@@ -69,7 +69,7 @@ pub(crate) fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
     let mut conn = Connection::open(&db_name)?;
     {
         let tx = conn.transaction()?;
-        tx.execute(&drop_statement, params![])?;
+        tx.execute(drop_statement, params![])?;
         tx.commit()?;
     }
     conn.close().unwrap();
@@ -81,7 +81,7 @@ pub(crate) fn delete_all_rows(db_name: &str, delete_statement: &str) -> Result<(
     let mut conn = Connection::open(&db_name)?;
     {
         let tx = conn.transaction()?;
-        tx.execute(&delete_statement, params![])?;
+        tx.execute(delete_statement, params![])?;
         tx.commit()?;
     }
     conn.close().unwrap();
@@ -118,7 +118,7 @@ pub(crate) fn read_differences(
     let mut result = vec![];
     let conn = Connection::open(&db_name)?;
     {
-        let mut stmt = conn.prepare(&select_statement)?;
+        let mut stmt = conn.prepare(select_statement)?;
         let difference_iter = stmt.query_map(params![], |row| Ok((row.get(0)?, row.get(1)?)))?;
 
         for difference in difference_iter {
@@ -134,8 +134,8 @@ pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
     let count;
     let conn = Connection::open(&db_name)?;
     {
-        let mut stmt = conn.prepare(&count_statement)?;
-        let mut count_iter = stmt.query_map(params![], |row| Ok(row.get(0)?))?;
+        let mut stmt = conn.prepare(count_statement)?;
+        let mut count_iter = stmt.query_map(params![], |row| row.get(0))?;
 
         count = count_iter.next();
     }
@@ -152,8 +152,8 @@ pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> 
     let count;
     let conn = Connection::open(&db_name)?;
     {
-        let mut stmt = conn.prepare(&table_exists_statement)?;
-        let mut count_iter = stmt.query_map(params![], |row| Ok(row.get(0)?))?;
+        let mut stmt = conn.prepare(table_exists_statement)?;
+        let mut count_iter = stmt.query_map(params![], |row| row.get(0))?;
         count = count_iter.next();
     }
     conn.close().unwrap();
@@ -169,8 +169,8 @@ pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str)
     let count;
     let conn = Connection::open(&db_name)?;
     {
-        let mut stmt = conn.prepare(&count_diff_type_statement)?;
-        let mut count_iter = stmt.query_map(params![], |row| Ok(row.get(0)?))?;
+        let mut stmt = conn.prepare(count_diff_type_statement)?;
+        let mut count_iter = stmt.query_map(params![], |row| row.get(0))?;
         count = count_iter.next();
     }
     conn.close().unwrap();

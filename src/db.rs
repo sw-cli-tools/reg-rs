@@ -16,7 +16,7 @@ pub(crate) fn store_results(
     statement_context: queries::StatementContext,
 ) -> Result<()> {
     log::info!("db/store_results {}", &db_name);
-    let filelock = match FileLock::lock(&db_name, BLOCKING, WRITING) {
+    let filelock = match FileLock::lock(db_name, BLOCKING, WRITING) {
         Ok(lock) => lock,
         Err(e) => panic!("unable to get lock, e={}", e),
     };
@@ -24,7 +24,7 @@ pub(crate) fn store_results(
         db_name,
         &queries::get_statement(
             &statement_context,
-            &statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
+            statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
         ),
     )?;
     sqlite::write_results(
@@ -32,7 +32,7 @@ pub(crate) fn store_results(
         test_results,
         &queries::get_statement(
             &statement_context,
-            &statements::INSERT_TEST_RESULTS_TEMPLATE,
+            statements::INSERT_TEST_RESULTS_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -41,15 +41,15 @@ pub(crate) fn store_results(
 
 pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
     log::info!("db/read_original_results {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     md!(&db_name);
     md!(&queries::StatementContext::original());
     md!(&statements::SELECT_TEST_RESULTS_TEMPLATE);
     let results = sqlite::read_results(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::original(),
-            &statements::SELECT_TEST_RESULTS_TEMPLATE,
+            statements::SELECT_TEST_RESULTS_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -58,19 +58,19 @@ pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
 
 pub fn reset_latest_results(db_name: &str) -> Result<()> {
     log::info!("db/reset_latest_results {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     sqlite::drop_table(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::latest(),
-            &statements::DROP_TABLE_TEMPLATE,
+            statements::DROP_TABLE_TEMPLATE,
         ),
     )?;
     sqlite::create_table(
         db_name,
         &queries::get_statement(
             &queries::StatementContext::latest(),
-            &statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
+            statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -79,34 +79,34 @@ pub fn reset_latest_results(db_name: &str) -> Result<()> {
 
 pub fn drop_all_results(db_name: &str) -> Result<()> {
     log::info!("db/drop_all_results {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     sqlite::drop_table(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::original(),
-            &statements::DROP_TABLE_TEMPLATE,
+            statements::DROP_TABLE_TEMPLATE,
         ),
     )?;
-    reset_latest_results(&db_name)?;
+    reset_latest_results(db_name)?;
     filelock.unlock().unwrap();
     Ok(())
 }
 
 pub fn reset_differences(db_name: &str) -> Result<()> {
     log::info!("db/reset_differences {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     sqlite::drop_table(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::differences(),
-            &statements::DROP_TABLE_TEMPLATE,
+            statements::DROP_TABLE_TEMPLATE,
         ),
     )?;
     sqlite::create_table(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::differences(),
-            &statements::CREATE_DIFFERENCES_TABLE_TEMPLATE,
+            statements::CREATE_DIFFERENCES_TABLE_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -119,21 +119,21 @@ pub fn store_difference(
     difference_chunk: &str,
 ) -> Result<()> {
     log::info!("db/store_difference {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     let difference_type = (difference_type as usize).to_string();
-    sqlite::write_difference(&db_name, &difference_type, &difference_chunk)?;
+    sqlite::write_difference(db_name, &difference_type, difference_chunk)?;
     filelock.unlock().unwrap();
     Ok(())
 }
 
 pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
     log::info!("db/read_latest_results {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     let results = sqlite::read_results(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::latest(),
-            &statements::SELECT_TEST_RESULTS_TEMPLATE,
+            statements::SELECT_TEST_RESULTS_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -142,12 +142,12 @@ pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
 
 pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
     log::info!("db/read_differences {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     let result = sqlite::read_differences(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::differences(),
-            &statements::SELECT_DIFFERENCES_TEMPLATE,
+            statements::SELECT_DIFFERENCES_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -156,12 +156,12 @@ pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
 
 pub fn count_differences(db_name: &str) -> Result<u32> {
     log::info!("db/count_differences {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     let result = sqlite::count_rows(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::differences(),
-            &statements::COUNT_TABLE_ROWS_TEMPLATE,
+            statements::COUNT_TABLE_ROWS_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -170,12 +170,12 @@ pub fn count_differences(db_name: &str) -> Result<u32> {
 
 pub fn count_latest_results(db_name: &str) -> Result<u32> {
     log::info!("db/count_latest_results {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     let result = sqlite::count_rows(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::latest(),
-            &statements::COUNT_TABLE_ROWS_TEMPLATE,
+            statements::COUNT_TABLE_ROWS_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -184,12 +184,12 @@ pub fn count_latest_results(db_name: &str) -> Result<u32> {
 
 pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u32> {
     log::info!("db/difference_count_by_type {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     let results = sqlite::count_differences_by_type(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::difference_count_by_type(difference_type),
-            &statements::COUNT_DIFF_TYPE_TEMPLATE,
+            statements::COUNT_DIFF_TYPE_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -198,12 +198,12 @@ pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u3
 
 pub fn clear_differences(db_name: &str) -> Result<()> {
     log::info!("db/clear_differences {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     sqlite::delete_all_rows(
-        &db_name,
+        db_name, 
         &queries::get_statement(
             &queries::StatementContext::differences(),
-            &statements::DELETE_ALL_ROWS_TEMPLATE,
+            statements::DELETE_ALL_ROWS_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();
@@ -212,12 +212,12 @@ pub fn clear_differences(db_name: &str) -> Result<()> {
 
 pub fn clear_latest_results(db_name: &str) -> Result<()> {
     log::info!("db/clear_results {}", &db_name);
-    let filelock = FileLock::lock(&db_name, BLOCKING, WRITING).unwrap();
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING).unwrap();
     sqlite::delete_all_rows(
-        &db_name,
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::latest(),
-            &statements::DELETE_ALL_ROWS_TEMPLATE,
+            statements::DELETE_ALL_ROWS_TEMPLATE,
         ),
     )?;
     filelock.unlock().unwrap();

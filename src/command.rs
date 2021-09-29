@@ -29,7 +29,7 @@ pub fn update_latest(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/update_latest");
-    runner::run_many(&config)?;
+    runner::run_many(config)?;
     Ok(())
 }
 
@@ -48,7 +48,7 @@ pub fn report_latest(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/report_latest");
-    generate_reports(&config)?;
+    generate_reports(config)?;
     log::info!("command/report_latest done");
     Ok(())
 }
@@ -56,7 +56,7 @@ pub fn status_server(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/status_server");
-    status::start_client(&config)?;
-    status::start_server(&config)?; // loops
+    status::start_client(config)?;
+    status::start_server(config)?; // loops
     Ok(())
 }
