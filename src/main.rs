@@ -1,6 +1,8 @@
 use rtt1::{args, builder, command};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+    log::info!(target: "rtt1::main", "env_logger initialized");
     let config = builder::build();
     match &config.mode {
         args::Subcommands::Create { .. } => {
@@ -19,5 +21,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             command::status_server(&config)?;
         }
     }
+    log::info!(target: "rtt1::main", "end");
     Ok(())
 }
