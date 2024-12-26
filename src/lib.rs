@@ -1,14 +1,10 @@
 //! modules
 #![deny(warnings, missing_docs)]
 
-//#[macro_use]
-//extern crate clap;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
-
-use std::env;
 
 lazy_static! {
     static ref DEBUG: bool = env::args().any(|s| s.starts_with("-d"));
