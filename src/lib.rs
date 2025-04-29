@@ -5,6 +5,7 @@
 extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
+use std::env;
 
 lazy_static! {
     static ref DEBUG: bool = env::args().any(|s| s.starts_with("-d"));
@@ -36,6 +37,8 @@ pub mod config;
 pub mod db;
 /// Test Differences
 pub mod diff;
+/// Error types and utilities
+pub mod error;
 /// Test Finder
 pub mod finder;
 /// Logging

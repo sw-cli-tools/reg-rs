@@ -1,9 +1,9 @@
 //! Regression Test Tool
 #![deny(warnings, missing_docs)]
-use rtt1::{args, builder, command};
+use rtt1::{args, builder, command, error::RttError};
 
-/// Entry
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// Entry point for the application
+fn main() -> Result<(), RttError> {
     env_logger::init();
     log::info!(target: "rtt1::main", "env_logger initialized");
     let config = builder::build();

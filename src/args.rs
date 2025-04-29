@@ -22,7 +22,7 @@ pub struct Args {
 }
 
 /// Regression Test Tool (first draft) - create and manage tests
-/// - for more details: rtt1 <subcommand> -h
+/// - for more details: rtt1 &lt;subcommand&gt; -h
 #[derive(Debug, PartialEq, StructOpt)]
 pub enum Subcommands {
     /// Creates a new test of a specified command (alias c)
