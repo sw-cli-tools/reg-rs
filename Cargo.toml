@@ -4,6 +4,15 @@ version = "0.1.0"
 authors = ["Mike Wright <wrightmikea@gmail.com>"]
 edition = "2021"
 
+[[bin]]
+name = "rtt1"
+path = "src/main.rs"
+
+[[bin]]
+name = "axum-server"
+path = "src/status/server_axum.rs"
+
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
