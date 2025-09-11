@@ -2,6 +2,11 @@
 
 A command-line utility that creates, discovers, runs, and reports on regression tests.
 
+## Requirements
+
+- Rust 2024 edition or later
+- Cargo build tool
+
 ## Features
 
 - Create tests that capture command output and exit codes
@@ -27,4 +32,27 @@ rtt1 remove -p pattern
 
 # Start status monitoring server
 rtt1 status -p pattern
+```
+
+## Building
+
+```bash
+# Build the project
+cargo build
+
+# Run tests
+cargo test
+
+# Run with debug output
+cargo run -- -d <subcommand>
+```
+
+## Development
+
+This project uses Rust 2024 edition with strict linting enabled. Before committing:
+
+```bash
+cargo fmt        # Format code
+cargo clippy     # Check for linting issues
+cargo test       # Run all tests
 ```

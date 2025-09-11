@@ -6,7 +6,7 @@ pub fn start(port: u16) {
     md!(port);
     println!(
         "open: http://{}:{}/status",
-        net::Ipv4Addr::LOCALHOST.to_string(),
+        net::Ipv4Addr::LOCALHOST,
         port
     );
 }

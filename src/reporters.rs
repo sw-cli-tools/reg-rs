@@ -43,7 +43,7 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
         fail_count,
         not_yet_run_count,
         pass_count,
-        &config.extract_pattern().to_string(),
+        config.extract_pattern(),
         total_count,
     ))?;
     if config.verbosity_level() > 0 {

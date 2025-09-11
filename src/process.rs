@@ -8,10 +8,7 @@ pub fn exec(command: String) -> Result<(i32, String, String), Box<dyn std::error
         .arg(command)
         .output()
         .expect("failed to execute process");
-    let status_code = match output.status.code() {
-        Some(n) => n,
-        _ => -1,
-    };
+    let status_code = output.status.code().unwrap_or(-1);
 
     println!("status: {:#?} status_code:{}", output.status, status_code);
     println!("stdout:\n{}", String::from_utf8_lossy(&output.stdout));

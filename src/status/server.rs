@@ -52,7 +52,7 @@ pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> 
     let pattern = config.extract_pattern().to_string();
     set_test_runs(pattern.to_string())?;
     let handles = monitor::launch_monitor(pattern);
-    let addr = format!("{}:{}", net::Ipv4Addr::LOCALHOST.to_string(), status_port);
+    let addr = format!("{}:{}", net::Ipv4Addr::LOCALHOST, status_port);
 
     println!("Listening at {}.  Ctrl-C to terminate server", addr);
     let _ = gotham::start(addr, || Ok(serve_status_view)); // loops until Ctrl-C kills process
