@@ -55,7 +55,7 @@ pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> 
     let addr = format!("{}:{}", net::Ipv4Addr::LOCALHOST.to_string(), status_port);
 
     println!("Listening at {}.  Ctrl-C to terminate server", addr);
-    gotham::start(addr, || Ok(serve_status_view)); // loops until Ctrl-C kills process
+    let _ = gotham::start(addr, || Ok(serve_status_view)); // loops until Ctrl-C kills process
     for handle in handles {
         handle.join().unwrap();
     }

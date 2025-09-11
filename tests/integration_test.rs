@@ -18,7 +18,7 @@ fn integration_test_rtt1_help() {
     assert_eq!(0, status_code);
     assert_eq!("", String::from_utf8_lossy(&output.stderr));
     assert_eq!(
-        "Regression Test Tool (first draft) - create and manage tests - for more details: rtt1 <subcommand> -h
+        "Regression Test Tool (first draft) - create and manage tests - for more details: rtt1 &lt;subcommand&gt; -h
 
 USAGE:
     rtt1 [FLAGS] <SUBCOMMAND>
