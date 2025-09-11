@@ -18,25 +18,24 @@ fn integration_test_rtt1_help() {
     assert_eq!(0, status_code);
     assert_eq!("", String::from_utf8_lossy(&output.stderr));
     assert_eq!(
-        "Regression Test Tool (first draft) - create and manage tests - for more details: rtt1 &lt;subcommand&gt; -h
+        "Argument processing configuration
 
-USAGE:
-    rtt1 [FLAGS] <SUBCOMMAND>
+Usage: rtt1 [OPTIONS] <COMMAND>
 
-FLAGS:
-    -d, --debug      Prints debugging info.  -d must preceed subcommands
-    -h, --help       Prints help information
-    -l, --logging    Logs to a log file.  -l must preceed subcommands
-    -V, --version    Prints version information
+Commands:
+  create  Creates a new test of a specified command (alias c)
+  remove  Removes previously created test and run results if any.  Discards test and results!
+  report  Reports counts/summary of specified test(s) (alias p)
+  run     Runs a test (or tests) based on a test name pattern (alias r)
+  status  Starts a server to monitor long running tests and/or show results (alias s)
+  help    Print this message or the help of the given subcommand(s)
 
-SUBCOMMANDS:
-    create    Creates a new test of a specified command (alias c)
-    help      Prints this message or the help of the given subcommand(s)
-    remove    Removes previously created test and run results if any.  Discards test and results!
-    report    Reports counts/summary of specified test(s) (alias p)
-    run       Runs a test (or tests) based on a test name pattern (alias r)
-    status    Starts a server to monitor long running tests and/or show results (alias s)
+Options:
+  -d, --debug    Prints debugging info.  -d must preceed subcommands
+  -l, --logging  Logs to a log file.  -l must preceed subcommands
+  -h, --help     Print help
+  -V, --version  Print version
 ",
-        String::from_utf8_lossy(&output.stdout).to_string().lines().skip(1).map(|s|format!("{}\n", s)).collect::<String>()
+        String::from_utf8_lossy(&output.stdout).to_string()
     );
 }
