@@ -1,6 +1,6 @@
 use tinytemplate::TinyTemplate;
 
-use crate::status::server_axum as server;
+use crate::status::server as server;
 use crate::templates::views;
 
 /// Status Counts Data
@@ -29,7 +29,7 @@ pub struct StatusFlags {
 
 /// Status view template data
 #[derive(Serialize)]
-pub struct StatusViewContext {
+pub struct StatusViewContext<'a> {
     fail_symbol: String,
     pass_symbol: String,
     server_started: String,
@@ -37,11 +37,11 @@ pub struct StatusViewContext {
     status_counts: StatusCounts,
     status_flags: StatusFlags,
     test_pattern: String,
-    test_runs: Vec<server::TestDetails>,
+    test_runs: &'a [server::TestDetails],
     warn_symbol: String,
 }
 
-impl StatusViewContext {
+impl<'a> StatusViewContext<'a> {
     /// build Status view template data
     pub fn new(
         server_started: String,
@@ -49,7 +49,7 @@ impl StatusViewContext {
         status_counts: StatusCounts,
         status_flags: StatusFlags,
         test_pattern: String,
-        test_runs: Vec<server::TestDetails>,
+        test_runs: &'a [server::TestDetails],
     ) -> Self {
         StatusViewContext {
             fail_symbol: "-".to_string(),
@@ -72,6 +72,6 @@ pub fn render(
     log::info!("status/render");
     let mut tt = TinyTemplate::new();
     tt.add_template("status_view_template", views::STATUS_VIEW_TEMPLATE)?;
-    let rendered = tt.render("status_view_template", &status_view_context)?;
+    let rendered = tt.render("status_view_template", &status_view_.context)?;
     Ok(rendered)
 }

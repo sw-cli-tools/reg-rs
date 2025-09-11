@@ -76,7 +76,7 @@ pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Er
 
     set_test_runs(app_state.clone())?;
 
-    let _handles = monitor::launch_monitor(pattern);
+    let _handles = monitor::launch_monitor(app_state.clone());
     let addr = SocketAddr::from(([127, 0, 0, 1], status_port));
 
     println!("Listening at {}.  Ctrl-C to terminate server", addr);
@@ -88,7 +88,7 @@ pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Er
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
-        .unwrap();
+        .expect("Failed to start server");
 
     Ok(())
 }
@@ -96,7 +96,7 @@ pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Er
 /// Serve the status view
 async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
     log::info!("server/serve_status_view");
-    let mut state_data = state.state_data.lock().unwrap();
+    let state_data = state.state_data.lock().expect("Failed to lock state data");
 
     // Update the state before rendering
     if let Err(e) = set_test_runs(state.clone()) {
@@ -108,42 +108,20 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
     let mut not_yet_run_test_names = vec![];
     let mut passed_test_names = vec![];
 
-    let mut copied_runs = vec![];
-    for run in &state_data.runs {
-        copied_runs.push(TestDetails {
-            created: run.created.clone(),
-            diffs: run.diffs.clone(),
-            last_ran: run.last_ran.clone(),
-            name: run.name.clone(),
-        });
-        if run.last_ran.is_none() {
-            not_yet_run_test_names.push(run.name.clone());
-        } else if run.diffs.is_none() {
-            passed_test_names.push(run.name.clone());
-        } else {
-            failed_test_names.push(run.name.clone());
-        }
-    }
-    let status_counts = status::StatusCounts {
-        fail_count: format!(" {:05}", failed_test_names.len()),
-        not_run_count: format!(" {:05}", not_yet_run_test_names.len()),
-        pass_count: format!(" {:05}", passed_test_names.len()),
-        test_count: format!(" {:05}", state_data.runs.len()),
-    };
-    let status_flags = status::StatusFlags {
-        no_failed_tests: failed_test_names.is_empty(),
-        no_not_yet_run_tests: not_yet_run_test_names.is_empty(),
-        no_passed_tests: passed_test_names.is_empty(),
-    };
-    let status_view = status::render(&status::StatusViewContext::new(
+    let status_view = match status::render(&status::StatusViewContext::new(
         state_data.server_started.clone(),
         state_data.state_updated.clone(),
         status_counts,
         status_flags,
         state_data.pattern.to_string(),
-        copied_runs,
-    ))
-    .unwrap();
+        &state_data.runs,
+    )) {
+        Ok(view) => view,
+        Err(e) => {
+            log::error!("Failed to render status view: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Html("<h1>Error</h1>".to_string()));
+        }
+    };
     let response_str = format!("<div>{}</div>", status_view);
     (StatusCode::OK, Html(response_str))
 }

@@ -4,25 +4,24 @@ use std::time::Duration;
 
 use notify::{watcher, RecursiveMode, Watcher};
 
-use crate::status::server;
+use crate::status::server::{self, AppState};
 use crate::time;
 
 /// launch monitor thread
-pub fn launch_monitor(pattern: String) -> Vec<std::thread::JoinHandle<()>> {
-    log::info!("monitor/launch_monitor pattern: {}", &pattern);
-    let state_data = &server::STATE_DATA.lock().unwrap();
-    md!(&state_data);
+pub fn launch_monitor(app_state: AppState) -> Vec<std::thread::JoinHandle<()>> {
+    log::info!("monitor/launch_monitor");
     let mut handles = vec![];
     handles.push({
         thread::spawn(move || {
-            watch(&pattern);
+            watch(app_state);
         })
     });
     handles
 }
 
 /// watch for test results
-fn watch(pattern: &str) -> ! {
+fn watch(app_state: AppState) -> ! {
+    let pattern = app_state.state_data.lock().unwrap().pattern.clone();
     log::info!("monitor/watch pattern: {}", &pattern);
     let (tx, rx) = channel();
     let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
@@ -42,7 +41,7 @@ fn watch(pattern: &str) -> ! {
             Err(e) => println!("watch error: {:?}", e),
         }
         {
-            let mut state_data = server::STATE_DATA.lock().unwrap();
+            let mut state_data = app_state.state_data.lock().unwrap();
             state_data.state_updated = time::now();
             log::info!(
                 "monitor/watch state_data.state_updated: {}",
@@ -51,7 +50,7 @@ fn watch(pattern: &str) -> ! {
 
             md!(&state_data.state_updated);
         }
-        server::set_test_runs(pattern.to_string()).unwrap();
+        server::set_test_runs(app_state.clone()).unwrap();
         md!(format!("loop {}", index));
     }
 }

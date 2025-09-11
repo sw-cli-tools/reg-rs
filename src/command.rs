@@ -12,17 +12,7 @@ pub fn create_original(
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/create_original");
     md!(&config);
-    let (test, command) = config.extract_test_and_command().unwrap();
-    if let Some(test_result) = runner::run_one(&test, &command, false)? {
-        let db_name = test;
-        db::reset_differences(&db_name)?;
-        db::reset_latest_results(&db_name)?;
-        db::store_results(
-            &db_name,
-            &test_result,
-            queries::StatementContext::original(),
-        )?;
-    }
+    if let Some((test, command)) = config.extract_test_and_command() {
     Ok(())
 }
 
