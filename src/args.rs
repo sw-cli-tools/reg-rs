@@ -1,80 +1,81 @@
 use std::env;
 
-use structopt::StructOpt;
+use clap::Parser;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 /// Argument processing configuration
-#[derive(Debug, PartialEq, StructOpt)]
-#[structopt(
+#[derive(Debug, PartialEq, Parser)]
+#[clap(
     name = "rtt1",
-version = generated_version())]
+    version = generated_version()
+)]
 pub struct Args {
-    #[structopt(long, short)]
+    #[clap(long, short)]
     /// Prints debugging info.  -d must preceed subcommands
     pub debug: bool,
-    #[structopt(long, short)]
+    #[clap(long, short)]
     /// Logs to a log file.  -l must preceed subcommands
     pub logging: bool,
     /// Subcommands
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub command: Subcommands,
 }
 
 /// Regression Test Tool (first draft) - create and manage tests
-/// - for more details: rtt1 &lt;subcommand&gt; -h
-#[derive(Debug, PartialEq, StructOpt)]
+/// - for more details: rtt1 <subcommand> -h
+#[derive(Debug, PartialEq, Parser)]
 pub enum Subcommands {
     /// Creates a new test of a specified command (alias c)
-    #[structopt(name = "create", alias = "c")]
+    #[clap(name = "create", alias = "c")]
     Create {
-        #[structopt(long, short)]
+        #[clap(long, short)]
         /// Names the test (a database file to be created)
         test: String,
-        #[structopt(long, short)]
+        #[clap(long, short)]
         /// Specifies a command to be executed
         command: String,
     },
     /// Removes previously created test and run results if any.  Discards test and results!
     Remove {
-        #[structopt(long, short)]
+        #[clap(long, short)]
         /// Removes tests and results matching this naming pattern.  
         pattern: String,
     },
     /// Reports counts/summary of specified test(s) (alias p)
-    #[structopt(name = "report", alias = "p")]
+    #[clap(name = "report", alias = "p")]
     Report {
-        #[structopt(long, short)]
+        #[clap(long, short)]
         /// name pattern to report on.  Can match zero, one, or more tests.
         pattern: String,
         /// Verbosity: -v adds names. -vv adds failure info. -vvv adds differences info.
-        #[structopt(short, parse(from_occurrences))]
+        #[clap(short, action = clap::ArgAction::Count)]
         verbosity: u8,
     },
     /// Runs a test (or tests) based on a test name pattern (alias r)
-    #[structopt(name = "run", alias = "r")]
+    #[clap(name = "run", alias = "r")]
     Run {
-        #[structopt(long, short)]
+        #[clap(long, short)]
         /// Discovers tests matching this naming pattern
         pattern: String,
         /// Prints steps instead of executing them
-        #[structopt(long, short = "n")]
+        #[clap(long, short = 'n')]
         dry_run: bool,
     },
     /// Starts a server to monitor long running tests and/or show results (alias s)
-    #[structopt(name = "status", alias = "s")]
+    #[clap(name = "status", alias = "s")]
     Status {
-        #[structopt(long, short)]
+        #[clap(long, short)]
         /// Monitors tests matching this naming pattern
         pattern: String,
-        #[structopt(default_value = "4111", long, short)]
+        #[clap(default_value = "4111", long, short)]
         /// optional port number
         localhost_port: u16,
     },
 }
 /// Parse arguments
 pub fn parse_args() -> Args {
-    Args::from_args()
+    Args::parse()
 }
 #[cfg(test)]
 mod tests {
@@ -91,7 +92,7 @@ mod tests {
                 debug: false,
                 logging: false,
             },
-            Args::from_iter(&["test", "create", "-t", "pat001", "-c", "pwd"])
+            Args::try_parse_from(&["test", "create", "-t", "pat001", "-c", "pwd"]).unwrap()
         );
     }
 
@@ -106,7 +107,7 @@ mod tests {
                 debug: true,
                 logging: false,
             },
-            Args::from_iter(&["test", "-d", "create", "-t", "pat001", "-c", "pwd"])
+            Args::try_parse_from(&["test", "-d", "create", "-t", "pat001", "-c", "pwd"]).unwrap()
         );
     }
 
@@ -120,7 +121,7 @@ mod tests {
                 debug: false,
                 logging: false,
             },
-            Args::from_iter(&["test", "remove", "-p", "pat001"])
+            Args::try_parse_from(&["test", "remove", "-p", "pat001"]).unwrap()
         );
     }
 
@@ -134,7 +135,7 @@ mod tests {
                 debug: true,
                 logging: false,
             },
-            Args::from_iter(&["test", "-d", "remove", "-p", "pat001"])
+            Args::try_parse_from(&["test", "-d", "remove", "-p", "pat001"]).unwrap()
         );
     }
 
@@ -149,7 +150,7 @@ mod tests {
                 debug: false,
                 logging: false,
             },
-            Args::from_iter(&["test", "report", "-p", "pat001"])
+            Args::try_parse_from(&["test", "report", "-p", "pat001"]).unwrap()
         );
     }
 
@@ -164,7 +165,7 @@ mod tests {
                 debug: true,
                 logging: false,
             },
-            Args::from_iter(&["test", "-d", "report", "-p", "pat001", "-vvv"])
+            Args::try_parse_from(&["test", "-d", "report", "-p", "pat001", "-vvv"]).unwrap()
         );
     }
 
@@ -179,7 +180,7 @@ mod tests {
                 debug: false,
                 logging: false,
             },
-            Args::from_iter(&["test", "run", "-p", "pat001"])
+            Args::try_parse_from(&["test", "run", "-p", "pat001"]).unwrap()
         );
     }
 
@@ -194,7 +195,7 @@ mod tests {
                 debug: true,
                 logging: false,
             },
-            Args::from_iter(&["test", "-d", "run", "-p", "pat001", "-n"])
+            Args::try_parse_from(&["test", "-d", "run", "-p", "pat001", "-n"]).unwrap()
         );
     }
 }
