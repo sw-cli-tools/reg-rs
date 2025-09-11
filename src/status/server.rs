@@ -1,7 +1,13 @@
-use std::net;
-use std::sync::Mutex;
-
-use gotham::state::State;
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{Html, IntoResponse},
+    routing::get,
+    Router,
+};
+use serde::Serialize;
+use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
 
 use crate::config;
 use crate::db;
@@ -10,14 +16,17 @@ use crate::status::monitor;
 use crate::status::views::status;
 use crate::time;
 
-lazy_static! {
-    /// initialize static Shared State Data
-    pub static ref STATE_DATA: Mutex<StateData> = Mutex::new(StateData {
-        pattern: "".to_string(),
-        runs: vec![],
-        server_started: time::now(),
-        state_updated: "".to_string(),
-    });
+/// Shared application state
+#[derive(Clone)]
+pub struct AppState {
+    pub state_data: Arc<Mutex<StateData>>,
+}
+
+impl AppState {
+    fn new(pattern: String) -> Self {
+        let state_data = Arc::new(Mutex::new(StateData::new(pattern.clone())));
+        Self { state_data }
+    }
 }
 
 /// Shared State Data
@@ -32,8 +41,19 @@ pub struct StateData {
     pub state_updated: String,
 }
 
+impl StateData {
+    fn new(pattern: String) -> Self {
+        Self {
+            pattern,
+            runs: vec![],
+            server_started: time::now(),
+            state_updated: "".to_string(),
+        }
+    }
+}
+
 /// Test details
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct TestDetails {
     /// When test was first run
     pub created: String,
@@ -46,27 +66,44 @@ pub struct TestDetails {
 }
 
 /// start status server
-pub fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("server/start");
     let status_port = config.status_port();
     let pattern = config.extract_pattern().to_string();
-    set_test_runs(pattern.to_string())?;
-    let handles = monitor::launch_monitor(pattern);
-    let addr = format!("{}:{}", net::Ipv4Addr::LOCALHOST, status_port);
+
+    let app_state = AppState::new(pattern.clone());
+
+    set_test_runs(app_state.clone())?;
+
+    let _handles = monitor::launch_monitor(pattern);
+    let addr = SocketAddr::from(([127, 0, 0, 1], status_port));
 
     println!("Listening at {}.  Ctrl-C to terminate server", addr);
-    let _ = gotham::start(addr, || Ok(serve_status_view)); // loops until Ctrl-C kills process
-    for handle in handles {
-        handle.join().unwrap();
-    }
+
+    let app = Router::new()
+        .route("/", get(serve_status_view))
+        .with_state(app_state);
+
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+
     Ok(())
 }
 
 /// Serve the status view
-fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
+async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
     log::info!("server/serve_status_view");
-    let state_data = &STATE_DATA.lock().unwrap();
-    md!(&state_data.state_updated);
+    let mut state_data = state.state_data.lock().unwrap();
+
+    // Update the state before rendering
+    if let Err(e) = set_test_runs(state.clone()) {
+        log::error!("Failed to update test runs: {}", e);
+        return (StatusCode::INTERNAL_SERVER_ERROR, Html("<h1>Error</h1>".to_string()));
+    }
+
     let mut failed_test_names = vec![];
     let mut not_yet_run_test_names = vec![];
     let mut passed_test_names = vec![];
@@ -108,14 +145,15 @@ fn serve_status_view(state: State) -> (State, (mime::Mime, String)) {
     ))
     .unwrap();
     let response_str = format!("<div>{}</div>", status_view);
-    (state, (mime::TEXT_HTML, response_str))
+    (StatusCode::OK, Html(response_str))
 }
 
 /// update shared state with test run data
-pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> {
-    log::info!("server/set_test_runs pattern: {}", &pattern);
+pub fn set_test_runs(app_state: AppState) -> Result<(), Box<dyn std::error::Error>> {
+    let mut state_data = app_state.state_data.lock().unwrap();
+    log::info!("server/set_test_runs pattern: {}", &state_data.pattern);
     let mut test_runs = vec![];
-    let test_names = finder::discover(pattern.to_string())?;
+    let test_names = finder::discover(state_data.pattern.to_string())?;
     for test_name in &test_names.found {
         let original_result = db::read_original_results(test_name)?;
         let latest_results_row_count = db::count_latest_results(test_name)?;
@@ -146,8 +184,6 @@ pub fn set_test_runs(pattern: String) -> Result<(), Box<dyn std::error::Error>> 
             }
         }
     }
-    let mut state_data = STATE_DATA.lock().unwrap();
-    state_data.pattern = pattern;
     state_data.runs = test_runs;
     state_data.state_updated = time::now();
     Ok(())

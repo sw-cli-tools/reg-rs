@@ -4,14 +4,6 @@ version = "0.1.0"
 authors = ["Mike Wright <wrightmikea@gmail.com>"]
 edition = "2021"
 
-[[bin]]
-name = "rtt1"
-path = "src/main.rs"
-
-[[bin]]
-name = "axum-server"
-path = "src/status/server_axum.rs"
-
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -24,7 +16,7 @@ colored = "2.1.0"
 env_logger = "0.10.1"
 fern = { version = "0.6.2", features = ["date-based"] }
 file-lock = "1.1.20"
-gotham = "0.7.4"
+
 hyper = "0.14.28"
 lazy_static = "1.4.0"
 log = "0.4.20"

@@ -58,11 +58,11 @@ pub fn report_latest(
 }
 
 /// start status client and server
-pub fn status_server(
+pub async fn status_server(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/status_server");
     status::start_client(config)?;
-    status::start_server(config)?; // loops
+    status::start_server(config).await?; // loops
     Ok(())
 }

@@ -1,6 +1,6 @@
 use tinytemplate::TinyTemplate;
 
-use crate::status::server;
+use crate::status::server_axum as server;
 use crate::templates::views;
 
 /// Status Counts Data
