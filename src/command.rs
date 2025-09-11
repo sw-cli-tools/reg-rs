@@ -7,12 +7,24 @@ use crate::runner;
 use crate::status;
 
 /// Create a test result
+#[allow(clippy::collapsible_if)]
 pub fn create_original(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/create_original");
     md!(&config);
     if let Some((test, command)) = config.extract_test_and_command() {
+        if let Some(test_result) = runner::run_one(&test, &command, false)? {
+            let db_name = test;
+            db::reset_differences(&db_name)?;
+            db::reset_latest_results(&db_name)?;
+            db::store_results(
+                &db_name,
+                &test_result,
+                queries::StatementContext::original(),
+            )?;
+        }
+    }
     Ok(())
 }
 

@@ -20,6 +20,6 @@ pub fn start_client(config: &config::Config) -> Result<(), Box<dyn std::error::E
 /// start server
 pub async fn start_server(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("status/start_server");
-    server::start(config).await?;
+    server::start(config)?;
     Ok(())
 }

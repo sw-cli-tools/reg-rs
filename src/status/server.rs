@@ -5,7 +5,7 @@ use axum::{
     routing::get,
     Router,
 };
-use serde::Serialize;
+
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
@@ -19,6 +19,7 @@ use crate::time;
 /// Shared application state
 #[derive(Clone)]
 pub struct AppState {
+    /// Shared state data
     pub state_data: Arc<Mutex<StateData>>,
 }
 
@@ -85,8 +86,8 @@ pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Er
         .route("/", get(serve_status_view))
         .with_state(app_state);
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app.into_make_service())
         .await
         .expect("Failed to start server");
 
@@ -104,9 +105,31 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
         return (StatusCode::INTERNAL_SERVER_ERROR, Html("<h1>Error</h1>".to_string()));
     }
 
-    let mut failed_test_names = vec![];
-    let mut not_yet_run_test_names = vec![];
-    let mut passed_test_names = vec![];
+    let mut failed_test_names: Vec<String> = vec![];
+    let mut not_yet_run_test_names: Vec<String> = vec![];
+    let mut passed_test_names: Vec<String> = vec![];
+
+    for run in &state_data.runs {
+        if run.last_ran.is_none() {
+            not_yet_run_test_names.push(run.name.clone());
+        } else if run.diffs.is_none() {
+            passed_test_names.push(run.name.clone());
+        } else {
+            failed_test_names.push(run.name.clone());
+        }
+    }
+
+    let status_counts = status::StatusCounts {
+        fail_count: format!(" {:05}", failed_test_names.len()),
+        not_run_count: format!(" {:05}", not_yet_run_test_names.len()),
+        pass_count: format!(" {:05}", passed_test_names.len()),
+        test_count: format!(" {:05}", state_data.runs.len()),
+    };
+    let status_flags = status::StatusFlags {
+        no_failed_tests: failed_test_names.is_empty(),
+        no_not_yet_run_tests: not_yet_run_test_names.is_empty(),
+        no_passed_tests: passed_test_names.is_empty(),
+    };
 
     let status_view = match status::render(&status::StatusViewContext::new(
         state_data.server_started.clone(),

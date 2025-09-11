@@ -72,6 +72,6 @@ pub fn render(
     log::info!("status/render");
     let mut tt = TinyTemplate::new();
     tt.add_template("status_view_template", views::STATUS_VIEW_TEMPLATE)?;
-    let rendered = tt.render("status_view_template", &status_view_.context)?;
+    let rendered = tt.render("status_view_template", status_view_context)?;
     Ok(rendered)
 }
