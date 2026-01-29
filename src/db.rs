@@ -28,12 +28,11 @@ pub(crate) fn store_results(
     sqlite::write_results(
         db_name,
         test_results,
-        &queries::get_statement(
-            &statement_context,
-            statements::INSERT_TEST_RESULTS_TEMPLATE,
-        ),
+        &queries::get_statement(&statement_context, statements::INSERT_TEST_RESULTS_TEMPLATE),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(())
 }
 
@@ -52,15 +51,16 @@ pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
             statements::SELECT_TEST_RESULTS_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(results)
 }
 
-/// reset latest test results
-pub fn reset_latest_results(db_name: &str) -> Result<()> {
-    log::info!("db/reset_latest_results {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
-        .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
+/// Internal helper to reset latest test results without acquiring lock
+/// Caller must hold the lock
+fn reset_latest_results_internal(db_name: &str) -> Result<()> {
+    log::info!("db/reset_latest_results_internal {}", &db_name);
     sqlite::drop_table(
         db_name,
         &queries::get_statement(
@@ -75,7 +75,18 @@ pub fn reset_latest_results(db_name: &str) -> Result<()> {
             statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    Ok(())
+}
+
+/// reset latest test results
+pub fn reset_latest_results(db_name: &str) -> Result<()> {
+    log::info!("db/reset_latest_results {}", &db_name);
+    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+        .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
+    reset_latest_results_internal(db_name)?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(())
 }
 
@@ -91,8 +102,11 @@ pub fn drop_all_results(db_name: &str) -> Result<()> {
             statements::DROP_TABLE_TEMPLATE,
         ),
     )?;
-    reset_latest_results(db_name)?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    // Use internal function to avoid deadlock - we already hold the lock
+    reset_latest_results_internal(db_name)?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(())
 }
 
@@ -115,7 +129,9 @@ pub fn reset_differences(db_name: &str) -> Result<()> {
             statements::CREATE_DIFFERENCES_TABLE_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(())
 }
 
@@ -130,7 +146,9 @@ pub fn store_difference(
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     let difference_type = (difference_type as usize).to_string();
     sqlite::write_difference(db_name, &difference_type, difference_chunk)?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(())
 }
 
@@ -146,7 +164,9 @@ pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
             statements::SELECT_TEST_RESULTS_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(results)
 }
 
@@ -162,7 +182,9 @@ pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
             statements::SELECT_DIFFERENCES_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(result)
 }
 
@@ -178,7 +200,9 @@ pub fn count_differences(db_name: &str) -> Result<u32> {
             statements::COUNT_TABLE_ROWS_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(result)
 }
 
@@ -194,7 +218,9 @@ pub fn count_latest_results(db_name: &str) -> Result<u32> {
             statements::COUNT_TABLE_ROWS_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(result)
 }
 
@@ -210,7 +236,9 @@ pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u3
             statements::COUNT_DIFF_TYPE_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(results)
 }
 
@@ -220,13 +248,15 @@ pub fn clear_differences(db_name: &str) -> Result<()> {
     let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     sqlite::delete_all_rows(
-        db_name, 
+        db_name,
         &queries::get_statement(
             &queries::StatementContext::differences(),
             statements::DELETE_ALL_ROWS_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(())
 }
 
@@ -242,6 +272,8 @@ pub fn clear_latest_results(db_name: &str) -> Result<()> {
             statements::DELETE_ALL_ROWS_TEMPLATE,
         ),
     )?;
-    filelock.unlock().map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    filelock
+        .unlock()
+        .map_err(|e| RttError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
     Ok(())
 }

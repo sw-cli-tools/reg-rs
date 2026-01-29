@@ -1,12 +1,13 @@
 use axum::{
+    Router,
     extract::State,
     http::StatusCode,
     response::{Html, IntoResponse},
     routing::get,
-    Router,
 };
 
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use crate::config;
@@ -40,15 +41,21 @@ pub struct StateData {
     server_started: String,
     /// updated time
     pub state_updated: String,
+    /// Data directory to watch for changes
+    pub data_dir: PathBuf,
 }
 
 impl StateData {
     fn new(pattern: String) -> Self {
+        let data_dir = std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join("data");
         Self {
             pattern,
             runs: vec![],
             server_started: time::now(),
             state_updated: "".to_string(),
+            data_dir,
         }
     }
 }
@@ -86,10 +93,8 @@ pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Er
         .route("/", get(serve_status_view))
         .with_state(app_state);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app.into_make_service())
-        .await
-        .expect("Failed to start server");
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, app.into_make_service()).await?;
 
     Ok(())
 }
@@ -102,7 +107,10 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
     // Update the state before rendering
     if let Err(e) = set_test_runs(state.clone()) {
         log::error!("Failed to update test runs: {}", e);
-        return (StatusCode::INTERNAL_SERVER_ERROR, Html("<h1>Error</h1>".to_string()));
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("<h1>Error</h1>".to_string()),
+        );
     }
 
     let mut failed_test_names: Vec<String> = vec![];
@@ -142,7 +150,10 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
         Ok(view) => view,
         Err(e) => {
             log::error!("Failed to render status view: {}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, Html("<h1>Error</h1>".to_string()));
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html("<h1>Error</h1>".to_string()),
+            );
         }
     };
     let response_str = format!("<div>{}</div>", status_view);
