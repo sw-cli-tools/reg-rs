@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::config;
 use crate::db;
+use crate::error::RttError;
 use crate::finder;
 use crate::status::monitor;
 use crate::status::views::status;
@@ -102,7 +103,16 @@ pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Er
 /// Serve the status view
 async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
     log::info!("server/serve_status_view");
-    let state_data = state.state_data.lock().expect("Failed to lock state data");
+    let state_data = match state.state_data.lock() {
+        Ok(guard) => guard,
+        Err(e) => {
+            log::error!("Failed to lock state data: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html("<h1>Error: mutex poisoned</h1>".to_string()),
+            );
+        }
+    };
 
     // Update the state before rendering
     if let Err(e) = set_test_runs(state.clone()) {
@@ -162,7 +172,10 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
 
 /// update shared state with test run data
 pub fn set_test_runs(app_state: AppState) -> Result<(), Box<dyn std::error::Error>> {
-    let mut state_data = app_state.state_data.lock().unwrap();
+    let mut state_data = app_state
+        .state_data
+        .lock()
+        .map_err(|e| RttError::MutexPoisoned(format!("state_data lock failed: {}", e)))?;
     log::info!("server/set_test_runs pattern: {}", &state_data.pattern);
     let mut test_runs = vec![];
     let test_names = finder::discover(state_data.pattern.to_string())?;

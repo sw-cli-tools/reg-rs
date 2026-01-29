@@ -1,13 +1,17 @@
 use std::process::Command;
 
+use crate::error::RttError;
+
 /// run a test capturing outputs and exit code
 pub fn exec(command: String) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
     log::info!("process/exec command: {}", &command);
     let output = Command::new("sh")
         .arg("-c")
-        .arg(command)
+        .arg(&command)
         .output()
-        .expect("failed to execute process");
+        .map_err(|e| {
+            RttError::CommandExecution(format!("failed to execute '{}': {}", command, e))
+        })?;
     let status_code = output.status.code().unwrap_or(-1);
 
     println!("status: {:#?} status_code:{}", output.status, status_code);

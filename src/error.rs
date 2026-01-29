@@ -1,6 +1,6 @@
 use std::io;
-use std::result;
 use std::path::PathBuf;
+use std::result;
 use thiserror::Error;
 
 /// Custom error type for RTT1
@@ -50,6 +50,10 @@ pub enum RttError {
     /// Configuration error
     #[error("Configuration error: {0}")]
     Config(String),
+
+    /// Mutex poisoned error
+    #[error("Mutex poisoned: {0}")]
+    MutexPoisoned(String),
 
     /// Other general errors
     #[error("{0}")]
