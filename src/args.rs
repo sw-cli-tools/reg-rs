@@ -8,7 +8,19 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 #[derive(Debug, PartialEq, Parser)]
 #[clap(
     name = "rtt1",
-    version = generated_version()
+    version = generated_version(),
+    long_about = "RTT1 (Regression Test Tool) - A CLI for regression testing
+
+RTT1 captures command output and exit codes as baseline 'golden' results,
+then compares subsequent runs against these baselines to detect regressions.
+
+WORKFLOW:
+  1. Create a test:   rtt1 create -t my_test.db -c 'my_command'
+  2. Run the test:    rtt1 run -p my_test.db
+  3. View results:    rtt1 report -p my_test.db -v
+
+For more information on a specific command, run:
+  rtt1 <command> --help"
 )]
 pub struct Args {
     #[clap(long, short)]
@@ -22,54 +34,115 @@ pub struct Args {
     pub command: Subcommands,
 }
 
-/// Regression Test Tool (first draft) - create and manage tests
-/// - for more details: rtt1 <subcommand> -h
+/// Subcommands for rtt1
 #[derive(Debug, PartialEq, Parser)]
 pub enum Subcommands {
     /// Creates a new test of a specified command (alias c)
-    #[clap(name = "create", alias = "c")]
+    #[clap(
+        name = "create",
+        alias = "c",
+        long_about = "Creates a new test by executing a command and storing its output.
+
+The command's stdout, stderr, and exit code are captured and stored in a
+SQLite database file. This becomes the baseline for future regression tests.
+
+EXAMPLES:
+  rtt1 create -t data/pwd_test.db -c 'pwd'
+  rtt1 create -t data/version.db -c 'git --version'
+  rtt1 c -t tests/ls.db -c 'ls -la'  # using alias"
+    )]
     Create {
+        /// Path to the test database file to create (e.g., data/my_test.db)
         #[clap(long, short)]
-        /// Names the test (a database file to be created)
         test: String,
+        /// Shell command to execute and capture (e.g., 'echo hello')
         #[clap(long, short)]
-        /// Specifies a command to be executed
         command: String,
     },
     /// Removes previously created test and run results if any.  Discards test and results!
+    #[clap(
+        long_about = "Removes test database files matching the specified pattern.
+
+WARNING: This permanently deletes the test and all stored results!
+
+EXAMPLES:
+  rtt1 remove -p data/old_test.db
+  rtt1 remove -p 'data/temp_*.db'"
+    )]
     Remove {
+        /// Glob pattern to match test files to remove (e.g., 'data/*.db')
         #[clap(long, short)]
-        /// Removes tests and results matching this naming pattern.  
         pattern: String,
     },
     /// Reports counts/summary of specified test(s) (alias p)
-    #[clap(name = "report", alias = "p")]
+    #[clap(
+        name = "report",
+        alias = "p",
+        long_about = "Reports on test results with configurable verbosity.
+
+VERBOSITY LEVELS:
+  (none)  - Show only summary counts
+  -v      - Also show test names
+  -vv     - Also show failure information
+  -vvv    - Also show detailed differences
+
+EXAMPLES:
+  rtt1 report -p data/my_test.db         # basic summary
+  rtt1 report -p 'data/*.db' -v          # show names
+  rtt1 p -p data/my_test.db -vvv         # full details (using alias)"
+    )]
     Report {
+        /// Glob pattern to match test files (e.g., 'data/*.db')
         #[clap(long, short)]
-        /// name pattern to report on.  Can match zero, one, or more tests.
         pattern: String,
-        /// Verbosity: -v adds names. -vv adds failure info. -vvv adds differences info.
+        /// Verbosity: -v adds names, -vv adds failures, -vvv adds differences
         #[clap(short, action = clap::ArgAction::Count)]
         verbosity: u8,
     },
     /// Runs a test (or tests) based on a test name pattern (alias r)
-    #[clap(name = "run", alias = "r")]
+    #[clap(
+        name = "run",
+        alias = "r",
+        long_about = "Runs previously created tests and compares results against baselines.
+
+Each matching test's command is re-executed, and the new output is compared
+against the stored baseline. Any differences are recorded as potential regressions.
+
+EXAMPLES:
+  rtt1 run -p data/my_test.db           # run a specific test
+  rtt1 run -p 'data/*.db'               # run all matching tests
+  rtt1 r -p data/my_test.db -n          # dry-run (show what would run)"
+    )]
     Run {
+        /// Glob pattern to match test files to run (e.g., 'data/*.db')
         #[clap(long, short)]
-        /// Discovers tests matching this naming pattern
         pattern: String,
-        /// Prints steps instead of executing them
+        /// Show what would be run without actually executing
         #[clap(long, short = 'n')]
         dry_run: bool,
     },
     /// Starts a server to monitor long running tests and/or show results (alias s)
-    #[clap(name = "status", alias = "s")]
+    #[clap(
+        name = "status",
+        alias = "s",
+        long_about = "Starts a web server to monitor test results in real-time.
+
+The status page shows test counts, pass/fail status, and detailed differences.
+The page auto-updates when test files change.
+
+Open http://localhost:<port> in a browser to view the status page.
+
+EXAMPLES:
+  rtt1 status -p 'data/*.db'            # start on default port 4111
+  rtt1 status -p 'data/*.db' -l 8080    # use custom port
+  rtt1 s -p 'data/*.db'                 # using alias"
+    )]
     Status {
+        /// Glob pattern to match test files to monitor (e.g., 'data/*.db')
         #[clap(long, short)]
-        /// Monitors tests matching this naming pattern
         pattern: String,
+        /// Port number for the web server (default: 4111)
         #[clap(default_value = "4111", long, short)]
-        /// optional port number
         localhost_port: u16,
     },
 }
