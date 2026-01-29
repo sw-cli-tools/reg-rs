@@ -33,12 +33,14 @@ pub mod builder;
 pub mod command;
 /// Command Configuration
 pub mod config;
-/// Test Results Database 
+/// Test Results Database
 pub mod db;
 /// Test Differences
 pub mod diff;
 /// Error types and utilities
 pub mod error;
+/// Command executor trait for dependency injection
+pub mod executor;
 /// Test Finder
 pub mod finder;
 /// Logging
