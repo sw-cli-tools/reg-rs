@@ -10,13 +10,19 @@ use crate::templates::statements;
 const BLOCKING: bool = true;
 const WRITING: bool = true;
 
+/// Get the path to the lock file for a given database file.
+/// Uses a separate .lock file to avoid conflicts with SQLite's file locking.
+fn lock_file_path(db_name: &str) -> String {
+    format!("{}.lock", db_name)
+}
+
 pub(crate) fn store_results(
     db_name: &str,
     test_results: &runner::TestResults,
     statement_context: queries::StatementContext,
 ) -> Result<()> {
     log::info!("db/store_results {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     sqlite::create_table(
         db_name,
@@ -39,7 +45,7 @@ pub(crate) fn store_results(
 /// read first time test results
 pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
     log::info!("db/read_original_results {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     md!(&db_name);
     md!(&queries::StatementContext::original());
@@ -81,7 +87,7 @@ fn reset_latest_results_internal(db_name: &str) -> Result<()> {
 /// reset latest test results
 pub fn reset_latest_results(db_name: &str) -> Result<()> {
     log::info!("db/reset_latest_results {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     reset_latest_results_internal(db_name)?;
     filelock
@@ -93,7 +99,7 @@ pub fn reset_latest_results(db_name: &str) -> Result<()> {
 /// drop all test results
 pub fn drop_all_results(db_name: &str) -> Result<()> {
     log::info!("db/drop_all_results {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     sqlite::drop_table(
         db_name,
@@ -113,7 +119,7 @@ pub fn drop_all_results(db_name: &str) -> Result<()> {
 /// reset test result differences
 pub fn reset_differences(db_name: &str) -> Result<()> {
     log::info!("db/reset_differences {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     sqlite::drop_table(
         db_name,
@@ -142,7 +148,7 @@ pub fn store_difference(
     difference_chunk: &str,
 ) -> Result<()> {
     log::info!("db/store_difference {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     let difference_type = (difference_type as usize).to_string();
     sqlite::write_difference(db_name, &difference_type, difference_chunk)?;
@@ -155,7 +161,7 @@ pub fn store_difference(
 /// read latest test results
 pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
     log::info!("db/read_latest_results {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     let results = sqlite::read_results(
         db_name,
@@ -173,7 +179,7 @@ pub fn read_latest_results(db_name: &str) -> Result<runner::TestResults> {
 /// read test result differences
 pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
     log::info!("db/read_differences {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     let result = sqlite::read_differences(
         db_name,
@@ -191,7 +197,7 @@ pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
 /// count test result differences
 pub fn count_differences(db_name: &str) -> Result<u32> {
     log::info!("db/count_differences {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     let result = sqlite::count_rows(
         db_name,
@@ -209,7 +215,7 @@ pub fn count_differences(db_name: &str) -> Result<u32> {
 /// count latest test results
 pub fn count_latest_results(db_name: &str) -> Result<u32> {
     log::info!("db/count_latest_results {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     let result = sqlite::count_rows(
         db_name,
@@ -227,7 +233,7 @@ pub fn count_latest_results(db_name: &str) -> Result<u32> {
 /// count test differences by type
 pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u32> {
     log::info!("db/difference_count_by_type {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     let results = sqlite::count_differences_by_type(
         db_name,
@@ -245,7 +251,7 @@ pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u3
 /// clear test result differences
 pub fn clear_differences(db_name: &str) -> Result<()> {
     log::info!("db/clear_differences {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     sqlite::delete_all_rows(
         db_name,
@@ -263,7 +269,7 @@ pub fn clear_differences(db_name: &str) -> Result<()> {
 /// clear latest test results
 pub fn clear_latest_results(db_name: &str) -> Result<()> {
     log::info!("db/clear_results {}", &db_name);
-    let filelock = FileLock::lock(db_name, BLOCKING, WRITING)
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RttError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
     sqlite::delete_all_rows(
         db_name,

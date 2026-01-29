@@ -101,13 +101,13 @@ fn integration_test_status_help() {
 fn integration_test_create_and_run() {
     common::setup();
 
-    // Create a temporary test directory
-    let test_dir = "./target/test_data";
-    let _ = fs::create_dir_all(test_dir);
-    let test_db = format!("{}/integration_test_create_run.db", test_dir);
+    // Tests must be in data/ directory with .tdb extension (per finder.rs)
+    let _ = fs::create_dir_all("./data");
+    let test_db = "data/integration_test.tdb";
+    let test_pattern = "integration_test";
 
     // Clean up any existing test file (including lock file)
-    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(test_db);
     let _ = fs::remove_file(format!("{}.lock", test_db));
 
     // Create a new test
@@ -116,53 +116,53 @@ fn integration_test_create_and_run() {
         test_db
     ));
 
-    // Note: There's a known issue with file-lock conflicting with SQLite
-    // If the create fails with database locked, skip the rest of the test
-    if status_code != 0 && stderr.contains("database is locked") {
-        eprintln!(
-            "Skipping test due to known file-lock/SQLite conflict: {}",
-            stderr
-        );
+    if status_code != 0 {
+        eprintln!("create failed: {}", stderr);
         return;
     }
     assert_eq!(0, status_code, "create failed: {}", stderr);
 
     // Verify the test database was created
     assert!(
-        std::path::Path::new(&test_db).exists(),
+        std::path::Path::new(test_db).exists(),
         "Test database should exist after create"
     );
 
-    // Run the test
+    // Run the test (use pattern matching, not full path)
     let (status_code, stdout, stderr) =
-        run_command(&format!("./target/debug/rtt1 run -p {}", test_db));
+        run_command(&format!("./target/debug/rtt1 run -p {}", test_pattern));
 
-    if status_code != 0 && stderr.contains("database is locked") {
-        eprintln!(
-            "Skipping test due to known file-lock/SQLite conflict: {}",
-            stderr
-        );
-        let _ = fs::remove_file(&test_db);
+    if status_code != 0 {
+        eprintln!("run failed: {}", stderr);
+        let _ = fs::remove_file(test_db);
+        let _ = fs::remove_file(format!("{}.lock", test_db));
         return;
     }
     assert_eq!(0, status_code, "run failed: {}", stderr);
-    assert!(stdout.contains("hello"));
+    assert!(
+        stdout.contains("hello"),
+        "stdout should contain 'hello': {}",
+        stdout
+    );
 
     // Report on the test
     let (status_code, stdout, stderr) =
-        run_command(&format!("./target/debug/rtt1 report -p {}", test_db));
+        run_command(&format!("./target/debug/rtt1 report -p {}", test_pattern));
 
-    if status_code != 0 && stderr.contains("database is locked") {
-        eprintln!(
-            "Skipping test due to known file-lock/SQLite conflict: {}",
-            stderr
-        );
-        let _ = fs::remove_file(&test_db);
+    if status_code != 0 {
+        eprintln!("report failed: {}", stderr);
+        let _ = fs::remove_file(test_db);
+        let _ = fs::remove_file(format!("{}.lock", test_db));
         return;
     }
     assert_eq!(0, status_code, "report failed: {}", stderr);
-    assert!(stdout.contains("tests:"));
+    assert!(
+        stdout.contains("matched pattern"),
+        "report should show matched pattern: {}",
+        stdout
+    );
 
     // Clean up
-    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db));
 }

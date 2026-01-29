@@ -54,19 +54,24 @@ cargo build --release
 
 ## Quick Start
 
-```bash
-# 1. Create a test that captures the output of a command
-rtt1 create -t data/my_test.db -c "echo hello world"
+**Note:** Tests must be stored in the `data/` directory with a `.tdb` extension.
 
-# 2. Run the test again to check for regressions
-rtt1 run -p data/my_test.db
+```bash
+# Create the data directory
+mkdir -p data
+
+# 1. Create a test that captures the output of a command
+rtt1 create -t data/my_test.tdb -c "echo hello world"
+
+# 2. Run the test again to check for regressions (use pattern matching)
+rtt1 run -p my_test
 
 # 3. View the test results
-rtt1 report -p data/my_test.db -v
+rtt1 report -p my_test -v
 
 # 4. If you modify the expected behavior, remove and recreate the test
-rtt1 remove -p data/my_test.db
-rtt1 create -t data/my_test.db -c "echo hello world"
+rtt1 remove -p my_test
+rtt1 create -t data/my_test.tdb -c "echo hello world"
 ```
 
 ## Commands
@@ -83,9 +88,9 @@ rtt1 create -t <test_name> -c <command>
 #   -c, --command <cmd>    Command to execute and capture
 
 # Examples:
-rtt1 create -t data/pwd_test.db -c "pwd"
-rtt1 create -t data/version_test.db -c "git --version"
-rtt1 c -t data/ls_test.db -c "ls -la"   # 'c' is an alias for 'create'
+rtt1 create -t data/pwd_test.tdb -c "pwd"
+rtt1 create -t data/version_test.tdb -c "git --version"
+rtt1 c -t data/ls_test.tdb -c "ls -la"   # 'c' is an alias for 'create'
 ```
 
 ### run
@@ -100,9 +105,9 @@ rtt1 run -p <pattern>
 #   -n, --dry-run          Print what would be run without executing
 
 # Examples:
-rtt1 run -p data/pwd_test.db           # Run a specific test
-rtt1 run -p "data/*.db"                # Run all tests in data/
-rtt1 r -p data/pwd_test.db -n          # 'r' is alias; dry-run mode
+rtt1 run -p data/pwd_test.tdb           # Run a specific test
+rtt1 run -p "data/*.tdb"                # Run all tests in data/
+rtt1 r -p data/pwd_test.tdb -n          # 'r' is alias; dry-run mode
 ```
 
 ### report
@@ -119,9 +124,9 @@ rtt1 report -p <pattern> [-v|-vv|-vvv]
 #   -vvv                   Show test names, failures, and differences
 
 # Examples:
-rtt1 report -p data/pwd_test.db        # Basic summary
-rtt1 report -p "data/*.db" -v          # Show names
-rtt1 p -p data/pwd_test.db -vvv        # 'p' is alias; full details
+rtt1 report -p data/pwd_test.tdb        # Basic summary
+rtt1 report -p "data/*.tdb" -v          # Show names
+rtt1 p -p data/pwd_test.tdb -vvv        # 'p' is alias; full details
 ```
 
 ### remove
@@ -135,8 +140,8 @@ rtt1 remove -p <pattern>
 #   -p, --pattern <pat>    Pattern to match tests to remove
 
 # Examples:
-rtt1 remove -p data/old_test.db
-rtt1 remove -p "data/temp_*.db"
+rtt1 remove -p data/old_test.tdb
+rtt1 remove -p "data/temp_*.tdb"
 ```
 
 ### status
@@ -151,9 +156,9 @@ rtt1 status -p <pattern> [-l <port>]
 #   -l, --localhost-port <port>   Port number (default: 4111)
 
 # Examples:
-rtt1 status -p "data/*.db"
-rtt1 status -p "data/*.db" -l 8080
-rtt1 s -p "data/*.db"              # 's' is alias for 'status'
+rtt1 status -p "data/*.tdb"
+rtt1 status -p "data/*.tdb" -l 8080
+rtt1 s -p "data/*.tdb"              # 's' is alias for 'status'
 ```
 
 Open http://localhost:4111 (or your chosen port) to view the status page.

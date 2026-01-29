@@ -15,9 +15,9 @@ RTT1 captures command output and exit codes as baseline 'golden' results,
 then compares subsequent runs against these baselines to detect regressions.
 
 WORKFLOW:
-  1. Create a test:   rtt1 create -t my_test.db -c 'my_command'
-  2. Run the test:    rtt1 run -p my_test.db
-  3. View results:    rtt1 report -p my_test.db -v
+  1. Create a test:   rtt1 create -t my_test.tdb -c 'my_command'
+  2. Run the test:    rtt1 run -p my_test.tdb
+  3. View results:    rtt1 report -p my_test.tdb -v
 
 For more information on a specific command, run:
   rtt1 <command> --help"
@@ -47,12 +47,12 @@ The command's stdout, stderr, and exit code are captured and stored in a
 SQLite database file. This becomes the baseline for future regression tests.
 
 EXAMPLES:
-  rtt1 create -t data/pwd_test.db -c 'pwd'
-  rtt1 create -t data/version.db -c 'git --version'
-  rtt1 c -t tests/ls.db -c 'ls -la'  # using alias"
+  rtt1 create -t data/pwd_test.tdb -c 'pwd'
+  rtt1 create -t data/version.tdb -c 'git --version'
+  rtt1 c -t tests/ls.tdb -c 'ls -la'  # using alias"
     )]
     Create {
-        /// Path to the test database file to create (e.g., data/my_test.db)
+        /// Path to the test database file to create (e.g., data/my_test.tdb)
         #[clap(long, short)]
         test: String,
         /// Shell command to execute and capture (e.g., 'echo hello')
@@ -66,11 +66,11 @@ EXAMPLES:
 WARNING: This permanently deletes the test and all stored results!
 
 EXAMPLES:
-  rtt1 remove -p data/old_test.db
-  rtt1 remove -p 'data/temp_*.db'"
+  rtt1 remove -p data/old_test.tdb
+  rtt1 remove -p 'data/temp_*.tdb'"
     )]
     Remove {
-        /// Glob pattern to match test files to remove (e.g., 'data/*.db')
+        /// Glob pattern to match test files to remove (e.g., 'data/*.tdb')
         #[clap(long, short)]
         pattern: String,
     },
@@ -87,12 +87,12 @@ VERBOSITY LEVELS:
   -vvv    - Also show detailed differences
 
 EXAMPLES:
-  rtt1 report -p data/my_test.db         # basic summary
-  rtt1 report -p 'data/*.db' -v          # show names
-  rtt1 p -p data/my_test.db -vvv         # full details (using alias)"
+  rtt1 report -p data/my_test.tdb         # basic summary
+  rtt1 report -p 'data/*.tdb' -v          # show names
+  rtt1 p -p data/my_test.tdb -vvv         # full details (using alias)"
     )]
     Report {
-        /// Glob pattern to match test files (e.g., 'data/*.db')
+        /// Glob pattern to match test files (e.g., 'data/*.tdb')
         #[clap(long, short)]
         pattern: String,
         /// Verbosity: -v adds names, -vv adds failures, -vvv adds differences
@@ -109,12 +109,12 @@ Each matching test's command is re-executed, and the new output is compared
 against the stored baseline. Any differences are recorded as potential regressions.
 
 EXAMPLES:
-  rtt1 run -p data/my_test.db           # run a specific test
-  rtt1 run -p 'data/*.db'               # run all matching tests
-  rtt1 r -p data/my_test.db -n          # dry-run (show what would run)"
+  rtt1 run -p data/my_test.tdb           # run a specific test
+  rtt1 run -p 'data/*.tdb'               # run all matching tests
+  rtt1 r -p data/my_test.tdb -n          # dry-run (show what would run)"
     )]
     Run {
-        /// Glob pattern to match test files to run (e.g., 'data/*.db')
+        /// Glob pattern to match test files to run (e.g., 'data/*.tdb')
         #[clap(long, short)]
         pattern: String,
         /// Show what would be run without actually executing
@@ -133,12 +133,12 @@ The page auto-updates when test files change.
 Open http://localhost:<port> in a browser to view the status page.
 
 EXAMPLES:
-  rtt1 status -p 'data/*.db'            # start on default port 4111
-  rtt1 status -p 'data/*.db' -l 8080    # use custom port
-  rtt1 s -p 'data/*.db'                 # using alias"
+  rtt1 status -p 'data/*.tdb'            # start on default port 4111
+  rtt1 status -p 'data/*.tdb' -l 8080    # use custom port
+  rtt1 s -p 'data/*.tdb'                 # using alias"
     )]
     Status {
-        /// Glob pattern to match test files to monitor (e.g., 'data/*.db')
+        /// Glob pattern to match test files to monitor (e.g., 'data/*.tdb')
         #[clap(long, short)]
         pattern: String,
         /// Port number for the web server (default: 4111)

@@ -7,19 +7,30 @@
 # Setup
 Output demo/basic.gif
 Set FontSize 14
-Set Width 800
+Set Width 900
 Set Height 600
 Set Theme "Dracula"
 
 # Title
-Type "# RTT1 - Regression Test Tool"
-Enter
-Type "# Basic Workflow Demo"
+Type "# RTT1 - Regression Test Tool - Basic Workflow"
 Enter
 Sleep 1s
 
-# Show help
-Type "rtt1 --help"
+# Build the binary first (silently)
+Type "cargo build --release 2>/dev/null && mkdir -p data"
+Enter
+Sleep 2s
+
+# Clean any previous test
+Type "rm -f data/hello.tdb data/hello.tdb.lock"
+Enter
+Sleep 500ms
+
+# Show short help
+Type "# Show available commands"
+Enter
+Sleep 500ms
+Type "./target/release/rtt1 -h"
 Enter
 Sleep 2s
 
@@ -27,33 +38,33 @@ Sleep 2s
 Type "# Step 1: Create a test"
 Enter
 Sleep 500ms
-Type "rtt1 create -t demo/hello.db -c 'echo hello world'"
+Type "./target/release/rtt1 create -t data/hello.tdb -c 'echo hello world'"
 Enter
 Sleep 2s
 
 # Run the test
-Type "# Step 2: Run the test (should pass - same output)"
+Type "# Step 2: Run the test (compare against baseline)"
 Enter
 Sleep 500ms
-Type "rtt1 run -p demo/hello.db"
+Type "./target/release/rtt1 run -p hello"
 Enter
 Sleep 2s
 
 # Report results
-Type "# Step 3: Report on test results"
+Type "# Step 3: Report results"
 Enter
 Sleep 500ms
-Type "rtt1 report -p demo/hello.db -v"
+Type "./target/release/rtt1 report -p hello -v"
 Enter
 Sleep 2s
 
 # Clean up
-Type "# Step 4: Remove the test"
+Type "# Step 4: Clean up"
 Enter
 Sleep 500ms
-Type "rtt1 remove -p demo/hello.db"
+Type "./target/release/rtt1 remove -p hello"
 Enter
-Sleep 2s
+Sleep 1s
 
 Type "# Done!"
 Enter
