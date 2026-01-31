@@ -1,1 +1,8 @@
 /target
+
+# Generated demo files (large binaries)
+*.gif
+*.mp4
+
+# Test data
+/data/
