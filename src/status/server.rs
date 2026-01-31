@@ -75,36 +75,63 @@ pub struct TestDetails {
 }
 
 /// start status server
-#[tokio::main]
 pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
-    log::info!("server/start");
+    log::info!("server/start - BEGIN");
     let status_port = config.status_port();
     let pattern = config.extract_pattern().to_string();
+    log::info!("server/start - port={}, pattern={}", status_port, pattern);
 
+    log::info!("server/start - creating AppState");
     let app_state = AppState::new(pattern.clone());
 
+    log::info!("server/start - calling initial set_test_runs");
     set_test_runs(app_state.clone())?;
+    log::info!("server/start - initial set_test_runs completed");
 
+    log::info!("server/start - launching monitor thread");
     let _handles = monitor::launch_monitor(app_state.clone());
-    let addr = SocketAddr::from(([127, 0, 0, 1], status_port));
+    log::info!("server/start - monitor thread launched");
 
+    let addr = SocketAddr::from(([127, 0, 0, 1], status_port));
     println!("Listening at {}.  Ctrl-C to terminate server", addr);
 
+    log::info!("server/start - creating router");
     let app = Router::new()
         .route("/", get(serve_status_view))
         .with_state(app_state);
 
+    log::info!("server/start - binding TCP listener to {}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await?;
+    log::info!("server/start - TCP listener bound, starting axum::serve");
+
     axum::serve(listener, app.into_make_service()).await?;
 
+    log::info!("server/start - END (server stopped)");
     Ok(())
 }
 
 /// Serve the status view
 async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
-    log::info!("server/serve_status_view");
+    log::info!("server/serve_status_view - START");
+
+    // Update the state BEFORE locking (set_test_runs acquires its own lock)
+    log::info!("server/serve_status_view - calling set_test_runs");
+    if let Err(e) = set_test_runs(state.clone()) {
+        log::error!("Failed to update test runs: {}", e);
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("<h1>Error updating test runs</h1>".to_string()),
+        );
+    }
+    log::info!("server/serve_status_view - set_test_runs completed");
+
+    // Now lock to read the updated state
+    log::info!("server/serve_status_view - acquiring lock");
     let state_data = match state.state_data.lock() {
-        Ok(guard) => guard,
+        Ok(guard) => {
+            log::info!("server/serve_status_view - lock acquired");
+            guard
+        }
         Err(e) => {
             log::error!("Failed to lock state data: {}", e);
             return (
@@ -113,15 +140,6 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
             );
         }
     };
-
-    // Update the state before rendering
-    if let Err(e) = set_test_runs(state.clone()) {
-        log::error!("Failed to update test runs: {}", e);
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Html("<h1>Error</h1>".to_string()),
-        );
-    }
 
     let mut failed_test_names: Vec<String> = vec![];
     let mut not_yet_run_test_names: Vec<String> = vec![];
@@ -167,16 +185,24 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
         }
     };
     let response_str = format!("<div>{}</div>", status_view);
+    log::info!(
+        "server/serve_status_view - END, response len={}",
+        response_str.len()
+    );
     (StatusCode::OK, Html(response_str))
 }
 
 /// update shared state with test run data
 pub fn set_test_runs(app_state: AppState) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("server/set_test_runs - acquiring lock");
     let mut state_data = app_state
         .state_data
         .lock()
         .map_err(|e| RttError::MutexPoisoned(format!("state_data lock failed: {}", e)))?;
-    log::info!("server/set_test_runs pattern: {}", &state_data.pattern);
+    log::info!(
+        "server/set_test_runs - lock acquired, pattern: {}",
+        &state_data.pattern
+    );
     let mut test_runs = vec![];
     let test_names = finder::discover(state_data.pattern.to_string())?;
     for test_name in &test_names.found {
@@ -211,6 +237,10 @@ pub fn set_test_runs(app_state: AppState) -> Result<(), Box<dyn std::error::Erro
     }
     state_data.runs = test_runs;
     state_data.state_updated = time::now();
+    log::info!(
+        "server/set_test_runs - completed, {} tests loaded, releasing lock",
+        state_data.runs.len()
+    );
     Ok(())
 }
 

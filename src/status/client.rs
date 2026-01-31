@@ -4,9 +4,5 @@ use std::net;
 pub fn start(port: u16) {
     log::info!("client/start");
     md!(port);
-    println!(
-        "open: http://{}:{}/status",
-        net::Ipv4Addr::LOCALHOST,
-        port
-    );
+    println!("open: http://{}:{}/status", net::Ipv4Addr::LOCALHOST, port);
 }

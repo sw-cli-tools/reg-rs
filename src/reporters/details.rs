@@ -93,18 +93,12 @@ fn show_failures(
                 difference_types.push("exit_code".to_string());
             }
             if 0 < db::difference_count_by_type(test, diff::RegressionType::StderrAdd as u8)?
-                || 0 < db::difference_count_by_type(
-                    test,
-                    diff::RegressionType::StderrRemove as u8,
-                )?
+                || 0 < db::difference_count_by_type(test, diff::RegressionType::StderrRemove as u8)?
             {
                 difference_types.push("stderr".to_string());
             }
             if 0 < db::difference_count_by_type(test, diff::RegressionType::StdoutAdd as u8)?
-                || 0 < db::difference_count_by_type(
-                    test,
-                    diff::RegressionType::StdoutRemove as u8,
-                )?
+                || 0 < db::difference_count_by_type(test, diff::RegressionType::StdoutRemove as u8)?
             {
                 difference_types.push("stdout".to_string());
             }

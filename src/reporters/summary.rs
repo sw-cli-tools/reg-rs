@@ -37,11 +37,7 @@ impl SummaryReportContext {
 /// conditionally color output
 fn maybe_color(condition: bool, cb: &dyn Fn(&str) -> String, count: u32) -> String {
     let s = format!(" {:05}", count);
-    if condition {
-        cb(&s)
-    } else {
-        s
-    }
+    if condition { cb(&s) } else { s }
 }
 
 /// show summary template rendered output

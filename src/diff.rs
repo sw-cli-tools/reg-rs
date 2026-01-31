@@ -1,4 +1,4 @@
-use text_diff::{diff, Difference};
+use text_diff::{Difference, diff};
 
 use crate::db;
 use crate::runner;
