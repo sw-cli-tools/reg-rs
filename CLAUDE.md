@@ -30,15 +30,21 @@ The codebase follows a modular architecture with clear separation of concerns:
 - All commands flow through: `main.rs` → `builder::build()` → `command::{action}()` → specific modules
 - Test results stored in SQLite databases (one per test)
 - Conditional debug output via `md!()` macro when `-d` flag is used
-- Status monitoring uses Gotham web framework
+- Status monitoring uses Axum web framework (async with Tokio)
+- Dependency injection via `CommandExecutor` trait (`executor.rs`) with `MockCommandExecutor` for tests
+- External `.lock` files prevent SQLite file-lock conflicts (one per `.tdb` database)
+- Custom `RttError` enum (`error.rs`) with `thiserror` — 10 error variants
+- `build.rs` generates version string with timestamp into `$OUT_DIR/generated.rs`
 
 ## Code Style Guidelines
 - Formatting: Run `cargo fmt` before committing
 - Imports: Group external crates first, then std imports
 - Documentation: All public items require doc comments (`///`)
 - Modules: Documented in lib.rs with `/// Module name` format
-- Error handling: Use Result<T, Box<dyn std::error::Error>> with ? operator
+- Error handling: Use custom `RttError` type (`Result<T> = Result<T, RttError>`) with `?` operator
 - Naming: snake_case for variables/functions, CamelCase for types
 - Warnings: #![deny(warnings, missing_docs)] is enforced
 - Debugging: Use the `md!()` macro for conditional debug output
 - HTML tags in docs must be properly closed (e.g., `&lt;tag&gt;`)
+- File size limit: < 500 lines (prefer 200-300); function limit: < 50 lines (prefer 10-30)
+- TDD workflow: Red/Green/Refactor cycle; see `docs/process.md` for full pre-commit checklist
