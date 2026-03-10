@@ -1,6 +1,6 @@
-# RTT1 Status Server
+# reg-rs Status Server
 
-The RTT1 status server provides a web-based interface for monitoring regression test results in real-time. It's particularly useful for long-running test suites where you want to track progress without constantly running reports from the command line.
+The reg-rs status server provides a web-based interface for monitoring regression test results in real-time. It's particularly useful for long-running test suites where you want to track progress without constantly running reports from the command line.
 
 ## Use Cases
 
@@ -22,13 +22,13 @@ During development, keep the status server running in the background. As you mak
 
 ```bash
 # Basic usage - monitor all tests matching a pattern
-rtt1 status -p "_test"
+reg-rs status -p "_test"
 
 # Specify a custom port (default is 4111)
-rtt1 status -p "_test" -l 8080
+reg-rs status -p "_test" -l 8080
 
 # Using the alias
-rtt1 s -p "my_tests"
+reg-rs s -p "my_tests"
 ```
 
 ### Command Options
@@ -86,9 +86,9 @@ The dashboard displays:
 
 The status server automatically detects changes to test database files in the `data/` directory. When you:
 
-1. Create a new test (`rtt1 create ...`)
-2. Run tests (`rtt1 run ...`)
-3. Remove tests (`rtt1 remove ...`)
+1. Create a new test (`reg-rs create ...`)
+2. Run tests (`reg-rs run ...`)
+3. Remove tests (`reg-rs remove ...`)
 
 The dashboard will reflect these changes on the next page refresh.
 
@@ -96,14 +96,14 @@ The dashboard will reflect these changes on the next page refresh.
 
 ```bash
 # Terminal 1: Start the status server
-rtt1 status -p "_test" -l 4111
+reg-rs status -p "_test" -l 4111
 
 # Terminal 2: Create and run tests
-rtt1 create -t data/hello_test.tdb -c 'echo hello'
-rtt1 create -t data/version_test.tdb -c 'cat VERSION'
+reg-rs create -t data/hello_test.tdb -c 'echo hello'
+reg-rs create -t data/version_test.tdb -c 'cat VERSION'
 
 # Run the tests
-rtt1 run -p "_test"
+reg-rs run -p "_test"
 
 # Check the browser - tests should show as passed
 
@@ -111,7 +111,7 @@ rtt1 run -p "_test"
 echo "2.0.0" > VERSION
 
 # Re-run tests
-rtt1 run -p "_test"
+reg-rs run -p "_test"
 
 # Check the browser - version_test should now show as failed
 # with diff showing the change from old version to new
@@ -137,8 +137,8 @@ Press `Ctrl-C` in the terminal where the server is running to stop it.
 
 ### Server won't start (Address already in use)
 Another process is using the port. Either:
-- Kill the existing process: `pkill -f "rtt1 status"`
-- Use a different port: `rtt1 status -p "_test" -l 8080`
+- Kill the existing process: `pkill -f "reg-rs status"`
+- Use a different port: `reg-rs status -p "_test" -l 8080`
 
 ### No tests found
 Ensure your tests:

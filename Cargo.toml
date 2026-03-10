@@ -1,5 +1,5 @@
 [package]
-name = "rtt1"
+name = "reg-rs"
 version = "0.1.0"
 authors = ["Mike Wright <wrightmikea@gmail.com>"]
 edition = "2024"

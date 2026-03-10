@@ -23,7 +23,7 @@ macro_rules! md {
 /// Default status port for web
 pub const DEFAULT_STATUS_PORT: u16 = 4111;
 /// Status banner
-pub const STATUS_BANNER: &str = "RTT1 Status Server";
+pub const STATUS_BANNER: &str = "reg-rs Status Server";
 
 /// Argument parsing
 pub mod args;

@@ -1,4 +1,4 @@
-# Regression Test Tool (RTT1)
+# reg-rs (regress)
 
 A command-line utility that creates, discovers, runs, and reports on regression tests.
 
@@ -15,10 +15,11 @@ A command-line utility that creates, discovers, runs, and reports on regression 
   - [status](#status)
 - [Architecture](#architecture)
 - [Development](#development)
+- [License](#license)
 
 ## Overview
 
-RTT1 captures command output and exit codes as "golden" test results, then compares subsequent runs against these baselines to detect regressions. It's useful for:
+reg-rs captures command output and exit codes as "golden" test results, then compares subsequent runs against these baselines to detect regressions. It's useful for:
 
 - Ensuring CLI tools maintain consistent behavior
 - Detecting unexpected changes in command output
@@ -43,13 +44,13 @@ RTT1 captures command output and exit codes as "golden" test results, then compa
 
 ```bash
 # Clone the repository
-git clone https://github.com/wrightmikea/rtt1.git
-cd rtt1
+git clone https://github.com/sw-cli-tools/reg-rs.git
+cd reg-rs
 
 # Build the project
 cargo build --release
 
-# The binary is at ./target/release/rtt1
+# The binary is at ./target/release/reg-rs
 ```
 
 ## Quick Start
@@ -61,17 +62,17 @@ cargo build --release
 mkdir -p data
 
 # 1. Create a test that captures the output of a command
-rtt1 create -t data/my_test.tdb -c "echo hello world"
+reg-rs create -t data/my_test.tdb -c "echo hello world"
 
 # 2. Run the test again to check for regressions (use pattern matching)
-rtt1 run -p my_test
+reg-rs run -p my_test
 
 # 3. View the test results
-rtt1 report -p my_test -v
+reg-rs report -p my_test -v
 
 # 4. If you modify the expected behavior, remove and recreate the test
-rtt1 remove -p my_test
-rtt1 create -t data/my_test.tdb -c "echo hello world"
+reg-rs remove -p my_test
+reg-rs create -t data/my_test.tdb -c "echo hello world"
 ```
 
 ## Commands
@@ -81,16 +82,16 @@ rtt1 create -t data/my_test.tdb -c "echo hello world"
 Creates a new test by running a command and storing its output as the baseline.
 
 ```bash
-rtt1 create -t <test_name> -c <command>
+reg-rs create -t <test_name> -c <command>
 
 # Options:
 #   -t, --test <name>      Name of the test (path to SQLite database file)
 #   -c, --command <cmd>    Command to execute and capture
 
 # Examples:
-rtt1 create -t data/pwd_test.tdb -c "pwd"
-rtt1 create -t data/version_test.tdb -c "git --version"
-rtt1 c -t data/ls_test.tdb -c "ls -la"   # 'c' is an alias for 'create'
+reg-rs create -t data/pwd_test.tdb -c "pwd"
+reg-rs create -t data/version_test.tdb -c "git --version"
+reg-rs c -t data/ls_test.tdb -c "ls -la"   # 'c' is an alias for 'create'
 ```
 
 ### run
@@ -98,16 +99,16 @@ rtt1 c -t data/ls_test.tdb -c "ls -la"   # 'c' is an alias for 'create'
 Runs previously created tests and compares results against baselines.
 
 ```bash
-rtt1 run -p <pattern>
+reg-rs run -p <pattern>
 
 # Options:
 #   -p, --pattern <pat>    Pattern to match test names (supports glob patterns)
 #   -n, --dry-run          Print what would be run without executing
 
 # Examples:
-rtt1 run -p data/pwd_test.tdb           # Run a specific test
-rtt1 run -p "data/*.tdb"                # Run all tests in data/
-rtt1 r -p data/pwd_test.tdb -n          # 'r' is alias; dry-run mode
+reg-rs run -p data/pwd_test.tdb           # Run a specific test
+reg-rs run -p "data/*.tdb"                # Run all tests in data/
+reg-rs r -p data/pwd_test.tdb -n          # 'r' is alias; dry-run mode
 ```
 
 ### report
@@ -115,7 +116,7 @@ rtt1 r -p data/pwd_test.tdb -n          # 'r' is alias; dry-run mode
 Reports on test results with configurable verbosity.
 
 ```bash
-rtt1 report -p <pattern> [-v|-vv|-vvv]
+reg-rs report -p <pattern> [-v|-vv|-vvv]
 
 # Options:
 #   -p, --pattern <pat>    Pattern to match test names
@@ -124,9 +125,9 @@ rtt1 report -p <pattern> [-v|-vv|-vvv]
 #   -vvv                   Show test names, failures, and differences
 
 # Examples:
-rtt1 report -p data/pwd_test.tdb        # Basic summary
-rtt1 report -p "data/*.tdb" -v          # Show names
-rtt1 p -p data/pwd_test.tdb -vvv        # 'p' is alias; full details
+reg-rs report -p data/pwd_test.tdb        # Basic summary
+reg-rs report -p "data/*.tdb" -v          # Show names
+reg-rs p -p data/pwd_test.tdb -vvv        # 'p' is alias; full details
 ```
 
 ### remove
@@ -134,14 +135,14 @@ rtt1 p -p data/pwd_test.tdb -vvv        # 'p' is alias; full details
 Removes tests and their associated result databases.
 
 ```bash
-rtt1 remove -p <pattern>
+reg-rs remove -p <pattern>
 
 # Options:
 #   -p, --pattern <pat>    Pattern to match tests to remove
 
 # Examples:
-rtt1 remove -p data/old_test.tdb
-rtt1 remove -p "data/temp_*.tdb"
+reg-rs remove -p data/old_test.tdb
+reg-rs remove -p "data/temp_*.tdb"
 ```
 
 ### status
@@ -149,16 +150,16 @@ rtt1 remove -p "data/temp_*.tdb"
 Starts a web server to monitor test results.
 
 ```bash
-rtt1 status -p <pattern> [-l <port>]
+reg-rs status -p <pattern> [-l <port>]
 
 # Options:
 #   -p, --pattern <pat>           Pattern to match tests to monitor
 #   -l, --localhost-port <port>   Port number (default: 4111)
 
 # Examples:
-rtt1 status -p "data/*.tdb"
-rtt1 status -p "data/*.tdb" -l 8080
-rtt1 s -p "data/*.tdb"              # 's' is alias for 'status'
+reg-rs status -p "data/*.tdb"
+reg-rs status -p "data/*.tdb" -l 8080
+reg-rs s -p "data/*.tdb"              # 's' is alias for 'status'
 ```
 
 Open http://localhost:4111 (or your chosen port) to view the status page.
@@ -169,27 +170,27 @@ The codebase follows a modular architecture:
 
 ```
 src/
-├── main.rs          # Entry point
-├── lib.rs           # Module declarations
-├── args.rs          # CLI argument parsing (clap)
-├── builder.rs       # Test creation logic
-├── command.rs       # Subcommand dispatch
-├── config.rs        # Configuration management
-├── db.rs            # Database operations with file locking
-├── diff.rs          # Test result comparison
-├── error.rs         # Error types (thiserror)
-├── executor.rs      # Command execution (with DI support)
-├── finder.rs        # Test discovery
-├── process.rs       # Process execution
-├── queries.rs       # SQL query building
-├── runner.rs        # Test execution logic
-├── sqlite.rs        # SQLite interface
-├── status/          # Web status server (axum)
-│   ├── mod.rs
-│   ├── server.rs
-│   ├── monitor.rs
-│   └── views/
-└── templates/       # SQL and HTML templates
+|-- main.rs          # Entry point
+|-- lib.rs           # Module declarations
+|-- args.rs          # CLI argument parsing (clap)
+|-- builder.rs       # Test creation logic
+|-- command.rs       # Subcommand dispatch
+|-- config.rs        # Configuration management
+|-- db.rs            # Database operations with file locking
+|-- diff.rs          # Test result comparison
+|-- error.rs         # Error types (thiserror)
+|-- executor.rs      # Command execution (with DI support)
+|-- finder.rs        # Test discovery
+|-- process.rs       # Process execution
+|-- queries.rs       # SQL query building
+|-- runner.rs        # Test execution logic
+|-- sqlite.rs        # SQLite interface
+|-- status/          # Web status server (axum)
+|   |-- mod.rs
+|   |-- server.rs
+|   |-- monitor.rs
+|   +-- views/
++-- templates/       # SQL and HTML templates
 ```
 
 ### Data Flow
@@ -205,8 +206,8 @@ src/
 
 ```bash
 # Clone and build
-git clone https://github.com/wrightmikea/rtt1.git
-cd rtt1
+git clone https://github.com/sw-cli-tools/reg-rs.git
+cd reg-rs
 cargo build
 
 # Run tests
@@ -234,12 +235,14 @@ cargo doc        # Generate documentation
 cargo test
 
 # Run a specific test
-cargo test integration_test_rtt1_help
+cargo test integration_test_reg_rs_help
 
 # Run tests with output
 cargo test -- --nocapture
 ```
 
 ## License
+
+MIT License - Copyright (c) 2020-2026 Michael A. Wright
 
 See LICENSE file for details.

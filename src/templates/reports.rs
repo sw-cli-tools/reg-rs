@@ -5,7 +5,7 @@ pub static DIFFERENCES_REPORT_TEMPLATE: &str = "
 {{ endfor }}";
 
 /// Test result summary report template
-pub static SUMMARY_REPORT_TEMPLATE: &str = "RTT Summary Report { report_date }
+pub static SUMMARY_REPORT_TEMPLATE: &str = "reg-rs Summary Report { report_date }
 { fail_count } failed
 { not_run_count } not yet run
 { pass_count } passed

@@ -3,13 +3,13 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-RTT1 (Regression Test Tool) is a CLI utility for creating, running, and managing regression tests. It captures command output and exit codes, then compares test runs to detect differences.
+reg-rs (pronounced "regress") is a CLI utility for creating, running, and managing regression tests. It captures command output and exit codes, then compares test runs to detect differences.
 
 ## Build/Test Commands
 - Build: `cargo build`
 - Run: `cargo run -- [FLAGS] [SUBCOMMAND]`
 - Test all: `cargo test`
-- Run single test: `cargo test integration_test_rtt1_help`
+- Run single test: `cargo test integration_test_reg_rs_help`
 - Lint: `cargo clippy`
 - Fix lints: `cargo clippy --fix`
 - Format: `cargo fmt`
@@ -33,7 +33,7 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Status monitoring uses Axum web framework (async with Tokio)
 - Dependency injection via `CommandExecutor` trait (`executor.rs`) with `MockCommandExecutor` for tests
 - External `.lock` files prevent SQLite file-lock conflicts (one per `.tdb` database)
-- Custom `RttError` enum (`error.rs`) with `thiserror` — 10 error variants
+- Custom `RegError` enum (`error.rs`) with `thiserror` — 10 error variants
 - `build.rs` generates version string with timestamp into `$OUT_DIR/generated.rs`
 
 ## Code Style Guidelines
@@ -41,7 +41,7 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Imports: Group external crates first, then std imports
 - Documentation: All public items require doc comments (`///`)
 - Modules: Documented in lib.rs with `/// Module name` format
-- Error handling: Use custom `RttError` type (`Result<T> = Result<T, RttError>`) with `?` operator
+- Error handling: Use custom `RegError` type (`Result<T> = Result<T, RegError>`) with `?` operator
 - Naming: snake_case for variables/functions, CamelCase for types
 - Warnings: #![deny(warnings, missing_docs)] is enforced
 - Debugging: Use the `md!()` macro for conditional debug output

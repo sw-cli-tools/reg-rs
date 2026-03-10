@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use std::result;
 use thiserror::Error;
 
-/// Custom error type for RTT1
+/// Custom error type for reg-rs
 #[derive(Error, Debug)]
-pub enum RttError {
+pub enum RegError {
     /// File I/O error
     #[error("File I/O error: {0}")]
     Io(#[from] io::Error),
@@ -60,38 +60,38 @@ pub enum RttError {
     Other(String),
 }
 
-/// Result type alias with RttError as the error type
-pub type Result<T> = result::Result<T, RttError>;
+/// Result type alias with RegError as the error type
+pub type Result<T> = result::Result<T, RegError>;
 
 // Conversion implementations for common error types
 // io::Error From impl is auto-derived by thiserror
 
-impl From<tinytemplate::error::Error> for RttError {
+impl From<tinytemplate::error::Error> for RegError {
     fn from(err: tinytemplate::error::Error) -> Self {
-        RttError::Template(err.to_string())
+        RegError::Template(err.to_string())
     }
 }
 
-impl From<notify::Error> for RttError {
+impl From<notify::Error> for RegError {
     fn from(err: notify::Error) -> Self {
-        RttError::Notification(err.to_string())
+        RegError::Notification(err.to_string())
     }
 }
 
-impl From<Box<dyn std::error::Error>> for RttError {
+impl From<Box<dyn std::error::Error>> for RegError {
     fn from(err: Box<dyn std::error::Error>) -> Self {
-        RttError::Other(err.to_string())
+        RegError::Other(err.to_string())
     }
 }
 
-impl From<String> for RttError {
+impl From<String> for RegError {
     fn from(err: String) -> Self {
-        RttError::Other(err)
+        RegError::Other(err)
     }
 }
 
-impl From<&str> for RttError {
+impl From<&str> for RegError {
     fn from(err: &str) -> Self {
-        RttError::Other(err.to_string())
+        RegError::Other(err.to_string())
     }
 }

@@ -7,20 +7,20 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 /// Argument processing configuration
 #[derive(Debug, PartialEq, Parser)]
 #[clap(
-    name = "rtt1",
+    name = "reg-rs",
     version = generated_version(),
-    long_about = "RTT1 (Regression Test Tool) - A CLI for regression testing
+    long_about = "reg-rs (regress) - A CLI for regression testing
 
-RTT1 captures command output and exit codes as baseline 'golden' results,
+reg-rs captures command output and exit codes as baseline 'golden' results,
 then compares subsequent runs against these baselines to detect regressions.
 
 WORKFLOW:
-  1. Create a test:   rtt1 create -t my_test.tdb -c 'my_command'
-  2. Run the test:    rtt1 run -p my_test.tdb
-  3. View results:    rtt1 report -p my_test.tdb -v
+  1. Create a test:   reg-rs create -t my_test.tdb -c 'my_command'
+  2. Run the test:    reg-rs run -p my_test.tdb
+  3. View results:    reg-rs report -p my_test.tdb -v
 
 For more information on a specific command, run:
-  rtt1 <command> --help"
+  reg-rs <command> --help"
 )]
 pub struct Args {
     #[clap(long, short)]
@@ -34,7 +34,7 @@ pub struct Args {
     pub command: Subcommands,
 }
 
-/// Subcommands for rtt1
+/// Subcommands for reg-rs
 #[derive(Debug, PartialEq, Parser)]
 pub enum Subcommands {
     /// Creates a new test of a specified command (alias c)
@@ -47,9 +47,9 @@ The command's stdout, stderr, and exit code are captured and stored in a
 SQLite database file. This becomes the baseline for future regression tests.
 
 EXAMPLES:
-  rtt1 create -t data/pwd_test.tdb -c 'pwd'
-  rtt1 create -t data/version.tdb -c 'git --version'
-  rtt1 c -t tests/ls.tdb -c 'ls -la'  # using alias"
+  reg-rs create -t data/pwd_test.tdb -c 'pwd'
+  reg-rs create -t data/version.tdb -c 'git --version'
+  reg-rs c-t tests/ls.tdb -c 'ls -la'  # using alias"
     )]
     Create {
         /// Path to the test database file to create (e.g., data/my_test.tdb)
@@ -66,8 +66,8 @@ EXAMPLES:
 WARNING: This permanently deletes the test and all stored results!
 
 EXAMPLES:
-  rtt1 remove -p data/old_test.tdb
-  rtt1 remove -p 'data/temp_*.tdb'"
+  reg-rs remove -p data/old_test.tdb
+  reg-rs remove -p 'data/temp_*.tdb'"
     )]
     Remove {
         /// Glob pattern to match test files to remove (e.g., 'data/*.tdb')
@@ -87,9 +87,9 @@ VERBOSITY LEVELS:
   -vvv    - Also show detailed differences
 
 EXAMPLES:
-  rtt1 report -p data/my_test.tdb         # basic summary
-  rtt1 report -p 'data/*.tdb' -v          # show names
-  rtt1 p -p data/my_test.tdb -vvv         # full details (using alias)"
+  reg-rs report -p data/my_test.tdb         # basic summary
+  reg-rs report -p 'data/*.tdb' -v          # show names
+  reg-rs p-p data/my_test.tdb -vvv         # full details (using alias)"
     )]
     Report {
         /// Glob pattern to match test files (e.g., 'data/*.tdb')
@@ -109,9 +109,9 @@ Each matching test's command is re-executed, and the new output is compared
 against the stored baseline. Any differences are recorded as potential regressions.
 
 EXAMPLES:
-  rtt1 run -p data/my_test.tdb           # run a specific test
-  rtt1 run -p 'data/*.tdb'               # run all matching tests
-  rtt1 r -p data/my_test.tdb -n          # dry-run (show what would run)"
+  reg-rs run -p data/my_test.tdb           # run a specific test
+  reg-rs run -p 'data/*.tdb'               # run all matching tests
+  reg-rs r-p data/my_test.tdb -n          # dry-run (show what would run)"
     )]
     Run {
         /// Glob pattern to match test files to run (e.g., 'data/*.tdb')
@@ -133,9 +133,9 @@ The page auto-updates when test files change.
 Open http://localhost:<port> in a browser to view the status page.
 
 EXAMPLES:
-  rtt1 status -p 'data/*.tdb'            # start on default port 4111
-  rtt1 status -p 'data/*.tdb' -l 8080    # use custom port
-  rtt1 s -p 'data/*.tdb'                 # using alias"
+  reg-rs status -p 'data/*.tdb'            # start on default port 4111
+  reg-rs status -p 'data/*.tdb' -l 8080    # use custom port
+  reg-rs s-p 'data/*.tdb'                 # using alias"
     )]
     Status {
         /// Glob pattern to match test files to monitor (e.g., 'data/*.tdb')

@@ -5,7 +5,7 @@ use crate::time;
 /// Set up logging
 pub fn setup_logging(level: log::LevelFilter) -> Result<(), Box<dyn std::error::Error>> {
     let pid = process::id();
-    let file_name = format!("rtt1-{}.log", pid);
+    let file_name = format!("reg-rs-{}.log", pid);
     println!("logging/setup_logging file: {}", &file_name);
     fern::Dispatch::new()
         .level(level)

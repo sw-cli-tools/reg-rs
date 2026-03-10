@@ -1142,6 +1142,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "reg-rs"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "clap",
+ "colored",
+ "env_logger",
+ "fern",
+ "file-lock",
+ "hyper 0.14.32",
+ "lazy_static",
+ "log",
+ "mime",
+ "notify",
+ "rusqlite",
+ "serde",
+ "serde_derive",
+ "tempfile",
+ "text-diff",
+ "thiserror",
+ "tinytemplate",
+ "tokio",
+ "walkdir",
+]
+
+[[package]]
 name = "regex"
 version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1169,33 +1196,6 @@ name = "regex-syntax"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "caf4aa5b0f434c91fe5c7f1ecb6a5ece2130b02ad2a590589dda5146df959001"
-
-[[package]]
-name = "rtt1"
-version = "0.1.0"
-dependencies = [
- "axum",
- "chrono",
- "clap",
- "colored",
- "env_logger",
- "fern",
- "file-lock",
- "hyper 0.14.32",
- "lazy_static",
- "log",
- "mime",
- "notify",
- "rusqlite",
- "serde",
- "serde_derive",
- "tempfile",
- "text-diff",
- "thiserror",
- "tinytemplate",
- "tokio",
- "walkdir",
-]
 
 [[package]]
 name = "rusqlite"

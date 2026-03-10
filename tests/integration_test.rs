@@ -17,13 +17,13 @@ fn run_command(cmd: &str) -> (i32, String, String) {
 }
 
 #[test]
-fn integration_test_rtt1_help() {
+fn integration_test_reg_rs_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/rtt1 -h");
+    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs -h");
     assert_eq!(0, status_code);
     assert_eq!("", stderr);
     // Check key parts of help output rather than exact match (to allow for minor formatting changes)
-    assert!(stdout.contains("Usage: rtt1 [OPTIONS] <COMMAND>"));
+    assert!(stdout.contains("Usage: reg-rs [OPTIONS] <COMMAND>"));
     assert!(stdout.contains("create  Creates a new test of a specified command"));
     assert!(stdout.contains("remove  Removes previously created test"));
     assert!(stdout.contains("report  Reports counts/summary"));
@@ -38,15 +38,15 @@ fn integration_test_rtt1_help() {
 #[test]
 fn integration_test_version() {
     common::setup();
-    let (status_code, stdout, _stderr) = run_command("./target/debug/rtt1 -V");
+    let (status_code, stdout, _stderr) = run_command("./target/debug/reg-rs -V");
     assert_eq!(0, status_code);
-    assert!(stdout.starts_with("rtt1 "));
+    assert!(stdout.starts_with("reg-rs "));
 }
 
 #[test]
 fn integration_test_create_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/rtt1 create -h");
+    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs create -h");
     assert_eq!(0, status_code);
     assert_eq!("", stderr);
     assert!(stdout.contains("Creates a new test of a specified command"));
@@ -57,7 +57,7 @@ fn integration_test_create_help() {
 #[test]
 fn integration_test_run_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/rtt1 run -h");
+    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs run -h");
     assert_eq!(0, status_code);
     assert_eq!("", stderr);
     assert!(stdout.contains("Runs a test"));
@@ -68,7 +68,7 @@ fn integration_test_run_help() {
 #[test]
 fn integration_test_report_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/rtt1 report -h");
+    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs report -h");
     assert_eq!(0, status_code);
     assert_eq!("", stderr);
     assert!(stdout.contains("Reports counts/summary"));
@@ -79,7 +79,7 @@ fn integration_test_report_help() {
 #[test]
 fn integration_test_remove_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/rtt1 remove -h");
+    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs remove -h");
     assert_eq!(0, status_code);
     assert_eq!("", stderr);
     assert!(stdout.contains("Removes previously created test"));
@@ -89,7 +89,7 @@ fn integration_test_remove_help() {
 #[test]
 fn integration_test_status_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/rtt1 status -h");
+    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs status -h");
     assert_eq!(0, status_code);
     assert_eq!("", stderr);
     assert!(stdout.contains("Starts a server to monitor"));
@@ -112,7 +112,7 @@ fn integration_test_create_and_run() {
 
     // Create a new test
     let (status_code, _stdout, stderr) = run_command(&format!(
-        "./target/debug/rtt1 create -t {} -c 'echo hello'",
+        "./target/debug/reg-rs create -t {} -c 'echo hello'",
         test_db
     ));
 
@@ -130,7 +130,7 @@ fn integration_test_create_and_run() {
 
     // Run the test (use pattern matching, not full path)
     let (status_code, stdout, stderr) =
-        run_command(&format!("./target/debug/rtt1 run -p {}", test_pattern));
+        run_command(&format!("./target/debug/reg-rs run -p {}", test_pattern));
 
     if status_code != 0 {
         eprintln!("run failed: {}", stderr);
@@ -147,7 +147,7 @@ fn integration_test_create_and_run() {
 
     // Report on the test
     let (status_code, stdout, stderr) =
-        run_command(&format!("./target/debug/rtt1 report -p {}", test_pattern));
+        run_command(&format!("./target/debug/reg-rs report -p {}", test_pattern));
 
     if status_code != 0 {
         eprintln!("report failed: {}", stderr);

@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use crate::error::RttError;
+use crate::error::RegError;
 
 /// run a test capturing outputs and exit code
 pub fn exec(command: String) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
@@ -10,7 +10,7 @@ pub fn exec(command: String) -> Result<(i32, String, String), Box<dyn std::error
         .arg(&command)
         .output()
         .map_err(|e| {
-            RttError::CommandExecution(format!("failed to execute '{}': {}", command, e))
+            RegError::CommandExecution(format!("failed to execute '{}': {}", command, e))
         })?;
     let status_code = output.status.code().unwrap_or(-1);
 

@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::config;
 use crate::db;
-use crate::error::RttError;
+use crate::error::RegError;
 use crate::finder;
 use crate::status::monitor;
 use crate::status::views::status;
@@ -198,7 +198,7 @@ pub fn set_test_runs(app_state: AppState) -> Result<(), Box<dyn std::error::Erro
     let mut state_data = app_state
         .state_data
         .lock()
-        .map_err(|e| RttError::MutexPoisoned(format!("state_data lock failed: {}", e)))?;
+        .map_err(|e| RegError::MutexPoisoned(format!("state_data lock failed: {}", e)))?;
     log::info!(
         "server/set_test_runs - lock acquired, pattern: {}",
         &state_data.pattern

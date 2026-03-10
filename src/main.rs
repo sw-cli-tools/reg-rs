@@ -1,12 +1,12 @@
-//! Regression Test Tool
+//! reg-rs (regress) - Regression Test Tool
 #![deny(warnings, missing_docs)]
-use rtt1::{args, builder, command, error::RttError};
+use reg_rs::{args, builder, command, error::RegError};
 
 /// Entry point for the application
 #[tokio::main]
-async fn main() -> Result<(), RttError> {
+async fn main() -> Result<(), RegError> {
     env_logger::init();
-    log::info!(target: "rtt1::main", "env_logger initialized");
+    log::info!(target: "reg_rs::main", "env_logger initialized");
     let config = builder::build();
     match &config.mode {
         args::Subcommands::Create { .. } => {
@@ -25,6 +25,6 @@ async fn main() -> Result<(), RttError> {
             command::status_server(&config).await?;
         }
     }
-    log::info!(target: "rtt1::main", "end");
+    log::info!(target: "reg_rs::main", "end");
     Ok(())
 }

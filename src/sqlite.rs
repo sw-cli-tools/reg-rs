@@ -1,6 +1,6 @@
 use rusqlite::{Connection, params};
 
-use crate::error::{Result, RttError};
+use crate::error::{RegError, Result};
 use crate::queries;
 use crate::runner::TestResults;
 use crate::templates::statements;
@@ -23,10 +23,10 @@ pub(crate) fn read_results(db_name: &str, select_statement: &str) -> Result<Test
         })?;
         test = test_iter.next();
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     match test {
         Some(t) => Ok(t?),
-        None => Err(RttError::TestNotFound(db_name.to_string())),
+        None => Err(RegError::TestNotFound(db_name.to_string())),
     }
 }
 
@@ -38,7 +38,7 @@ pub(crate) fn create_table(db_name: &str, create_statement: &str) -> Result<()> 
         tx.execute(create_statement, params![])?;
         tx.commit()?;
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     Ok(())
 }
 
@@ -64,7 +64,7 @@ pub(crate) fn write_results(
         )?;
         tx.commit()?;
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     Ok(())
 }
 
@@ -76,7 +76,7 @@ pub(crate) fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
         tx.execute(drop_statement, params![])?;
         tx.commit()?;
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     Ok(())
 }
 
@@ -88,7 +88,7 @@ pub(crate) fn delete_all_rows(db_name: &str, delete_statement: &str) -> Result<(
         tx.execute(delete_statement, params![])?;
         tx.commit()?;
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     Ok(())
 }
 
@@ -111,7 +111,7 @@ pub fn write_difference(
         )?;
         tx.commit()?;
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     Ok(())
 }
 
@@ -131,7 +131,7 @@ pub(crate) fn read_differences(
             result.push(difference?);
         }
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     Ok(result)
 }
 
@@ -146,10 +146,10 @@ pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
 
         count = count_iter.next();
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     match count {
         Some(c) => Ok(c?),
-        None => Err(RttError::Database(rusqlite::Error::QueryReturnedNoRows)),
+        None => Err(RegError::Database(rusqlite::Error::QueryReturnedNoRows)),
     }
 }
 
@@ -167,10 +167,10 @@ pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> 
         let mut count_iter = stmt.query_map(params![], |row| row.get(0))?;
         count = count_iter.next();
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     match count {
         Some(c) => Ok(c?),
-        None => Err(RttError::Database(rusqlite::Error::QueryReturnedNoRows)),
+        None => Err(RegError::Database(rusqlite::Error::QueryReturnedNoRows)),
     }
 }
 
@@ -188,9 +188,9 @@ pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str)
         let mut count_iter = stmt.query_map(params![], |row| row.get(0))?;
         count = count_iter.next();
     }
-    conn.close().map_err(|(_, e)| RttError::Database(e))?;
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
     match count {
         Some(c) => Ok(c?),
-        None => Err(RttError::Database(rusqlite::Error::QueryReturnedNoRows)),
+        None => Err(RegError::Database(rusqlite::Error::QueryReturnedNoRows)),
     }
 }

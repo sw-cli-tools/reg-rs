@@ -1,4 +1,4 @@
-# RTT1 Basic Workflow Demo
+# reg-rs Basic Workflow Demo
 # This VHS tape demonstrates the basic workflow: create, run, report, remove
 #
 # To generate the GIF:
@@ -12,7 +12,7 @@ Set Height 600
 Set Theme "Dracula"
 
 # Title
-Type "# RTT1 - Regression Test Tool - Basic Workflow"
+Type "# reg-rs - Regression Test Tool - Basic Workflow"
 Enter
 Sleep 1s
 
@@ -30,7 +30,7 @@ Sleep 500ms
 Type "# Show available commands"
 Enter
 Sleep 500ms
-Type "./target/release/rtt1 -h"
+Type "./target/release/reg-rs -h"
 Enter
 Sleep 2s
 
@@ -38,7 +38,7 @@ Sleep 2s
 Type "# Step 1: Create a test"
 Enter
 Sleep 500ms
-Type "./target/release/rtt1 create -t data/hello.tdb -c 'echo hello world'"
+Type "./target/release/reg-rs create -t data/hello.tdb -c 'echo hello world'"
 Enter
 Sleep 2s
 
@@ -46,7 +46,7 @@ Sleep 2s
 Type "# Step 2: Run the test (compare against baseline)"
 Enter
 Sleep 500ms
-Type "./target/release/rtt1 run -p hello"
+Type "./target/release/reg-rs run -p hello"
 Enter
 Sleep 2s
 
@@ -54,7 +54,7 @@ Sleep 2s
 Type "# Step 3: Report results"
 Enter
 Sleep 500ms
-Type "./target/release/rtt1 report -p hello -v"
+Type "./target/release/reg-rs report -p hello -v"
 Enter
 Sleep 2s
 
@@ -62,7 +62,7 @@ Sleep 2s
 Type "# Step 4: Clean up"
 Enter
 Sleep 500ms
-Type "./target/release/rtt1 remove -p hello"
+Type "./target/release/reg-rs remove -p hello"
 Enter
 Sleep 1s
 

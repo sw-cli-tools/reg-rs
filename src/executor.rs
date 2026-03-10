@@ -1,6 +1,6 @@
 //! Command executor trait and implementations for dependency injection
 
-use crate::error::RttError;
+use crate::error::RegError;
 
 /// Trait for executing shell commands
 ///
@@ -32,7 +32,7 @@ impl CommandExecutor for RealCommandExecutor {
             .arg(command)
             .output()
             .map_err(|e| {
-                RttError::CommandExecution(format!("failed to execute '{}': {}", command, e))
+                RegError::CommandExecution(format!("failed to execute '{}': {}", command, e))
             })?;
         let status_code = output.status.code().unwrap_or(-1);
 
