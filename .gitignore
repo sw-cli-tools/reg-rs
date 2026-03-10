@@ -1,8 +1,10 @@
 /target
 
 # Generated demo files (large binaries)
-*.gif
 *.mp4
+
+# Demo GIFs are tracked (referenced from README.md)
+# Regenerate with: vhs demo/<name>.tape
 
 # Test data
 /data/
