@@ -1,4 +1,4 @@
-* rtt1/doc/plan.org
+* reg-rs/doc/plan.org
 ** deps
 *** chrono - timestamps
 *** rusqlite - db
@@ -20,10 +20,10 @@
 *** smarter diff
 *** regex
 ** completed
-*** DONE refactor db6, structopt2 to use structopt in rtt1 instead of clap
-*** DONE add debug flag from clap5 args in rtt1 instead 
-*** DONE refactor clap5 to support dry-run, report in rtt1
-*** DONE refactor wdir2 to support test discovery in rtt1
+*** DONE refactor db6, structopt2 to use structopt in reg-rs instead of clap
+*** DONE add debug flag from clap5 args in reg-rs instead 
+*** DONE refactor clap5 to support dry-run, report in reg-rs
+*** DONE refactor wdir2 to support test discovery in reg-rs
 *** DONE add string_template crate to produce reports
 *** DONE refactor to use tinytemplate instead of string_template crate 
 *** DONE move now to new time module
@@ -59,24 +59,24 @@
 *** DONE add aliases for create, run, and report subcommands (c, r, p); update int test
 *** DONE fix created TBD bug
 *** DONE add logging
-*** DONE monitor tests running under different rtt1 process(es) (using notify)
+*** DONE monitor tests running under different reg-rs process(es) (using notify)
 *** DONE add build script that updates the -V version with each build timestamp
 *** DONE refactor to fix clippy warnings
 ** next
 *** TODO add version to status view
 *** TODO fix timing bug that corrupts database (or handle unexpected None)
-*** TODO remove hardcoded paths (e.g. "data", "wrightmikea/rtt1")
+*** TODO remove hardcoded paths (e.g. "data", "wrightmikea/reg-rs")
 *** TODO add recovery to restart monitor thread after panic
-*** TODO run rtt tests serially under separate thread; detect thread panic/error
+*** TODO run reg-rs tests serially under separate thread; detect thread panic/error
 *** TODO clean up, add unit-tests, doc tests, (e.g. remove hardcoded data dir, add .tdb when missing)
-*** TODO dogfood test tests, rtt tests
+*** TODO dogfood test tests, reg-rs tests
 *** TODO stress test (for parallel execution, potential db inconsistent state issues)
 *** TODO add more safeguards, if needed (modify copy of db, overlay original with changes?)
 *** TODO add examples
 *** TODO add mechanism to ignore allowed diffs
 *** TODO handle bad test databases and other errors (errors module)
 *** TODO add error handling in main (try_main?) see watchexec/watchexec/src/error.rs
-*** TODO add exit codes (rtt1 should return non-zero if there is a test regression or rtt1 error)
+*** TODO add exit codes (reg-rs should return non-zero if there is a test regression or reg-rs error)
 *** TODO add panics for internal logic errors? (code coverage unreachable paths?)
 *** TODO time test execution (store in db)
 *** TODO watchdog time-out: per-test watchdog thread waits for test thread completion or time-out
@@ -90,5 +90,18 @@
 *** TODO add parallel examples
 *** TODO update benchmarks
 *** TODO update documentation
-deferred
+** ai-agent-integration (wish list - see docs/prd.md for details)
+*** TODO (A) agent-oriented help: --help-agent / --help-json for structured machine-readable CLI help
+*** TODO (A) include input/output schemas, recipes, error taxonomy in structured format
+*** TODO (A) annotate flags with type, default, constraints, side effects for agent discovery
+*** TODO (B) intelligent golden file management: distinguish stable output from environmental noise
+*** TODO (B) reg-rs analyze: run test N times, detect volatile sections (timestamps, paths, PIDs)
+*** TODO (B) mask/schema sidecar files (.tdb.mask) for regex-based diff exclusions
+*** TODO (B) reg-rs create --smart: auto-detect volatile sections from multiple runs
+*** TODO (C) AI-powered failure interpretation: reg-rs diagnose command
+*** TODO (C) classify failures: true regression, flaky test, environmental change, stale baseline
+*** TODO (C) flakiness detection: run K times, measure variance, suggest masks
+*** TODO (C) --json output for all diagnostic commands (agent consumption)
+*** TODO (C) failure history table in .tdb for trend analysis
+** deferred
 *** TODO change sql statements from str to types? (so you can't pass a drop by accident)

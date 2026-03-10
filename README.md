@@ -5,6 +5,7 @@ A command-line utility that creates, discovers, runs, and reports on regression 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Demos](#demos)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Commands](#commands)
@@ -32,6 +33,20 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 - Report test results with varying verbosity
 - Track and analyze differences between original and latest test runs
 - Web-based status monitoring for long-running tests
+
+## Demos
+
+### Basic Workflow
+
+![Basic Workflow](demo/basic.gif)
+
+*Create, run, report, and remove a regression test. Generate with `vhs demo/basic.tape`.*
+
+### Regression Detection
+
+![Regression Detection](demo/workflow.gif)
+
+*Detect regressions when command output changes. Generate with `vhs demo/workflow.tape`.*
 
 ## Installation
 
