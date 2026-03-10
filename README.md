@@ -48,6 +48,12 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 
 *Detect regressions when command output changes. Generate with `vhs demo/workflow.tape`.*
 
+### Dogfooding
+
+![Dogfood Demo](demo/dogfood.gif)
+
+*reg-rs tests its own CLI help output for regressions. Generate with `vhs demo/dogfood.tape`.*
+
 ## Installation
 
 ### Requirements
@@ -255,6 +261,28 @@ cargo test integration_test_reg_rs_help
 # Run tests with output
 cargo test -- --nocapture
 ```
+
+### Self-Testing (Dogfooding)
+
+reg-rs tests its own CLI output for regressions. This catches any unintended changes to help text, command names, or flag descriptions.
+
+```bash
+# Run the dogfood script (creates, runs, and reports self-tests)
+bash demo/dogfood.sh
+
+# Or do it manually:
+cargo build --release
+mkdir -p data
+./target/release/reg-rs create -t data/reg_rs_help.tdb -c './target/release/reg-rs -h'
+./target/release/reg-rs create -t data/reg_rs_create_help.tdb -c './target/release/reg-rs create -h'
+# ... (repeat for run, report, remove, status)
+
+# Run and report
+./target/release/reg-rs run -p reg_rs
+./target/release/reg-rs report -p reg_rs -vv
+```
+
+After making CLI changes, run `reg-rs run -p reg_rs` to check if any help text changed unexpectedly. If the change was intentional, re-create the baselines with `demo/dogfood.sh`.
 
 ## License
 
