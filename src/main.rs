@@ -1,6 +1,6 @@
 //! reg-rs (regress) - Regression Test Tool
 #![deny(warnings, missing_docs)]
-use reg_rs::{args, builder, command, error::RegError};
+use reg_rs::{analyze, args, builder, command, error::RegError};
 
 /// Entry point for the application
 #[tokio::main]
@@ -11,6 +11,9 @@ async fn main() -> Result<(), RegError> {
         .init();
     log::info!(target: "reg_rs::main", "env_logger initialized");
     match &config.mode {
+        args::Subcommands::Analyze { pattern } => {
+            analyze::analyze_failures(pattern)?;
+        }
         args::Subcommands::Create { .. } => {
             command::create_original(&config)?;
         }

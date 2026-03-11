@@ -19,7 +19,7 @@ reg-rs (pronounced "regress") is a CLI utility for creating, running, and managi
 The codebase follows a modular architecture with clear separation of concerns:
 
 - **Main Entry**: `src/main.rs` + `src/lib.rs` - Entry point and module declarations
-- **Command Processing**: `src/command.rs` + `src/builder.rs` - Handles subcommands (create, run, report, remove, status)
+- **Command Processing**: `src/command.rs` + `src/builder.rs` - Handles subcommands (create, run, report, remove, status, analyze)
 - **Test Execution**: `src/runner.rs` + `src/process.rs` - Runs tests and captures output
 - **Preprocessing**: `src/preprocess.rs` - Output normalization before diffing (pipes through shell commands)
 - **AI Integration**: `src/ai.rs` - Natural language test creation via Claude API (`--describe` flag)

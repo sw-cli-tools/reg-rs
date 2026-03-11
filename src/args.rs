@@ -75,6 +75,27 @@ EXAMPLES:
         #[clap(long, short = 'M', default_value = "text")]
         diff_mode: String,
     },
+    /// Uses AI to analyze a test failure and determine if it's a real regression or flaky (alias a)
+    #[clap(
+        name = "analyze",
+        alias = "a",
+        long_about = "Uses AI to analyze a test failure and determine root cause.
+
+Sends the test's original output, latest output, and diff to the Claude API
+for analysis. The AI determines if the failure is a real regression, a flaky
+test, or a baseline that needs updating.
+
+Requires ANTHROPIC_API_KEY environment variable.
+
+EXAMPLES:
+  reg-rs analyze -p my_test
+  reg-rs a -p failing_test"
+    )]
+    Analyze {
+        /// Substring pattern to match test names to analyze
+        #[clap(long, short)]
+        pattern: String,
+    },
     /// Removes previously created test and run results if any.  Discards test and results!
     #[clap(
         long_about = "Removes test database files matching the specified pattern.

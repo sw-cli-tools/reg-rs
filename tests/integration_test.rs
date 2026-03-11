@@ -52,17 +52,14 @@ fn integration_test_reg_rs_help() {
         .stdout(predicate::str::contains(
             "Usage: reg-rs [OPTIONS] <COMMAND>",
         ))
+        .stdout(predicate::str::contains("analyze"))
         .stdout(predicate::str::contains(
-            "create  Creates a new test of a specified command",
+            "Creates a new test of a specified command",
         ))
-        .stdout(predicate::str::contains(
-            "remove  Removes previously created test",
-        ))
-        .stdout(predicate::str::contains("report  Reports counts/summary"))
-        .stdout(predicate::str::contains("run     Runs a test"))
-        .stdout(predicate::str::contains(
-            "status  Starts a server to monitor",
-        ))
+        .stdout(predicate::str::contains("Removes previously created test"))
+        .stdout(predicate::str::contains("Reports counts/summary"))
+        .stdout(predicate::str::contains("Runs a test"))
+        .stdout(predicate::str::contains("Starts a server to monitor"))
         .stdout(predicate::str::contains("-d, --debug"))
         .stdout(predicate::str::contains("-l, --logging"))
         .stdout(predicate::str::contains("-h, --help"))

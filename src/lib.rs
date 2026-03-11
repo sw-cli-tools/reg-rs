@@ -71,6 +71,8 @@ mod tests {
 
 /// AI-powered command generation
 pub mod ai;
+/// AI-powered failure analysis
+pub mod analyze;
 /// Argument parsing
 pub mod args;
 /// Test Builder
