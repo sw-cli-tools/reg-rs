@@ -39,8 +39,9 @@ pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
         return Ok(());
     };
 
+    let timeout_secs = config.extract_timeout();
     let db_name = resolve_test_path(&test);
-    if let Some(test_result) = runner::run_one(&db_name, &command, false)? {
+    if let Some(test_result) = runner::run_one_timeout(&db_name, &command, false, timeout_secs)? {
         db::reset_differences(&db_name)?;
         db::reset_latest_results(&db_name)?;
         db::store_results(
@@ -55,6 +56,9 @@ pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
             && diff_mode != "text"
         {
             db::store_metadata(&db_name, crate::normalize::DIFF_MODE_KEY, &diff_mode)?;
+        }
+        if timeout_secs != 300 {
+            db::store_metadata(&db_name, "timeout", &timeout_secs.to_string())?;
         }
     }
     Ok(())

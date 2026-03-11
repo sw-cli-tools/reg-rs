@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::config;
 use crate::db;
 use crate::diff;
@@ -38,7 +40,15 @@ pub fn run_many(config: &config::Config) -> crate::error::Result<()> {
     }
     for test in tests.found {
         let prior_test_result = db::read_original_results(&test)?;
-        let maybe_regression = run_one(&test, &prior_test_result.command, config.is_dry_run())?;
+        let timeout_secs = db::read_metadata(&test, "timeout")?
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(300);
+        let maybe_regression = run_one_timeout(
+            &test,
+            &prior_test_result.command,
+            config.is_dry_run(),
+            timeout_secs,
+        )?;
         if let Some(latest_test_result) = maybe_regression {
             let db_name = &test;
             diff::process_differences(db_name, &prior_test_result, &latest_test_result)?;
@@ -46,6 +56,37 @@ pub fn run_many(config: &config::Config) -> crate::error::Result<()> {
         }
     }
     Ok(())
+}
+
+/// Run one test with a custom timeout (in seconds)
+pub fn run_one_timeout(
+    test_name: &str,
+    command: &str,
+    dry_run: bool,
+    timeout_secs: u64,
+) -> crate::error::Result<Option<TestResults>> {
+    log::info!(
+        "runner/run_one_timeout test_name {}, dry_run {}, timeout {}s",
+        &test_name,
+        dry_run,
+        timeout_secs
+    );
+    if dry_run {
+        println!("dry-run: test name: {}, command: {}", test_name, command);
+        Ok(None)
+    } else {
+        let (exit_code, stderr, stdout) =
+            process::exec_with_timeout(command.to_string(), Duration::from_secs(timeout_secs))?;
+        let test = TestResults {
+            name: test_name.to_string(),
+            command: command.to_string(),
+            time_created: time::now(),
+            exit_code,
+            stderr,
+            stdout,
+        };
+        Ok(Some(test))
+    }
 }
 
 /// Run one test

@@ -74,6 +74,9 @@ EXAMPLES:
         /// Built-in diff normalization mode: text (default) or json (sorts keys, normalizes whitespace)
         #[clap(long, short = 'M', default_value = "text")]
         diff_mode: String,
+        /// Command timeout in seconds (default: 300)
+        #[clap(long, default_value = "300")]
+        timeout: u64,
     },
     /// Uses AI to analyze a test failure and determine if it's a real regression or flaky (alias a)
     #[clap(
@@ -201,6 +204,7 @@ mod tests {
                     describe: None,
                     preprocess: None,
                     diff_mode: "text".to_string(),
+                    timeout: 300,
                 },
                 debug: false,
                 logging: false,
@@ -219,6 +223,7 @@ mod tests {
                     describe: None,
                     preprocess: None,
                     diff_mode: "text".to_string(),
+                    timeout: 300,
                 },
                 debug: true,
                 logging: false,

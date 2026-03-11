@@ -76,6 +76,15 @@ impl Config {
         }
     }
 
+    /// extract timeout from Create subcommand (in seconds)
+    pub fn extract_timeout(&self) -> u64 {
+        if let args::Subcommands::Create { timeout, .. } = &self.mode {
+            *timeout
+        } else {
+            300
+        }
+    }
+
     /// extract diff mode from Create subcommand
     pub fn extract_diff_mode(&self) -> Option<String> {
         if let args::Subcommands::Create { diff_mode, .. } = &self.mode {
@@ -154,6 +163,7 @@ mod tests {
                 describe: None,
                 preprocess: None,
                 diff_mode: "text".to_string(),
+                timeout: 300,
             },
             debug: false,
         };
