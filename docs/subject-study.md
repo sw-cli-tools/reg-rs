@@ -213,14 +213,14 @@ Since each `.tdb` is a separate SQLite database with its own file lock, there ar
 
 ### Performance results
 
-Measured on the 11-test pjmai-rs suite (macOS, Apple Silicon):
+Measured on macOS, Apple Silicon:
 
-| Mode | Wall clock | CPU utilization |
-|------|-----------|-----------------|
-| Sequential | 0.179s | 90% |
-| Parallel | 0.046s | 516% |
+| Suite | Tests | Sequential | Parallel | Speedup |
+|-------|-------|-----------|----------|---------|
+| reg-rs self-tests | 6 | 0.098s | 0.024s | 4.1x |
+| pjmai-rs | 11 | 0.186s | 0.047s | 4.0x |
 
-**3.9x speedup** — the parallel run saturates multiple cores since each test spawns an independent shell process. The speedup comes from overlapping the process launch and I/O wait times across tests.
+Both suites achieve ~4x speedup. The parallel runs saturate multiple cores (500%+ CPU utilization) since each test spawns an independent shell process. The speedup comes from overlapping process launch and I/O wait times across tests.
 
 With larger suites or slower commands (e.g., network-dependent tests with longer runtimes), the speedup would be more dramatic since there's more idle time to overlap.
 
@@ -237,6 +237,23 @@ The pjmai-rs suite satisfies all three: each test creates an isolated temp direc
 ### Meta-testing value
 
 Running the pjmai-rs suite in parallel also serves as a stress test of reg-rs itself — it exercises concurrent reads and writes to different `.tdb` files, concurrent process spawning, and concurrent diff computation. Any file-locking or thread-safety bugs in reg-rs would surface as flaky failures in the parallel pjmai-rs run.
+
+### reg-rs self-tests (dogfooding)
+
+reg-rs also tests itself. The `demo/dogfood.sh` script creates 6 regression tests that capture the `--help` output of each reg-rs subcommand:
+
+| Test | Command |
+|------|---------|
+| `reg_rs_help` | `reg-rs -h` |
+| `reg_rs_create_help` | `reg-rs create -h` |
+| `reg_rs_run_help` | `reg-rs run -h` |
+| `reg_rs_report_help` | `reg-rs report -h` |
+| `reg_rs_remove_help` | `reg-rs remove -h` |
+| `reg_rs_status_help` | `reg-rs status -h` |
+
+These tests detect regressions in CLI argument definitions — any change to flag names, help descriptions, subcommand ordering, or clap formatting will produce a diff. They are the simplest possible regression tests: no sandbox needed, no preprocessing, no state, fully deterministic.
+
+Because they are completely independent (each just runs `reg-rs <subcommand> -h`), they run in parallel without modification and achieve the same ~4x speedup as the pjmai-rs suite. The self-tests running in parallel is a particularly good meta-test: reg-rs is simultaneously the test runner, the subject under test, and the test executor — any concurrency bug would cause reg-rs to detect a regression in itself.
 
 ## Extending the suite
 
