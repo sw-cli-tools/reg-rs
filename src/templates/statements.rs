@@ -66,3 +66,22 @@ SELECT COUNT(*) AS c from { table_name }
 pub const COUNT_DIFF_TYPE_TEMPLATE: &str = "
 SELECT COUNT(*) FROM { table_name } WHERE type = '{ difference_type }'
 ";
+
+/// create metadata table SQL statement (not templated — fixed table name)
+pub const CREATE_METADATA_TABLE: &str = "
+ CREATE TABLE IF NOT EXISTS metadata_table (
+ key               TEXT PRIMARY KEY,
+ value             TEXT NOT NULL
+)
+";
+
+/// upsert metadata SQL statement
+pub const UPSERT_METADATA: &str = "
+ INSERT INTO metadata_table (key, value) VALUES (?1, ?2)
+ ON CONFLICT(key) DO UPDATE SET value = excluded.value
+";
+
+/// select metadata value by key SQL statement
+pub const SELECT_METADATA: &str = "
+ SELECT value FROM metadata_table WHERE key = ?1
+";

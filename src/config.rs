@@ -62,6 +62,19 @@ impl Config {
         }
     }
 
+    /// extract optional preprocess command from Create subcommand
+    pub fn extract_preprocess(&self) -> Option<String> {
+        if let args::Subcommands::Create {
+            preprocess: Some(preprocess),
+            ..
+        } = &self.mode
+        {
+            Some(preprocess.to_string())
+        } else {
+            None
+        }
+    }
+
     /// determines how verbose the output should be
     pub fn verbosity_level(&self) -> u8 {
         if let args::Subcommands::Report { verbosity, .. } = &self.mode {
@@ -129,6 +142,7 @@ mod tests {
                 test: "my_test".to_string(),
                 command: Some("echo hello".to_string()),
                 describe: None,
+                preprocess: None,
             },
             debug: false,
         };

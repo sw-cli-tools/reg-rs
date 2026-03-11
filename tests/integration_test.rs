@@ -262,6 +262,82 @@ fn integration_test_remove_no_matching_tests() {
         ));
 }
 
+// --- Preprocess tests ---
+
+#[test]
+fn integration_test_create_with_preprocess() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("pp_test.tdb");
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+
+    // Create a test with a preprocess that sorts lines
+    reg_rs()
+        .args([
+            "create",
+            "-t",
+            "pp_test",
+            "-c",
+            "printf 'banana\\napple\\ncherry\\n'",
+            "-P",
+            "sort",
+        ])
+        .assert()
+        .success();
+
+    // Run a command that outputs same lines in different order — should pass after sort
+    // The original captured "banana\napple\ncherry\n" preprocessed to "apple\nbanana\ncherry\n"
+    // This run outputs "cherry\napple\nbanana\n" preprocessed to "apple\nbanana\ncherry\n"
+    // So after preprocessing both match.
+
+    // First, remove and recreate with a command that outputs differently
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+
+    // Create baseline: unsorted fruit list
+    reg_rs()
+        .args([
+            "create",
+            "-t",
+            "pp_test",
+            "-c",
+            "printf 'banana\\napple\\ncherry\\n'",
+            "-P",
+            "sort",
+        ])
+        .assert()
+        .success();
+
+    assert!(test_db.exists());
+
+    // Run and report — same command should pass
+    reg_rs().args(["run", "-p", "pp_test"]).assert().success();
+
+    reg_rs()
+        .args(["report", "-p", "pp_test"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("00001 passed"));
+
+    // Clean up
+    reg_rs()
+        .args(["remove", "-p", "pp_test"])
+        .assert()
+        .success();
+}
+
+#[test]
+fn integration_test_create_help_shows_preprocess() {
+    common::setup();
+    reg_rs()
+        .args(["create", "-h"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("-P, --preprocess"));
+}
+
 // --- Demo script tests (dogfooding) ---
 // These run the demo shell scripts using the debug binary,
 // ensuring reg-rs can test itself and that demo scripts stay working.

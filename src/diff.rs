@@ -2,6 +2,7 @@ use text_diff::{Difference, diff};
 
 use crate::db;
 use crate::error::Result;
+use crate::preprocess;
 use crate::runner;
 
 /// test result regression types
@@ -86,16 +87,64 @@ pub fn get_differences(older: &str, newer: &str) -> Option<Vec<Difference>> {
 }
 
 /// store test result differences
+///
+/// If a preprocess command is configured for this test, stdout and stderr
+/// are piped through it before comparison. Raw output is still stored in
+/// the results tables for debugging.
 pub fn process_differences(
     db_name: &str,
     prior_test_result: &runner::TestResults,
     latest_test_result: &runner::TestResults,
 ) -> Result<()> {
     log::info!("diff/process_differences {}", &db_name);
+
+    let pp = db::read_metadata(db_name, preprocess::PREPROCESS_KEY)?;
+    let pp_ref = pp.as_deref();
+
+    let prior = if pp_ref.is_some() {
+        runner::TestResults {
+            name: prior_test_result.name.clone(),
+            command: prior_test_result.command.clone(),
+            time_created: prior_test_result.time_created.clone(),
+            exit_code: prior_test_result.exit_code,
+            stderr: preprocess::apply(&prior_test_result.stderr, pp_ref)?,
+            stdout: preprocess::apply(&prior_test_result.stdout, pp_ref)?,
+        }
+    } else {
+        runner::TestResults {
+            name: prior_test_result.name.clone(),
+            command: prior_test_result.command.clone(),
+            time_created: prior_test_result.time_created.clone(),
+            exit_code: prior_test_result.exit_code,
+            stderr: prior_test_result.stderr.clone(),
+            stdout: prior_test_result.stdout.clone(),
+        }
+    };
+
+    let latest = if pp_ref.is_some() {
+        runner::TestResults {
+            name: latest_test_result.name.clone(),
+            command: latest_test_result.command.clone(),
+            time_created: latest_test_result.time_created.clone(),
+            exit_code: latest_test_result.exit_code,
+            stderr: preprocess::apply(&latest_test_result.stderr, pp_ref)?,
+            stdout: preprocess::apply(&latest_test_result.stdout, pp_ref)?,
+        }
+    } else {
+        runner::TestResults {
+            name: latest_test_result.name.clone(),
+            command: latest_test_result.command.clone(),
+            time_created: latest_test_result.time_created.clone(),
+            exit_code: latest_test_result.exit_code,
+            stderr: latest_test_result.stderr.clone(),
+            stdout: latest_test_result.stdout.clone(),
+        }
+    };
+
     db::clear_differences(db_name)?;
-    maybe_store_exit_code_differences(db_name, prior_test_result, latest_test_result)?;
-    maybe_store_stderr_differences(db_name, prior_test_result, latest_test_result)?;
-    maybe_store_stdout_differences(db_name, prior_test_result, latest_test_result)?;
+    maybe_store_exit_code_differences(db_name, &prior, &latest)?;
+    maybe_store_stderr_differences(db_name, &prior, &latest)?;
+    maybe_store_stdout_differences(db_name, &prior, &latest)?;
     Ok(())
 }
 

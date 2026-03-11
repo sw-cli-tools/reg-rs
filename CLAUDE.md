@@ -21,6 +21,8 @@ The codebase follows a modular architecture with clear separation of concerns:
 - **Main Entry**: `src/main.rs` + `src/lib.rs` - Entry point and module declarations
 - **Command Processing**: `src/command.rs` + `src/builder.rs` - Handles subcommands (create, run, report, remove, status)
 - **Test Execution**: `src/runner.rs` + `src/process.rs` - Runs tests and captures output
+- **Preprocessing**: `src/preprocess.rs` - Output normalization before diffing (pipes through shell commands)
+- **AI Integration**: `src/ai.rs` - Natural language test creation via Claude API (`--describe` flag)
 - **Database Layer**: `src/db.rs` + `src/sqlite.rs` + `src/queries.rs` - SQLite storage for test results
 - **Reporting**: `src/reporters/*.rs` - Different report formats (summary, details, passes, failures, differences)
 - **Status Server**: `src/status/*.rs` - Web-based monitoring server (port 4111)
@@ -42,6 +44,9 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Magic strings extracted as constants: `TDB_EXTENSION`, `LOCK_EXTENSION`, `FILE_WATCH_DEBOUNCE_SECS`, `REQUIRED_BLANK`
 - `build.rs` generates version string with timestamp into `$OUT_DIR/generated.rs`
 - Demo scripts (`demo/*.sh`) are tested via `cargo test` — reg-rs dogfoods itself
+- Per-test metadata stored in `metadata_table` (key-value pairs) in each `.tdb` file — backward compatible
+- `--preprocess` flag on `create` stores a shell command applied to stdout/stderr before diffing
+- `--describe` flag on `create` uses Claude API to generate commands from natural language
 
 ## Code Style Guidelines
 - Formatting: Run `cargo fmt` before committing

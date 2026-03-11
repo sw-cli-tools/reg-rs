@@ -233,6 +233,18 @@ pub fn clear_differences(db_name: &str) -> Result<()> {
     })
 }
 
+/// Store test metadata (key-value pair)
+pub fn store_metadata(db_name: &str, key: &str, value: &str) -> Result<()> {
+    log::info!("db/store_metadata {} key={}", db_name, key);
+    with_lock(db_name, || sqlite::store_metadata(db_name, key, value))
+}
+
+/// Read test metadata by key. Returns None if not set.
+pub fn read_metadata(db_name: &str, key: &str) -> Result<Option<String>> {
+    log::info!("db/read_metadata {} key={}", db_name, key);
+    with_lock(db_name, || sqlite::read_metadata(db_name, key))
+}
+
 /// clear latest test results
 pub fn clear_latest_results(db_name: &str) -> Result<()> {
     log::info!("db/clear_results {}", &db_name);

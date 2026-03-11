@@ -48,6 +48,9 @@ pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
             &test_result,
             queries::StatementContext::original(),
         )?;
+        if let Some(preprocess) = config.extract_preprocess() {
+            db::store_metadata(&db_name, crate::preprocess::PREPROCESS_KEY, &preprocess)?;
+        }
     }
     Ok(())
 }

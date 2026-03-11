@@ -68,6 +68,9 @@ EXAMPLES:
         /// Natural language description — AI generates the command (requires ANTHROPIC_API_KEY)
         #[clap(long, short = 'D', conflicts_with = "command")]
         describe: Option<String>,
+        /// Shell command to preprocess stdout/stderr before diffing (e.g., "jq --sort-keys")
+        #[clap(long, short = 'P')]
+        preprocess: Option<String>,
     },
     /// Removes previously created test and run results if any.  Discards test and results!
     #[clap(
@@ -172,6 +175,7 @@ mod tests {
                     test: "pat001".to_string(),
                     command: Some("pwd".to_string()),
                     describe: None,
+                    preprocess: None,
                 },
                 debug: false,
                 logging: false,
@@ -188,6 +192,7 @@ mod tests {
                     test: "pat001".to_string(),
                     command: Some("pwd".to_string()),
                     describe: None,
+                    preprocess: None,
                 },
                 debug: true,
                 logging: false,

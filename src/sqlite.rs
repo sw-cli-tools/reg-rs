@@ -174,6 +174,41 @@ pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> 
     }
 }
 
+/// Store a metadata key-value pair, creating the table if needed.
+pub(crate) fn store_metadata(db_name: &str, key: &str, value: &str) -> Result<()> {
+    log::info!("sqlite/store_metadata {} key={}", db_name, key);
+    let mut conn = Connection::open(db_name)?;
+    {
+        let tx = conn.transaction()?;
+        tx.execute(statements::CREATE_METADATA_TABLE, params![])?;
+        tx.execute(statements::UPSERT_METADATA, params![key, value])?;
+        tx.commit()?;
+    }
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
+    Ok(())
+}
+
+/// Read a metadata value by key. Returns None if the table or key doesn't exist.
+pub(crate) fn read_metadata(db_name: &str, key: &str) -> Result<Option<String>> {
+    log::info!("sqlite/read_metadata {} key={}", db_name, key);
+    let conn = Connection::open(db_name)?;
+    let result = {
+        // Table may not exist in older .tdb files
+        match conn.prepare(statements::SELECT_METADATA) {
+            Ok(mut stmt) => {
+                let mut rows = stmt.query_map(params![key], |row| row.get(0))?;
+                match rows.next() {
+                    Some(val) => Some(val?),
+                    None => None,
+                }
+            }
+            Err(_) => None, // metadata_table doesn't exist
+        }
+    };
+    conn.close().map_err(|(_, e)| RegError::Database(e))?;
+    Ok(result)
+}
+
 /// count differences by type
 pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str) -> Result<u32> {
     log::info!(
@@ -408,5 +443,39 @@ mod tests {
             ),
         );
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_store_and_read_metadata() {
+        let (_dir, db) = test_db();
+        store_metadata(&db, "preprocess", "jq --sort-keys").unwrap();
+        let val = read_metadata(&db, "preprocess").unwrap();
+        assert_eq!(val, Some("jq --sort-keys".to_string()));
+    }
+
+    #[test]
+    fn test_read_metadata_missing_key() {
+        let (_dir, db) = test_db();
+        store_metadata(&db, "preprocess", "cat").unwrap();
+        let val = read_metadata(&db, "nonexistent").unwrap();
+        assert_eq!(val, None);
+    }
+
+    #[test]
+    fn test_read_metadata_no_table() {
+        let (_dir, db) = test_db();
+        // Create a DB file without metadata table
+        create_original_table(&db);
+        let val = read_metadata(&db, "preprocess").unwrap();
+        assert_eq!(val, None);
+    }
+
+    #[test]
+    fn test_store_metadata_upsert() {
+        let (_dir, db) = test_db();
+        store_metadata(&db, "preprocess", "cat").unwrap();
+        store_metadata(&db, "preprocess", "sort").unwrap();
+        let val = read_metadata(&db, "preprocess").unwrap();
+        assert_eq!(val, Some("sort".to_string()));
     }
 }

@@ -91,6 +91,8 @@ pub mod executor;
 pub mod finder;
 /// Logging
 pub mod logging;
+/// Output preprocessing for normalization before diffing
+pub mod preprocess;
 /// Test Process
 pub mod process;
 /// Test Result DB Queries
