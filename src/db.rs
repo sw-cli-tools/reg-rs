@@ -284,6 +284,42 @@ pub fn clear_latest_results(db_name: &str) -> Result<()> {
     Ok(())
 }
 
+/// Atomically clear and replace latest test results under a single file lock.
+///
+/// This prevents data loss if the process crashes between clear and store,
+/// which was possible when these were separate operations.
+pub fn replace_latest_results(db_name: &str, test_results: &runner::TestResults) -> Result<()> {
+    log::info!("db/replace_latest_results {}", &db_name);
+    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
+        .map_err(|e| RegError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
+    sqlite::delete_all_rows(
+        db_name,
+        &queries::get_statement(
+            &queries::StatementContext::latest(),
+            statements::DELETE_ALL_ROWS_TEMPLATE,
+        ),
+    )?;
+    sqlite::create_table(
+        db_name,
+        &queries::get_statement(
+            &queries::StatementContext::latest(),
+            statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
+        ),
+    )?;
+    sqlite::write_results(
+        db_name,
+        test_results,
+        &queries::get_statement(
+            &queries::StatementContext::latest(),
+            statements::INSERT_TEST_RESULTS_TEMPLATE,
+        ),
+    )?;
+    filelock
+        .unlock()
+        .map_err(|e| RegError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

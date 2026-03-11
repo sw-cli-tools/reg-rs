@@ -4,7 +4,6 @@ use crate::diff;
 use crate::executor::CommandExecutor;
 use crate::finder;
 use crate::process;
-use crate::queries;
 use crate::time;
 
 /// Test Results data
@@ -38,12 +37,7 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
         if let Some(latest_test_result) = maybe_regression {
             let db_name = &test;
             diff::process_differences(db_name, &prior_test_result, &latest_test_result)?;
-            db::clear_latest_results(db_name)?;
-            db::store_results(
-                db_name,
-                &latest_test_result,
-                queries::StatementContext::latest(),
-            )?;
+            db::replace_latest_results(db_name, &latest_test_result)?;
         }
     }
     Ok(())

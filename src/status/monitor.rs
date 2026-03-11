@@ -4,55 +4,61 @@ use std::time::Duration;
 
 use notify::{RecursiveMode, Watcher, watcher};
 
+use crate::error::RegError;
 use crate::status::server::{self, AppState};
 use crate::time;
 
-/// launch monitor thread
+/// Launch monitor thread.
+///
+/// The monitor watches the data directory for file changes and updates
+/// the shared application state. Errors during setup are logged and
+/// the thread exits gracefully rather than panicking.
 pub fn launch_monitor(app_state: AppState) -> Vec<std::thread::JoinHandle<()>> {
     log::info!("monitor/launch_monitor");
     let mut handles = vec![];
     handles.push({
         thread::spawn(move || {
-            watch(app_state);
+            if let Err(e) = watch(app_state) {
+                log::error!("monitor/watch exited with error: {}", e);
+                eprintln!("Warning: file monitor stopped: {}", e);
+            }
         })
     });
     handles
 }
 
-/// watch for test results
-fn watch(app_state: AppState) -> ! {
-    let (pattern, data_dir) = match app_state.state_data.lock() {
-        Ok(state_data) => (state_data.pattern.clone(), state_data.data_dir.clone()),
-        Err(e) => {
-            log::error!("monitor/watch: Failed to lock state_data: {}", e);
-            panic!("Cannot start monitor: mutex poisoned");
-        }
+/// Watch for test results, returning an error instead of panicking on failure
+fn watch(app_state: AppState) -> Result<(), RegError> {
+    let (pattern, data_dir) = {
+        let state_data = app_state
+            .state_data
+            .lock()
+            .map_err(|e| RegError::MutexPoisoned(format!("monitor startup: {}", e)))?;
+        (state_data.pattern.clone(), state_data.data_dir.clone())
     };
     log::info!("monitor/watch pattern: {}", &pattern);
     log::info!("monitor/watch data_dir: {:?}", &data_dir);
     let (tx, rx) = channel();
-    let mut watcher = match watcher(tx, Duration::from_secs(5)) {
-        Ok(w) => w,
-        Err(e) => {
-            log::error!("monitor/watch: Failed to create watcher: {}", e);
-            panic!("Cannot start monitor: watcher creation failed");
-        }
-    };
-    if let Err(e) = watcher.watch(&data_dir, RecursiveMode::Recursive) {
-        log::error!(
-            "monitor/watch: Failed to watch directory {:?}: {}",
-            data_dir,
-            e
-        );
-        panic!("Cannot start monitor: directory watch failed");
-    }
+    let mut watcher = watcher(tx, Duration::from_secs(5))
+        .map_err(|e| RegError::Notification(format!("failed to create watcher: {}", e)))?;
+    watcher
+        .watch(&data_dir, RecursiveMode::Recursive)
+        .map_err(|e| {
+            RegError::Notification(format!("failed to watch directory {:?}: {}", data_dir, e))
+        })?;
 
     let mut index = 0;
     loop {
         index += 1;
         match rx.recv() {
             Ok(event) => println!("monitor.rs {:?}", event),
-            Err(e) => println!("watch error: {:?}", e),
+            Err(e) => {
+                log::error!("monitor/watch: channel closed: {}", e);
+                return Err(RegError::Notification(format!(
+                    "file watcher channel closed: {}",
+                    e
+                )));
+            }
         }
         {
             match app_state.state_data.lock() {

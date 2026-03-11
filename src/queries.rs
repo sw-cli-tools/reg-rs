@@ -40,18 +40,27 @@ impl StatementContext {
     }
 }
 
-/// build a DB get (select) request
+/// Build a SQL statement by rendering a template with the given context.
+///
+/// Returns the rendered SQL string, or panics with a descriptive message
+/// if the template is malformed (indicates a programming error).
 pub fn get_statement(statement_context: &StatementContext, statement_template: &str) -> String {
-    render(statement_context, statement_template).unwrap()
+    render(statement_context, statement_template).unwrap_or_else(|e| {
+        panic!(
+            "SQL template rendering failed (this is a bug): template='{}', error={}",
+            statement_template, e
+        )
+    })
 }
 
-/// fill in template
+/// Fill in template, rendering it only once
 fn render(
     statement_context: &StatementContext,
     statement_template: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut tt = TinyTemplate::new();
     tt.add_template("statement_template", statement_template)?;
-    md!(tt.render("statement_template", &statement_context)?);
-    Ok(tt.render("statement_template", &statement_context)?)
+    let result = tt.render("statement_template", &statement_context)?;
+    md!(&result);
+    Ok(result)
 }
