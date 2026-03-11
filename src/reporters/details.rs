@@ -118,6 +118,7 @@ fn show_failures(
             original_result.time_created.to_string(),
             latest_result.time_created.to_string(),
         ))?;
+        show_doc_metadata(test)?;
         if verbosity_level > 2 {
             let display_differences: Vec<_> = differences
                 .iter()
@@ -138,6 +139,25 @@ fn show_failures(
                 display_differences,
                 test.to_string(),
             ))?;
+        }
+    }
+    Ok(())
+}
+
+/// Show documentation metadata for a test, if any exists.
+fn show_doc_metadata(test: &str) -> crate::error::Result<()> {
+    let desc = db::read_metadata(test, "desc")?;
+    let expects = db::read_metadata(test, "expects")?;
+    let flaky_note = db::read_metadata(test, "flaky_note")?;
+    if desc.is_some() || expects.is_some() || flaky_note.is_some() {
+        if let Some(d) = desc {
+            println!("    desc:       {}", d);
+        }
+        if let Some(e) = expects {
+            println!("    expects:    {}", e);
+        }
+        if let Some(f) = flaky_note {
+            println!("    flaky_note: {}", f);
         }
     }
     Ok(())

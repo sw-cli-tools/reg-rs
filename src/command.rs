@@ -62,6 +62,7 @@ pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
         if timeout_secs != 300 {
             db::store_metadata(&db_name, "timeout", &timeout_secs.to_string())?;
         }
+        store_doc_metadata(config, &db_name)?;
     }
     Ok(())
 }
@@ -133,6 +134,28 @@ pub async fn status_server(config: &config::Config) -> crate::error::Result<()> 
     log::info!("command/status_server");
     status::start_client(config)?;
     status::start_server(config).await?; // loops
+    Ok(())
+}
+
+/// Metadata keys for self-documenting test information
+const META_DESC: &str = "desc";
+/// Metadata key for expected behavior
+const META_EXPECTS: &str = "expects";
+/// Metadata key for flakiness notes
+const META_FLAKY_NOTE: &str = "flaky_note";
+
+/// Store documentation metadata (desc, expects, flaky_note) if provided.
+fn store_doc_metadata(config: &config::Config, db_name: &str) -> crate::error::Result<()> {
+    let (desc, expects, flaky_note) = config.extract_doc_metadata();
+    if let Some(d) = desc {
+        db::store_metadata(db_name, META_DESC, &d)?;
+    }
+    if let Some(e) = expects {
+        db::store_metadata(db_name, META_EXPECTS, &e)?;
+    }
+    if let Some(f) = flaky_note {
+        db::store_metadata(db_name, META_FLAKY_NOTE, &f)?;
+    }
     Ok(())
 }
 

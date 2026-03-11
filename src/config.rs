@@ -107,6 +107,21 @@ impl Config {
         }
     }
 
+    /// extract optional documentation metadata from Create subcommand
+    pub fn extract_doc_metadata(&self) -> (Option<String>, Option<String>, Option<String>) {
+        if let args::Subcommands::Create {
+            desc,
+            expects,
+            flaky_note,
+            ..
+        } = &self.mode
+        {
+            (desc.clone(), expects.clone(), flaky_note.clone())
+        } else {
+            (None, None, None)
+        }
+    }
+
     /// determines how verbose the output should be
     pub fn verbosity_level(&self) -> u8 {
         if let args::Subcommands::Report { verbosity, .. } = &self.mode {
@@ -178,6 +193,9 @@ mod tests {
                 preprocess: None,
                 diff_mode: "text".to_string(),
                 timeout: 300,
+                desc: None,
+                expects: None,
+                flaky_note: None,
             },
             debug: false,
         };

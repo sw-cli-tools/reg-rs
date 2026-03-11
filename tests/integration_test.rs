@@ -440,6 +440,53 @@ fn integration_test_create_with_diff_mode_lines_unordered() {
         .success();
 }
 
+#[test]
+fn integration_test_create_help_shows_doc_metadata() {
+    common::setup();
+    reg_rs()
+        .args(["create", "-h"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("--desc"))
+        .stdout(predicate::str::contains("--expects"))
+        .stdout(predicate::str::contains("--flaky-note"));
+}
+
+#[test]
+fn integration_test_create_with_doc_metadata() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("doc_meta_test.tdb");
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+
+    reg_rs()
+        .args([
+            "create",
+            "-t",
+            "doc_meta_test",
+            "-c",
+            "echo hello",
+            "--desc",
+            "Verifies echo works",
+            "--expects",
+            "Prints hello to stdout",
+            "--flaky-note",
+            "None - fully deterministic",
+        ])
+        .assert()
+        .success();
+
+    assert!(test_db.exists());
+
+    // Clean up
+    reg_rs()
+        .args(["remove", "-p", "doc_meta_test"])
+        .assert()
+        .success();
+}
+
 // --- Demo script tests (dogfooding) ---
 // These run the demo shell scripts using the debug binary,
 // ensuring reg-rs can test itself and that demo scripts stay working.

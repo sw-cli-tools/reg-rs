@@ -80,6 +80,15 @@ EXAMPLES:
         /// Command timeout in seconds (default: 300)
         #[clap(long, default_value = "300")]
         timeout: u64,
+        /// Human-readable description of what this test verifies
+        #[clap(long)]
+        desc: Option<String>,
+        /// Expected behavior or output characteristics
+        #[clap(long)]
+        expects: Option<String>,
+        /// Known flakiness or environmental sensitivity notes
+        #[clap(long)]
+        flaky_note: Option<String>,
     },
     /// Uses AI to analyze a test failure and determine if it's a real regression or flaky (alias a)
     #[clap(
@@ -209,6 +218,9 @@ mod tests {
                     preprocess: None,
                     diff_mode: "text".to_string(),
                     timeout: 300,
+                    desc: None,
+                    expects: None,
+                    flaky_note: None,
                 },
                 debug: false,
                 logging: false,
@@ -229,6 +241,9 @@ mod tests {
                     preprocess: None,
                     diff_mode: "text".to_string(),
                     timeout: 300,
+                    desc: None,
+                    expects: None,
+                    flaky_note: None,
                 },
                 debug: true,
                 logging: false,
