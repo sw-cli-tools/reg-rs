@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use std::time::Duration;
 
 use crate::config;
@@ -25,7 +26,7 @@ pub struct TestResults {
     pub stdout: String,
 }
 
-/// Run many tests
+/// Run many tests (sequential or parallel based on config)
 pub fn run_many(config: &config::Config) -> crate::error::Result<()> {
     log::info!("runner/run_many");
     let pattern = config.extract_pattern().to_string();
@@ -38,22 +39,70 @@ pub fn run_many(config: &config::Config) -> crate::error::Result<()> {
         eprintln!("warning: no tests matched pattern '{}'", pattern);
         return Ok(());
     }
-    for test in tests.found {
-        let prior_test_result = db::read_original_results(&test)?;
-        let timeout_secs = db::read_metadata(&test, "timeout")?
-            .and_then(|s| s.parse::<u64>().ok())
-            .unwrap_or(300);
-        let maybe_regression = run_one_timeout(
-            &test,
-            &prior_test_result.command,
-            config.is_dry_run(),
-            timeout_secs,
-        )?;
-        if let Some(latest_test_result) = maybe_regression {
-            let db_name = &test;
-            diff::process_differences(db_name, &prior_test_result, &latest_test_result)?;
-            db::replace_latest_results(db_name, &latest_test_result)?;
+    if config.is_parallel() {
+        run_many_parallel(&tests.found, config.is_dry_run())
+    } else {
+        run_many_sequential(&tests.found, config.is_dry_run())
+    }
+}
+
+/// Run tests sequentially
+fn run_many_sequential(tests: &[String], dry_run: bool) -> crate::error::Result<()> {
+    for test in tests {
+        run_and_diff(test, dry_run)?;
+    }
+    Ok(())
+}
+
+/// Run tests in parallel using scoped threads (one thread per test)
+fn run_many_parallel(tests: &[String], dry_run: bool) -> crate::error::Result<()> {
+    let test_count = tests.len();
+    eprintln!("running {} tests in parallel", test_count);
+    let start = std::time::Instant::now();
+
+    let errors: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+    std::thread::scope(|s| {
+        for test in tests {
+            let errors = &errors;
+            s.spawn(move || {
+                if let Err(e) = run_and_diff(test, dry_run) {
+                    errors.lock().unwrap().push(format!("{}: {}", test, e));
+                }
+            });
         }
+    });
+
+    let elapsed = start.elapsed();
+    eprintln!(
+        "parallel run complete: {} tests in {:.2}s",
+        test_count,
+        elapsed.as_secs_f64()
+    );
+
+    let errors = errors.into_inner().unwrap();
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(crate::error::RegError::Other(format!(
+            "{} test(s) failed:\n  {}",
+            errors.len(),
+            errors.join("\n  ")
+        )))
+    }
+}
+
+/// Run a single test and process differences
+fn run_and_diff(test: &str, dry_run: bool) -> crate::error::Result<()> {
+    let prior_test_result = db::read_original_results(test)?;
+    let timeout_secs = db::read_metadata(test, "timeout")?
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(300);
+    let maybe_regression =
+        run_one_timeout(test, &prior_test_result.command, dry_run, timeout_secs)?;
+    if let Some(latest_test_result) = maybe_regression {
+        diff::process_differences(test, &prior_test_result, &latest_test_result)?;
+        db::replace_latest_results(test, &latest_test_result)?;
     }
     Ok(())
 }

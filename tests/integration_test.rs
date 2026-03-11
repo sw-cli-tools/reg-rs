@@ -101,7 +101,17 @@ fn integration_test_run_help() {
         .stderr("")
         .stdout(predicate::str::contains("Runs a test"))
         .stdout(predicate::str::contains("-p, --pattern"))
-        .stdout(predicate::str::contains("-n, --dry-run"));
+        .stdout(predicate::str::contains("-n, --dry-run"))
+        .stdout(predicate::str::contains("--parallel"));
+}
+
+#[test]
+fn integration_test_run_parallel_no_matching_tests() {
+    common::setup();
+    reg_rs()
+        .args(["run", "-p", "nonexistent_pattern_xyz", "--parallel"])
+        .assert()
+        .success();
 }
 
 #[test]

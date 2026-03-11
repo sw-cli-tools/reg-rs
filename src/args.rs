@@ -163,7 +163,8 @@ against the stored baseline. Any differences are recorded as potential regressio
 EXAMPLES:
   reg-rs run -p my_test                    # run a specific test
   reg-rs run -p test                       # run all matching tests
-  reg-rs r -p my_test -n                   # dry-run (show what would run)"
+  reg-rs r -p my_test -n                   # dry-run (show what would run)
+  reg-rs r -p test --parallel              # run all matching tests in parallel"
     )]
     Run {
         /// Substring pattern to match test names to run
@@ -172,6 +173,9 @@ EXAMPLES:
         /// Show what would be run without actually executing
         #[clap(long, short = 'n')]
         dry_run: bool,
+        /// Run tests in parallel using one thread per test
+        #[clap(long)]
+        parallel: bool,
     },
     /// Starts a server to monitor long running tests and/or show results (alias s)
     #[clap(
@@ -317,6 +321,7 @@ mod tests {
                 command: Subcommands::Run {
                     dry_run: false,
                     pattern: "pat001".to_string(),
+                    parallel: false,
                 },
                 debug: false,
                 logging: false,
@@ -332,6 +337,7 @@ mod tests {
                 command: Subcommands::Run {
                     dry_run: true,
                     pattern: "pat001".to_string(),
+                    parallel: false,
                 },
                 debug: true,
                 logging: false,

@@ -18,6 +18,14 @@ impl Config {
         }
     }
 
+    /// determines if parallel flag was specified
+    pub fn is_parallel(&self) -> bool {
+        match &self.mode {
+            args::Subcommands::Run { parallel, .. } => *parallel,
+            _ => false,
+        }
+    }
+
     /// extracts the test name pattern
     pub fn extract_pattern(&self) -> &str {
         log::debug!("extract_pattern mode: {:?}", &self.mode);
@@ -152,6 +160,7 @@ mod tests {
             mode: args::Subcommands::Run {
                 dry_run: true,
                 pattern: "foo".to_string(),
+                parallel: false,
             },
             debug: false,
         };
@@ -164,6 +173,7 @@ mod tests {
             mode: args::Subcommands::Run {
                 dry_run: false,
                 pattern: "foo".to_string(),
+                parallel: false,
             },
             debug: false,
         };
@@ -212,6 +222,7 @@ mod tests {
             mode: args::Subcommands::Run {
                 dry_run: false,
                 pattern: "foo".to_string(),
+                parallel: false,
             },
             debug: false,
         };
@@ -268,6 +279,7 @@ mod tests {
             command: args::Subcommands::Run {
                 dry_run: false,
                 pattern: "bar".to_string(),
+                parallel: false,
             },
             debug: false,
             logging: false,
