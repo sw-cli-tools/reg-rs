@@ -91,6 +91,8 @@ pub mod executor;
 pub mod finder;
 /// Logging
 pub mod logging;
+/// Built-in output normalization for diff modes (text, json)
+pub mod normalize;
 /// Output preprocessing for normalization before diffing
 pub mod preprocess;
 /// Test Process

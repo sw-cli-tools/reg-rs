@@ -51,6 +51,11 @@ pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
         if let Some(preprocess) = config.extract_preprocess() {
             db::store_metadata(&db_name, crate::preprocess::PREPROCESS_KEY, &preprocess)?;
         }
+        if let Some(diff_mode) = config.extract_diff_mode()
+            && diff_mode != "text"
+        {
+            db::store_metadata(&db_name, crate::normalize::DIFF_MODE_KEY, &diff_mode)?;
+        }
     }
     Ok(())
 }

@@ -47,6 +47,8 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Per-test metadata stored in `metadata_table` (key-value pairs) in each `.tdb` file — backward compatible
 - `--preprocess` flag on `create` stores a shell command applied to stdout/stderr before diffing
 - `--describe` flag on `create` uses Claude API to generate commands from natural language
+- `--diff-mode` flag on `create` selects built-in normalization: `text` (default) or `json` (sorts keys, pretty-prints)
+- Preprocess and diff-mode compose: preprocess runs first (external), then diff-mode normalizes (built-in)
 
 ## Code Style Guidelines
 - Formatting: Run `cargo fmt` before committing

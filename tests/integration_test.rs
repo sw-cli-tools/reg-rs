@@ -338,6 +338,57 @@ fn integration_test_create_help_shows_preprocess() {
         .stdout(predicate::str::contains("-P, --preprocess"));
 }
 
+#[test]
+fn integration_test_create_with_diff_mode_json() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("json_test.tdb");
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+
+    // Create with JSON diff mode — keys in one order
+    reg_rs()
+        .args([
+            "create",
+            "-t",
+            "json_test",
+            "-c",
+            r#"printf '{"z":1,"a":2,"m":3}'"#,
+            "-M",
+            "json",
+        ])
+        .assert()
+        .success();
+
+    assert!(test_db.exists());
+
+    // Run — same command produces same JSON, should pass after normalization
+    reg_rs().args(["run", "-p", "json_test"]).assert().success();
+
+    reg_rs()
+        .args(["report", "-p", "json_test"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("00001 passed"));
+
+    // Clean up
+    reg_rs()
+        .args(["remove", "-p", "json_test"])
+        .assert()
+        .success();
+}
+
+#[test]
+fn integration_test_create_help_shows_diff_mode() {
+    common::setup();
+    reg_rs()
+        .args(["create", "-h"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("-M, --diff-mode"));
+}
+
 // --- Demo script tests (dogfooding) ---
 // These run the demo shell scripts using the debug binary,
 // ensuring reg-rs can test itself and that demo scripts stay working.

@@ -75,6 +75,15 @@ impl Config {
         }
     }
 
+    /// extract diff mode from Create subcommand
+    pub fn extract_diff_mode(&self) -> Option<String> {
+        if let args::Subcommands::Create { diff_mode, .. } = &self.mode {
+            Some(diff_mode.clone())
+        } else {
+            None
+        }
+    }
+
     /// determines how verbose the output should be
     pub fn verbosity_level(&self) -> u8 {
         if let args::Subcommands::Report { verbosity, .. } = &self.mode {
@@ -143,6 +152,7 @@ mod tests {
                 command: Some("echo hello".to_string()),
                 describe: None,
                 preprocess: None,
+                diff_mode: "text".to_string(),
             },
             debug: false,
         };

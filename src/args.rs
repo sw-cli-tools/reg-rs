@@ -71,6 +71,9 @@ EXAMPLES:
         /// Shell command to preprocess stdout/stderr before diffing (e.g., "jq --sort-keys")
         #[clap(long, short = 'P')]
         preprocess: Option<String>,
+        /// Built-in diff normalization mode: text (default) or json (sorts keys, normalizes whitespace)
+        #[clap(long, short = 'M', default_value = "text")]
+        diff_mode: String,
     },
     /// Removes previously created test and run results if any.  Discards test and results!
     #[clap(
@@ -176,6 +179,7 @@ mod tests {
                     command: Some("pwd".to_string()),
                     describe: None,
                     preprocess: None,
+                    diff_mode: "text".to_string(),
                 },
                 debug: false,
                 logging: false,
@@ -193,6 +197,7 @@ mod tests {
                     command: Some("pwd".to_string()),
                     describe: None,
                     preprocess: None,
+                    diff_mode: "text".to_string(),
                 },
                 debug: true,
                 logging: false,

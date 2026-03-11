@@ -2,6 +2,7 @@ use text_diff::{Difference, diff};
 
 use crate::db;
 use crate::error::Result;
+use crate::normalize;
 use crate::preprocess;
 use crate::runner;
 
@@ -86,11 +87,36 @@ pub fn get_differences(older: &str, newer: &str) -> Option<Vec<Difference>> {
     }
 }
 
+/// Prepare test results for diffing by applying preprocess and normalization.
+///
+/// Order: preprocess (external shell command) runs first, then
+/// diff-mode normalization (built-in, e.g., JSON key sorting).
+/// JSON normalization is applied only to stdout; stderr falls back to text
+/// since it's typically unstructured.
+fn prepare_for_diff(
+    test_result: &runner::TestResults,
+    preprocess_cmd: Option<&str>,
+    diff_mode: &normalize::DiffMode,
+) -> Result<runner::TestResults> {
+    let stdout = preprocess::apply(&test_result.stdout, preprocess_cmd)?;
+    let stderr = preprocess::apply(&test_result.stderr, preprocess_cmd)?;
+    let stdout = normalize::apply(&stdout, diff_mode)?;
+    // stderr: only apply text mode (no JSON normalization for unstructured error output)
+    Ok(runner::TestResults {
+        name: test_result.name.clone(),
+        command: test_result.command.clone(),
+        time_created: test_result.time_created.clone(),
+        exit_code: test_result.exit_code,
+        stdout,
+        stderr,
+    })
+}
+
 /// store test result differences
 ///
-/// If a preprocess command is configured for this test, stdout and stderr
-/// are piped through it before comparison. Raw output is still stored in
-/// the results tables for debugging.
+/// If a preprocess command is configured, stdout/stderr are piped through it
+/// before comparison. If a diff mode is set, built-in normalization is applied
+/// after preprocessing. Raw output is still stored in the results tables.
 pub fn process_differences(
     db_name: &str,
     prior_test_result: &runner::TestResults,
@@ -101,45 +127,15 @@ pub fn process_differences(
     let pp = db::read_metadata(db_name, preprocess::PREPROCESS_KEY)?;
     let pp_ref = pp.as_deref();
 
-    let prior = if pp_ref.is_some() {
-        runner::TestResults {
-            name: prior_test_result.name.clone(),
-            command: prior_test_result.command.clone(),
-            time_created: prior_test_result.time_created.clone(),
-            exit_code: prior_test_result.exit_code,
-            stderr: preprocess::apply(&prior_test_result.stderr, pp_ref)?,
-            stdout: preprocess::apply(&prior_test_result.stdout, pp_ref)?,
-        }
-    } else {
-        runner::TestResults {
-            name: prior_test_result.name.clone(),
-            command: prior_test_result.command.clone(),
-            time_created: prior_test_result.time_created.clone(),
-            exit_code: prior_test_result.exit_code,
-            stderr: prior_test_result.stderr.clone(),
-            stdout: prior_test_result.stdout.clone(),
-        }
-    };
+    let diff_mode_str = db::read_metadata(db_name, normalize::DIFF_MODE_KEY)?;
+    let diff_mode = diff_mode_str
+        .as_deref()
+        .map(|s| s.parse::<normalize::DiffMode>())
+        .transpose()?
+        .unwrap_or_default();
 
-    let latest = if pp_ref.is_some() {
-        runner::TestResults {
-            name: latest_test_result.name.clone(),
-            command: latest_test_result.command.clone(),
-            time_created: latest_test_result.time_created.clone(),
-            exit_code: latest_test_result.exit_code,
-            stderr: preprocess::apply(&latest_test_result.stderr, pp_ref)?,
-            stdout: preprocess::apply(&latest_test_result.stdout, pp_ref)?,
-        }
-    } else {
-        runner::TestResults {
-            name: latest_test_result.name.clone(),
-            command: latest_test_result.command.clone(),
-            time_created: latest_test_result.time_created.clone(),
-            exit_code: latest_test_result.exit_code,
-            stderr: latest_test_result.stderr.clone(),
-            stdout: latest_test_result.stdout.clone(),
-        }
-    };
+    let prior = prepare_for_diff(prior_test_result, pp_ref, &diff_mode)?;
+    let latest = prepare_for_diff(latest_test_result, pp_ref, &diff_mode)?;
 
     db::clear_differences(db_name)?;
     maybe_store_exit_code_differences(db_name, &prior, &latest)?;
