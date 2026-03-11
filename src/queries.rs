@@ -54,6 +54,18 @@ pub fn get_statement(statement_context: &StatementContext, statement_template: &
     })
 }
 
+/// Fill in template, rendering it only once
+fn render(
+    statement_context: &StatementContext,
+    statement_template: &str,
+) -> crate::error::Result<String> {
+    let mut tt = TinyTemplate::new();
+    tt.add_template("statement_template", statement_template)?;
+    let result = tt.render("statement_template", &statement_context)?;
+    log::debug!("render_statement: {}", &result);
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -123,16 +135,4 @@ mod tests {
         assert!(stmt.contains("SELECT"));
         assert!(stmt.contains("original_results_table"));
     }
-}
-
-/// Fill in template, rendering it only once
-fn render(
-    statement_context: &StatementContext,
-    statement_template: &str,
-) -> crate::error::Result<String> {
-    let mut tt = TinyTemplate::new();
-    tt.add_template("statement_template", statement_template)?;
-    let result = tt.render("statement_template", &statement_context)?;
-    log::debug!("render_statement: {}", &result);
-    Ok(result)
 }

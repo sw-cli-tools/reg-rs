@@ -167,7 +167,7 @@ mod tests {
                 debug: false,
                 logging: false,
             },
-            Args::try_parse_from(&["test", "create", "-t", "pat001", "-c", "pwd"]).unwrap()
+            Args::try_parse_from(["test", "create", "-t", "pat001", "-c", "pwd"]).unwrap()
         );
     }
 
@@ -182,7 +182,7 @@ mod tests {
                 debug: true,
                 logging: false,
             },
-            Args::try_parse_from(&["test", "-d", "create", "-t", "pat001", "-c", "pwd"]).unwrap()
+            Args::try_parse_from(["test", "-d", "create", "-t", "pat001", "-c", "pwd"]).unwrap()
         );
     }
 
@@ -196,7 +196,7 @@ mod tests {
                 debug: false,
                 logging: false,
             },
-            Args::try_parse_from(&["test", "remove", "-p", "pat001"]).unwrap()
+            Args::try_parse_from(["test", "remove", "-p", "pat001"]).unwrap()
         );
     }
 
@@ -210,7 +210,7 @@ mod tests {
                 debug: true,
                 logging: false,
             },
-            Args::try_parse_from(&["test", "-d", "remove", "-p", "pat001"]).unwrap()
+            Args::try_parse_from(["test", "-d", "remove", "-p", "pat001"]).unwrap()
         );
     }
 
@@ -225,7 +225,7 @@ mod tests {
                 debug: false,
                 logging: false,
             },
-            Args::try_parse_from(&["test", "report", "-p", "pat001"]).unwrap()
+            Args::try_parse_from(["test", "report", "-p", "pat001"]).unwrap()
         );
     }
 
@@ -240,7 +240,7 @@ mod tests {
                 debug: true,
                 logging: false,
             },
-            Args::try_parse_from(&["test", "-d", "report", "-p", "pat001", "-vvv"]).unwrap()
+            Args::try_parse_from(["test", "-d", "report", "-p", "pat001", "-vvv"]).unwrap()
         );
     }
 
@@ -255,7 +255,7 @@ mod tests {
                 debug: false,
                 logging: false,
             },
-            Args::try_parse_from(&["test", "run", "-p", "pat001"]).unwrap()
+            Args::try_parse_from(["test", "run", "-p", "pat001"]).unwrap()
         );
     }
 
@@ -270,7 +270,7 @@ mod tests {
                 debug: true,
                 logging: false,
             },
-            Args::try_parse_from(&["test", "-d", "run", "-p", "pat001", "-n"]).unwrap()
+            Args::try_parse_from(["test", "-d", "run", "-p", "pat001", "-n"]).unwrap()
         );
     }
 }
