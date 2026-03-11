@@ -31,7 +31,7 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Test results stored in SQLite databases (one `.tdb` per test) in `~/.local/reg-rs/` by default
 - Data directory overridable via `REG_RS_DATA_DIR` env var (used by tests and demos: `./work/reg-rs/`)
 - `resolve_test_path()` in `command.rs` auto-places tests in data dir and appends `.tdb`
-- Conditional debug output via `md!()` macro when `-d` flag is used
+- Debug output via `log::debug!()`, enabled with `-d` flag (sets log level to debug via `env_logger`)
 - Status monitoring uses Axum web framework (async with Tokio)
 - Dependency injection via `CommandExecutor` trait (`executor.rs`) with `MockCommandExecutor` for tests
 - External `.lock` files prevent SQLite file-lock conflicts (one per `.tdb` database)
@@ -46,7 +46,7 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Error handling: Use custom `RegError` type (`Result<T> = Result<T, RegError>`) with `?` operator
 - Naming: snake_case for variables/functions, CamelCase for types
 - Warnings: #![deny(warnings, missing_docs)] is enforced
-- Debugging: Use the `md!()` macro for conditional debug output
+- Debugging: Use `log::debug!()` for debug output (enabled by `-d` flag or `RUST_LOG=debug`)
 - HTML tags in docs must be properly closed (e.g., `&lt;tag&gt;`)
 - File size limit: < 500 lines (prefer 200-300); function limit: < 50 lines (prefer 10-30)
 - TDD workflow: Red/Green/Refactor cycle; see `docs/process.md` for full pre-commit checklist

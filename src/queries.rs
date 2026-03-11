@@ -61,6 +61,6 @@ fn render(
     let mut tt = TinyTemplate::new();
     tt.add_template("statement_template", statement_template)?;
     let result = tt.render("statement_template", &statement_context)?;
-    md!(&result);
+    log::debug!("render_statement: {}", &result);
     Ok(result)
 }

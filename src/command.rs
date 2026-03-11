@@ -15,7 +15,7 @@ pub fn create_original(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/create_original");
-    md!(&config);
+    log::debug!("create_original config: {:?}", &config);
     if let Some((test, command)) = config.extract_test_and_command() {
         let db_name = resolve_test_path(&test);
         if let Some(test_result) = runner::run_one(&db_name, &command, false)? {
@@ -100,7 +100,7 @@ pub fn update_latest(
 pub fn remove_all(config: &config::Config) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/remove_all");
     let tests = finder::discover(config.extract_pattern().to_string())?;
-    md!(&tests);
+    log::debug!("remove_all tests: {:?}", &tests);
     for test in tests.found {
         db::drop_all_results(&test)?;
     }

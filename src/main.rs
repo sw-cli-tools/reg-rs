@@ -5,9 +5,11 @@ use reg_rs::{args, builder, command, error::RegError};
 /// Entry point for the application
 #[tokio::main]
 async fn main() -> Result<(), RegError> {
-    env_logger::init();
-    log::info!(target: "reg_rs::main", "env_logger initialized");
     let config = builder::build();
+    let default_level = if config.debug { "debug" } else { "info" };
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(default_level))
+        .init();
+    log::info!(target: "reg_rs::main", "env_logger initialized");
     match &config.mode {
         args::Subcommands::Create { .. } => {
             command::create_original(&config)?;

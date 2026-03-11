@@ -35,7 +35,7 @@ pub fn show_passes(
     passes_report_context: &PassesReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("passes/show_passes");
-    md!("testing");
+    log::debug!("show_passes");
     let mut tt = TinyTemplate::new();
     tt.add_template("passes_report_template", reports::PASSES_REPORT_TEMPLATE)?;
     let rendered = tt.render("passes_report_template", &passes_report_context)?;

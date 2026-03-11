@@ -18,7 +18,6 @@ fern = { version = "0.6.2", features = ["date-based"] }
 file-lock = "1.1.20"
 
 hyper = "0.14.28"
-lazy_static = "1.4.0"
 log = "0.4.20"
 mime = "0.3.17"
 notify = "4.0.15"

@@ -20,7 +20,7 @@ impl Config {
 
     /// extracts the test name pattern
     pub fn extract_pattern(&self) -> &str {
-        md!(&self.mode);
+        log::debug!("extract_pattern mode: {:?}", &self.mode);
         let p = match &self.mode {
             args::Subcommands::Create { .. } => unreachable!(),
             args::Subcommands::Remove { pattern, .. } => pattern,
@@ -28,14 +28,14 @@ impl Config {
             args::Subcommands::Run { pattern, .. } => pattern,
             args::Subcommands::Status { pattern, .. } => pattern,
         };
-        md!(&p);
+        log::debug!("extract_pattern result: {:?}", &p);
         p
     }
 
     /// extract test and command
     pub fn extract_test_and_command(&self) -> Option<(String, String)> {
         if let args::Subcommands::Create { test, command } = &self.mode {
-            md!((&test, &command));
+            log::debug!("extract_test_and_command: {:?}, {:?}", &test, &command);
             Some((test.to_string(), command.to_string()))
         } else {
             None
@@ -45,7 +45,7 @@ impl Config {
     /// determines how verbose the output should be
     pub fn verbosity_level(&self) -> u8 {
         if let args::Subcommands::Report { verbosity, .. } = &self.mode {
-            md!(verbosity);
+            log::debug!("verbosity_level: {}", verbosity);
             *verbosity
         } else {
             0

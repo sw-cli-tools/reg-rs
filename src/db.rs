@@ -47,9 +47,7 @@ pub fn read_original_results(db_name: &str) -> Result<runner::TestResults> {
     log::info!("db/read_original_results {}", &db_name);
     let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
         .map_err(|e| RegError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
-    md!(&db_name);
-    md!(&queries::StatementContext::original());
-    md!(&statements::SELECT_TEST_RESULTS_TEMPLATE);
+    log::debug!("read_original_results db: {}", &db_name);
     let results = sqlite::read_results(
         db_name,
         &queries::get_statement(

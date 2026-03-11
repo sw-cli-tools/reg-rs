@@ -1153,7 +1153,6 @@ dependencies = [
  "fern",
  "file-lock",
  "hyper 0.14.32",
- "lazy_static",
  "log",
  "mime",
  "notify",

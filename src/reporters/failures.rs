@@ -41,7 +41,7 @@ pub fn show_failure(
     failures_report_context: &FailuresReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("failures/show_failure");
-    md!("testing");
+    log::debug!("show_failure");
     let mut tt = TinyTemplate::new();
     tt.add_template(
         "failures_report_template",

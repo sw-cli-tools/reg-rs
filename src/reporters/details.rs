@@ -76,13 +76,13 @@ fn show_failures(
         println!("Failures: (-vv)");
     }
     for test in failed_test_names {
-        md!(&test);
+        log::debug!("show_failures test: {:?}", &test);
         let original_result = db::read_original_results(test)?;
-        md!(&original_result);
+        log::debug!("show_failures original: {:?}", &original_result);
         let latest_result = db::read_latest_results(test)?;
-        md!(&latest_result);
+        log::debug!("show_failures latest: {:?}", &latest_result);
         let differences = db::read_differences(test)?;
-        md!(&differences);
+        log::debug!("show_failures differences: {:?}", &differences);
         let mut difference_types = vec![];
         let same_count =
             db::difference_count_by_type(test, diff::RegressionType::StderrSame as u8)?
@@ -151,7 +151,10 @@ fn show_failures(
                     });
                 }
             }
-            md!(&display_differences);
+            log::debug!(
+                "show_failures display_differences: {:?}",
+                &display_differences
+            );
             differences::show_differences(&differences::DifferencesReportContext::new(
                 display_differences,
                 test.to_string(),
@@ -172,11 +175,11 @@ fn show_passes(
         println!("Passes:");
     }
     for test in passed_test_names {
-        md!(&test);
+        log::debug!("show_passes test: {:?}", &test);
         let original_result = db::read_original_results(test)?;
-        md!(&original_result);
+        log::debug!("show_passes original: {:?}", &original_result);
         let latest_result = db::read_latest_results(test)?;
-        md!(&latest_result);
+        log::debug!("show_passes latest: {:?}", &latest_result);
         passes::show_passes(&passes::PassesReportContext::new(
             pass_symbol(),
             test.to_string(),

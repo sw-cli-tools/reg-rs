@@ -28,8 +28,8 @@ pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error
     log::info!("runner/run_many");
     let tests = finder::discover(config.extract_pattern().to_string())?;
     if config.debug {
-        md!(&config);
-        md!(&tests);
+        log::debug!("run_many config: {:?}", &config);
+        log::debug!("run_many tests: {:?}", &tests);
     }
     for test in tests.found {
         let prior_test_result = db::read_original_results(&test)?;

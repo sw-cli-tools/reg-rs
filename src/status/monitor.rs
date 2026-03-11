@@ -68,7 +68,7 @@ fn watch(app_state: AppState) -> Result<(), RegError> {
                         "monitor/watch state_data.state_updated: {}",
                         &state_data.state_updated
                     );
-                    md!(&state_data.state_updated);
+                    log::debug!("monitor state_updated: {}", &state_data.state_updated);
                 }
                 Err(e) => {
                     log::error!("monitor/watch: Failed to lock state_data in loop: {}", e);
@@ -78,6 +78,6 @@ fn watch(app_state: AppState) -> Result<(), RegError> {
         if let Err(e) = server::set_test_runs(app_state.clone()) {
             log::error!("monitor/watch: Failed to set test runs: {}", e);
         }
-        md!(format!("loop {}", index));
+        log::debug!("monitor loop {}", index);
     }
 }

@@ -27,8 +27,7 @@ pub enum RegressionType {
 pub fn get_differences(older: &str, newer: &str) -> Option<Vec<Difference>> {
     log::info!("diff/get_differences");
     let differences = diff(older, newer, "\n");
-    md!("*** get_differences ***");
-    md!(&differences);
+    log::debug!("get_differences: {:?}", &differences);
     if differences.0 > 0 {
         Some(differences.1)
     } else {
@@ -58,7 +57,11 @@ fn maybe_store_exit_code_differences(
 ) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("diff/maybe_store_exit_code_differences {}", &db_name);
     if prior_test_result.exit_code != latest_test_result.exit_code {
-        md!((prior_test_result.exit_code, latest_test_result.exit_code));
+        log::debug!(
+            "exit code diff: {} vs {}",
+            prior_test_result.exit_code,
+            latest_test_result.exit_code
+        );
         db::store_difference(
             db_name,
             RegressionType::ExpectedCode,
@@ -83,9 +86,9 @@ fn maybe_store_stderr_differences(
     if let Some(differences) =
         get_differences(&prior_test_result.stderr, &latest_test_result.stderr)
     {
-        md!("*** stderr differences ***");
+        log::debug!("stderr differences");
         for difference in differences.iter() {
-            md!(difference);
+            log::debug!("stderr diff: {:?}", difference);
             match difference {
                 Difference::Add(add) => {
                     db::store_difference(db_name, RegressionType::StderrAdd, add)?;
@@ -112,9 +115,9 @@ fn maybe_store_stdout_differences(
     if let Some(differences) =
         get_differences(&prior_test_result.stdout, &latest_test_result.stdout)
     {
-        md!("*** stdout differences ***");
+        log::debug!("stdout differences");
         for difference in differences.iter() {
-            md!(difference);
+            log::debug!("stdout diff: {:?}", difference);
             match difference {
                 Difference::Add(add) => {
                     db::store_difference(db_name, RegressionType::StdoutAdd, add)?;

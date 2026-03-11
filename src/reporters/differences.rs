@@ -35,7 +35,7 @@ pub fn show_differences(
     differences_report_context: &DifferencesReportContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("differences/show_differences");
-    md!("testing");
+    log::debug!("show_differences");
     let mut tt = TinyTemplate::new();
     tt.add_template(
         "differences_report_template",

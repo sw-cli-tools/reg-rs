@@ -16,7 +16,7 @@ pub mod summary;
 /// generate reports
 pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("reporters/generate_reports");
-    md!("generate_report");
+    log::debug!("generate_reports");
     let test_names = finder::discover(config.extract_pattern().to_string())?;
     let total_count = test_names.found.len() as u32;
     let mut failed_test_names = vec![];
@@ -28,7 +28,7 @@ pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::erro
             not_yet_run_test_names.push(test_name.to_string());
         } else {
             let difference_count = db::count_differences(test_name)?;
-            md!(difference_count);
+            log::debug!("difference_count: {}", difference_count);
             if difference_count > 0 {
                 failed_test_names.push(test_name.to_string());
             } else {

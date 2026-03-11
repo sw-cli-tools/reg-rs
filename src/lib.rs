@@ -2,24 +2,9 @@
 #![deny(warnings, missing_docs)]
 
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate serde_derive;
 use std::env;
 use std::path::PathBuf;
-
-lazy_static! {
-    static ref DEBUG: bool = env::args().any(|s| s.starts_with("-d"));
-}
-
-macro_rules! md {
-    // maybe-debug
-    ( $e:expr ) => {
-        if *crate::DEBUG {
-            dbg!($e);
-        }
-    };
-}
 
 /// Default status port for web
 pub const DEFAULT_STATUS_PORT: u16 = 4111;
