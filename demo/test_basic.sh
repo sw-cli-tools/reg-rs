@@ -4,27 +4,29 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-echo "=== reg-rs Basic Workflow Test ==="
+export REG_RS_DATA_DIR=./work/reg-rs
 
-# Clean up any previous test artifacts
-rm -f data/hello.tdb data/hello.tdb.lock
+echo "=== reg-rs Basic Workflow Test ==="
 
 # Build
 echo "Building reg-rs..."
 cargo build --release
 
 # Ensure data directory exists
-mkdir -p data
+mkdir -p "$REG_RS_DATA_DIR"
+
+# Clean up any previous test artifacts
+rm -f "$REG_RS_DATA_DIR"/hello.tdb "$REG_RS_DATA_DIR"/hello.tdb.lock
 
 # Show help
 echo ""
 echo "=== Step 0: Show help ==="
 ./target/release/reg-rs --help
 
-# Create a test (must be in data/ directory with .tdb extension)
+# Create a test (just a name - placed in data dir automatically)
 echo ""
 echo "=== Step 1: Create a test ==="
-./target/release/reg-rs create -t data/hello.tdb -c 'echo hello world'
+./target/release/reg-rs create -t hello -c 'echo hello world'
 
 # Run the test
 echo ""

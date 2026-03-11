@@ -4,23 +4,26 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-echo "=== reg-rs Regression Detection Test ==="
+export REG_RS_DATA_DIR=./work/reg-rs
 
-# Clean up any previous test artifacts
-rm -rf data/testdata data/version_test.tdb data/version_test.tdb.lock
+echo "=== reg-rs Regression Detection Test ==="
 
 # Build
 echo "Building reg-rs..."
 cargo build --release
 
 # Ensure data directory exists
-mkdir -p data/testdata
+mkdir -p "$REG_RS_DATA_DIR"/testdata
+
+# Clean up any previous test artifacts
+rm -f "$REG_RS_DATA_DIR"/version_test.tdb "$REG_RS_DATA_DIR"/version_test.tdb.lock
+rm -rf "$REG_RS_DATA_DIR"/testdata/*
 
 # Create baseline test
 echo ""
 echo "=== Step 1: Create a baseline test ==="
-echo 'version 1.0.0' > data/testdata/version.txt
-./target/release/reg-rs create -t data/version_test.tdb -c 'cat data/testdata/version.txt'
+echo 'version 1.0.0' > "$REG_RS_DATA_DIR"/testdata/version.txt
+./target/release/reg-rs create -t version_test -c "cat $REG_RS_DATA_DIR/testdata/version.txt"
 
 # Run test - should pass
 echo ""
@@ -35,7 +38,7 @@ echo "=== Step 3: Report results - no differences ==="
 # Simulate a change (regression)
 echo ""
 echo "=== Step 4: Simulate a regression (version change) ==="
-echo 'version 2.0.0' > data/testdata/version.txt
+echo 'version 2.0.0' > "$REG_RS_DATA_DIR"/testdata/version.txt
 
 # Run test again - should detect regression
 echo ""
@@ -50,7 +53,7 @@ echo "=== Step 6: Report shows the differences ==="
 # Clean up
 echo ""
 echo "=== Cleaning up ==="
-rm -rf data/testdata data/version_test.tdb data/version_test.tdb.lock
+rm -rf "$REG_RS_DATA_DIR"/testdata "$REG_RS_DATA_DIR"/version_test.tdb "$REG_RS_DATA_DIR"/version_test.tdb.lock
 
 echo ""
 echo "=== Done! reg-rs successfully detected the regression ==="

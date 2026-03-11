@@ -1,4 +1,4 @@
-//! modules
+//! reg-rs (regress) - Regression Test Tool
 #![deny(warnings, missing_docs)]
 
 #[macro_use]
@@ -6,6 +6,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
 use std::env;
+use std::path::PathBuf;
 
 lazy_static! {
     static ref DEBUG: bool = env::args().any(|s| s.starts_with("-d"));
@@ -24,6 +25,26 @@ macro_rules! md {
 pub const DEFAULT_STATUS_PORT: u16 = 4111;
 /// Status banner
 pub const STATUS_BANNER: &str = "reg-rs Status Server";
+
+/// Return the data directory, creating it if needed.
+///
+/// Resolution order:
+/// 1. `REG_RS_DATA_DIR` environment variable (if set)
+/// 2. `~/.local/reg-rs/` (default)
+/// 3. `./data/` (fallback when HOME is unavailable)
+pub fn data_dir() -> PathBuf {
+    let dir = if let Ok(custom) = env::var("REG_RS_DATA_DIR") {
+        PathBuf::from(custom)
+    } else {
+        env::var("HOME")
+            .map(|h| PathBuf::from(h).join(".local").join("reg-rs"))
+            .unwrap_or_else(|_| PathBuf::from("data"))
+    };
+    if !dir.exists() {
+        let _ = std::fs::create_dir_all(&dir);
+    }
+    dir
+}
 
 /// Argument parsing
 pub mod args;

@@ -25,7 +25,7 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-/// find subject tests
+/// find subject tests in the default data directory (`~/.local/reg-rs/`)
 fn subject(pattern: String) -> Result<TestNames, Error> {
     let mut tests = TestNames { found: vec![] };
     let mut closure_variable = |acc: &mut Vec<String>, val: String| {
@@ -35,8 +35,8 @@ fn subject(pattern: String) -> Result<TestNames, Error> {
             acc.push(val);
         }
     };
-    // TODO use cwd
-    let walker = WalkDir::new("data").into_iter();
+    let data_dir = crate::data_dir();
+    let walker = WalkDir::new(&data_dir).into_iter();
     for entry in walker.filter_entry(|e| !is_hidden(e)) {
         execute_closure(
             &mut closure_variable,

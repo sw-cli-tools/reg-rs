@@ -48,9 +48,7 @@ pub struct StateData {
 
 impl StateData {
     fn new(pattern: String) -> Self {
-        let data_dir = std::env::current_dir()
-            .unwrap_or_else(|_| PathBuf::from("."))
-            .join("data");
+        let data_dir = crate::data_dir();
         Self {
             pattern,
             runs: vec![],

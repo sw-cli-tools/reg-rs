@@ -76,14 +76,11 @@ cargo build --release
 
 ## Quick Start
 
-**Note:** Tests must be stored in the `data/` directory with a `.tdb` extension.
+Tests are stored in `~/.local/reg-rs/` by default. Override with `REG_RS_DATA_DIR`.
 
 ```bash
-# Create the data directory
-mkdir -p data
-
 # 1. Create a test that captures the output of a command
-reg-rs create -t data/my_test.tdb -c "echo hello world"
+reg-rs create -t my_test -c "echo hello world"
 
 # 2. Run the test again to check for regressions (use pattern matching)
 reg-rs run -p my_test
@@ -93,7 +90,7 @@ reg-rs report -p my_test -v
 
 # 4. If you modify the expected behavior, remove and recreate the test
 reg-rs remove -p my_test
-reg-rs create -t data/my_test.tdb -c "echo hello world"
+reg-rs create -t my_test -c "echo hello world"
 ```
 
 ## Commands
@@ -106,13 +103,13 @@ Creates a new test by running a command and storing its output as the baseline.
 reg-rs create -t <test_name> -c <command>
 
 # Options:
-#   -t, --test <name>      Name of the test (path to SQLite database file)
+#   -t, --test <name>      Test name (stored as name.tdb in data dir)
 #   -c, --command <cmd>    Command to execute and capture
 
 # Examples:
-reg-rs create -t data/pwd_test.tdb -c "pwd"
-reg-rs create -t data/version_test.tdb -c "git --version"
-reg-rs c -t data/ls_test.tdb -c "ls -la"   # 'c' is an alias for 'create'
+reg-rs create -t pwd_test -c "pwd"
+reg-rs create -t version_test -c "git --version"
+reg-rs c -t ls_test -c "ls -la"   # 'c' is an alias for 'create'
 ```
 
 ### run
@@ -127,9 +124,9 @@ reg-rs run -p <pattern>
 #   -n, --dry-run          Print what would be run without executing
 
 # Examples:
-reg-rs run -p data/pwd_test.tdb           # Run a specific test
-reg-rs run -p "data/*.tdb"                # Run all tests in data/
-reg-rs r -p data/pwd_test.tdb -n          # 'r' is alias; dry-run mode
+reg-rs run -p pwd_test                    # Run a specific test
+reg-rs run -p test                        # Run all matching tests
+reg-rs r -p pwd_test -n                   # 'r' is alias; dry-run mode
 ```
 
 ### report
@@ -146,9 +143,9 @@ reg-rs report -p <pattern> [-v|-vv|-vvv]
 #   -vvv                   Show test names, failures, and differences
 
 # Examples:
-reg-rs report -p data/pwd_test.tdb        # Basic summary
-reg-rs report -p "data/*.tdb" -v          # Show names
-reg-rs p -p data/pwd_test.tdb -vvv        # 'p' is alias; full details
+reg-rs report -p pwd_test                 # Basic summary
+reg-rs report -p test -v                  # Show names
+reg-rs p -p pwd_test -vvv                 # 'p' is alias; full details
 ```
 
 ### remove
@@ -162,8 +159,8 @@ reg-rs remove -p <pattern>
 #   -p, --pattern <pat>    Pattern to match tests to remove
 
 # Examples:
-reg-rs remove -p data/old_test.tdb
-reg-rs remove -p "data/temp_*.tdb"
+reg-rs remove -p old_test
+reg-rs remove -p temp_
 ```
 
 ### status
@@ -178,9 +175,9 @@ reg-rs status -p <pattern> [-l <port>]
 #   -l, --localhost-port <port>   Port number (default: 4111)
 
 # Examples:
-reg-rs status -p "data/*.tdb"
-reg-rs status -p "data/*.tdb" -l 8080
-reg-rs s -p "data/*.tdb"              # 's' is alias for 'status'
+reg-rs status -p test
+reg-rs status -p test -l 8080
+reg-rs s -p test                      # 's' is alias for 'status'
 ```
 
 Open http://localhost:4111 (or your chosen port) to view the status page.
@@ -268,13 +265,15 @@ reg-rs tests its own CLI output for regressions. This catches any unintended cha
 
 ```bash
 # Run the dogfood script (creates, runs, and reports self-tests)
+# Uses REG_RS_DATA_DIR=./work/reg-rs to keep self-tests separate from user data
 bash demo/dogfood.sh
 
 # Or do it manually:
 cargo build --release
-mkdir -p data
-./target/release/reg-rs create -t data/reg_rs_help.tdb -c './target/release/reg-rs -h'
-./target/release/reg-rs create -t data/reg_rs_create_help.tdb -c './target/release/reg-rs create -h'
+export REG_RS_DATA_DIR=./work/reg-rs
+mkdir -p "$REG_RS_DATA_DIR"
+./target/release/reg-rs create -t reg_rs_help -c './target/release/reg-rs -h'
+./target/release/reg-rs create -t reg_rs_create_help -c './target/release/reg-rs create -h'
 # ... (repeat for run, report, remove, status)
 
 # Run and report

@@ -84,7 +84,7 @@ The dashboard displays:
 
 ## Real-Time Updates
 
-The status server automatically detects changes to test database files in the `data/` directory. When you:
+The status server automatically detects changes to test database files in the data directory (`~/.local/reg-rs/` by default, override with `REG_RS_DATA_DIR`). When you:
 
 1. Create a new test (`reg-rs create ...`)
 2. Run tests (`reg-rs run ...`)
@@ -99,8 +99,8 @@ The dashboard will reflect these changes on the next page refresh.
 reg-rs status -p "_test" -l 4111
 
 # Terminal 2: Create and run tests
-reg-rs create -t data/hello_test.tdb -c 'echo hello'
-reg-rs create -t data/version_test.tdb -c 'cat VERSION'
+reg-rs create -t hello_test -c 'echo hello'
+reg-rs create -t version_test -c 'cat VERSION'
 
 # Run the tests
 reg-rs run -p "_test"
@@ -123,9 +123,9 @@ The `-p` pattern option uses **substring matching**, not glob patterns:
 
 | Pattern | Matches |
 |---------|---------|
-| `_test` | `data/hello_test.tdb`, `data/my_test.tdb` |
-| `hello` | `data/hello_test.tdb`, `data/hello_world.tdb` |
-| `data/` | All tests (since all are in data/) |
+| `_test` | `hello_test.tdb`, `my_test.tdb` |
+| `hello` | `hello_test.tdb`, `hello_world.tdb` |
+| `.tdb`  | All tests |
 
 **Note**: Patterns like `*.tdb` will NOT work as expected. Use substring patterns instead.
 
@@ -142,7 +142,7 @@ Another process is using the port. Either:
 
 ### No tests found
 Ensure your tests:
-1. Are in the `data/` directory
+1. Are in the data directory (`~/.local/reg-rs/` or `$REG_RS_DATA_DIR`)
 2. Have the `.tdb` extension
 3. Match your pattern (remember: substring matching, not glob)
 

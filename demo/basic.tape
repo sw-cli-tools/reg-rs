@@ -17,12 +17,17 @@ Enter
 Sleep 1s
 
 # Build the binary first (silently)
-Type "cargo build --release 2>/dev/null && mkdir -p data"
+Type "cargo build --release 2>/dev/null"
 Enter
 Sleep 2s
 
+# Set data dir to project-local work directory
+Type "export REG_RS_DATA_DIR=./work/reg-rs && mkdir -p $REG_RS_DATA_DIR"
+Enter
+Sleep 500ms
+
 # Clean any previous test
-Type "rm -f data/hello.tdb data/hello.tdb.lock"
+Type "rm -f $REG_RS_DATA_DIR/hello.tdb $REG_RS_DATA_DIR/hello.tdb.lock"
 Enter
 Sleep 500ms
 
@@ -38,7 +43,7 @@ Sleep 2s
 Type "# Step 1: Create a test"
 Enter
 Sleep 500ms
-Type "./target/release/reg-rs create -t data/hello.tdb -c 'echo hello world'"
+Type "./target/release/reg-rs create -t hello -c 'echo hello world'"
 Enter
 Sleep 2s
 

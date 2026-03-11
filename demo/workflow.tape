@@ -17,15 +17,20 @@ Enter
 Sleep 1s
 
 # Build and setup (silently)
-Type "cargo build --release 2>/dev/null && mkdir -p data/testdata"
+Type "cargo build --release 2>/dev/null"
 Enter
 Sleep 2s
 
-# Clean any previous test
-Type "rm -rf data/version_test.tdb* data/testdata"
+# Set data dir to project-local work directory
+Type "export REG_RS_DATA_DIR=./work/reg-rs && mkdir -p $REG_RS_DATA_DIR/testdata"
 Enter
 Sleep 500ms
-Type "mkdir -p data/testdata"
+
+# Clean any previous test
+Type "rm -rf $REG_RS_DATA_DIR/version_test.tdb* $REG_RS_DATA_DIR/testdata"
+Enter
+Sleep 500ms
+Type "mkdir -p $REG_RS_DATA_DIR/testdata"
 Enter
 Sleep 500ms
 
@@ -33,10 +38,10 @@ Sleep 500ms
 Type "# Step 1: Create a baseline test"
 Enter
 Sleep 500ms
-Type "echo 'version 1.0.0' > data/testdata/version.txt"
+Type "echo 'version 1.0.0' > $REG_RS_DATA_DIR/testdata/version.txt"
 Enter
 Sleep 500ms
-Type "./target/release/reg-rs create -t data/version_test.tdb -c 'cat data/testdata/version.txt'"
+Type "./target/release/reg-rs create -t version_test -c 'cat $REG_RS_DATA_DIR/testdata/version.txt'"
 Enter
 Sleep 2s
 
@@ -60,7 +65,7 @@ Sleep 2s
 Type "# Step 4: Simulate a regression (change the output)"
 Enter
 Sleep 500ms
-Type "echo 'version 2.0.0' > data/testdata/version.txt"
+Type "echo 'version 2.0.0' > $REG_RS_DATA_DIR/testdata/version.txt"
 Enter
 Sleep 1s
 
@@ -84,7 +89,7 @@ Sleep 3s
 Type "# Cleaning up"
 Enter
 Sleep 500ms
-Type "rm -rf data/testdata data/version_test.tdb*"
+Type "rm -rf $REG_RS_DATA_DIR/testdata $REG_RS_DATA_DIR/version_test.tdb*"
 Enter
 Sleep 1s
 

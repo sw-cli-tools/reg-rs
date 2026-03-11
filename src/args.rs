@@ -14,10 +14,12 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 reg-rs captures command output and exit codes as baseline 'golden' results,
 then compares subsequent runs against these baselines to detect regressions.
 
+Tests are stored in ~/.local/reg-rs/ by default (override with REG_RS_DATA_DIR).
+
 WORKFLOW:
-  1. Create a test:   reg-rs create -t my_test.tdb -c 'my_command'
-  2. Run the test:    reg-rs run -p my_test.tdb
-  3. View results:    reg-rs report -p my_test.tdb -v
+  1. Create a test:   reg-rs create -t my_test -c 'my_command'
+  2. Run the test:    reg-rs run -p my_test
+  3. View results:    reg-rs report -p my_test -v
 
 For more information on a specific command, run:
   reg-rs <command> --help"
@@ -47,12 +49,12 @@ The command's stdout, stderr, and exit code are captured and stored in a
 SQLite database file. This becomes the baseline for future regression tests.
 
 EXAMPLES:
-  reg-rs create -t data/pwd_test.tdb -c 'pwd'
-  reg-rs create -t data/version.tdb -c 'git --version'
-  reg-rs c-t tests/ls.tdb -c 'ls -la'  # using alias"
+  reg-rs create -t pwd_test -c 'pwd'
+  reg-rs create -t version -c 'git --version'
+  reg-rs c -t ls_test -c 'ls -la'     # using alias"
     )]
     Create {
-        /// Path to the test database file to create (e.g., data/my_test.tdb)
+        /// Test name (stored in ~/.local/reg-rs/ as name.tdb)
         #[clap(long, short)]
         test: String,
         /// Shell command to execute and capture (e.g., 'echo hello')
@@ -66,11 +68,11 @@ EXAMPLES:
 WARNING: This permanently deletes the test and all stored results!
 
 EXAMPLES:
-  reg-rs remove -p data/old_test.tdb
-  reg-rs remove -p 'data/temp_*.tdb'"
+  reg-rs remove -p old_test
+  reg-rs remove -p 'temp_'"
     )]
     Remove {
-        /// Glob pattern to match test files to remove (e.g., 'data/*.tdb')
+        /// Substring pattern to match test names to remove
         #[clap(long, short)]
         pattern: String,
     },
@@ -87,12 +89,12 @@ VERBOSITY LEVELS:
   -vvv    - Also show detailed differences
 
 EXAMPLES:
-  reg-rs report -p data/my_test.tdb         # basic summary
-  reg-rs report -p 'data/*.tdb' -v          # show names
-  reg-rs p-p data/my_test.tdb -vvv         # full details (using alias)"
+  reg-rs report -p my_test            # basic summary
+  reg-rs report -p my_test -v         # show names
+  reg-rs p -p my_test -vvv            # full details (using alias)"
     )]
     Report {
-        /// Glob pattern to match test files (e.g., 'data/*.tdb')
+        /// Substring pattern to match test names
         #[clap(long, short)]
         pattern: String,
         /// Verbosity: -v adds names, -vv adds failures, -vvv adds differences
@@ -109,12 +111,12 @@ Each matching test's command is re-executed, and the new output is compared
 against the stored baseline. Any differences are recorded as potential regressions.
 
 EXAMPLES:
-  reg-rs run -p data/my_test.tdb           # run a specific test
-  reg-rs run -p 'data/*.tdb'               # run all matching tests
-  reg-rs r-p data/my_test.tdb -n          # dry-run (show what would run)"
+  reg-rs run -p my_test                    # run a specific test
+  reg-rs run -p test                       # run all matching tests
+  reg-rs r -p my_test -n                   # dry-run (show what would run)"
     )]
     Run {
-        /// Glob pattern to match test files to run (e.g., 'data/*.tdb')
+        /// Substring pattern to match test names to run
         #[clap(long, short)]
         pattern: String,
         /// Show what would be run without actually executing
@@ -133,12 +135,12 @@ The page auto-updates when test files change.
 Open http://localhost:<port> in a browser to view the status page.
 
 EXAMPLES:
-  reg-rs status -p 'data/*.tdb'            # start on default port 4111
-  reg-rs status -p 'data/*.tdb' -l 8080    # use custom port
-  reg-rs s-p 'data/*.tdb'                 # using alias"
+  reg-rs status -p my_test                 # start on default port 4111
+  reg-rs status -p my_test -l 8080         # use custom port
+  reg-rs s -p test                         # using alias"
     )]
     Status {
-        /// Glob pattern to match test files to monitor (e.g., 'data/*.tdb')
+        /// Substring pattern to match test names to monitor
         #[clap(long, short)]
         pattern: String,
         /// Port number for the web server (default: 4111)

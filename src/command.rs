@@ -6,7 +6,11 @@ use crate::reporters::generate_reports;
 use crate::runner;
 use crate::status;
 
-/// Create a test result
+/// Create a test result.
+///
+/// If the test path is just a filename (no directory separators), it is
+/// placed in the default data directory (`~/.local/reg-rs/`). The `.tdb`
+/// extension is appended automatically if missing.
 #[allow(clippy::collapsible_if)]
 pub fn create_original(
     config: &config::Config,
@@ -14,8 +18,8 @@ pub fn create_original(
     log::info!("command/create_original");
     md!(&config);
     if let Some((test, command)) = config.extract_test_and_command() {
-        if let Some(test_result) = runner::run_one(&test, &command, false)? {
-            let db_name = test;
+        let db_name = resolve_test_path(&test);
+        if let Some(test_result) = runner::run_one(&db_name, &command, false)? {
             db::reset_differences(&db_name)?;
             db::reset_latest_results(&db_name)?;
             db::store_results(
@@ -26,6 +30,25 @@ pub fn create_original(
         }
     }
     Ok(())
+}
+
+/// Resolve a test path: if it has no directory component, place it in the
+/// data directory. Append `.tdb` extension if missing.
+fn resolve_test_path(test: &str) -> String {
+    let path = std::path::Path::new(test);
+    let mut resolved = if path.parent().is_some_and(|p| p != std::path::Path::new("")) {
+        // Has a directory component - use as-is
+        path.to_path_buf()
+    } else {
+        // Just a filename - put it in the data directory
+        crate::data_dir().join(test)
+    };
+    if resolved.extension().is_none_or(|ext| ext != "tdb") {
+        let mut name = resolved.file_name().unwrap_or_default().to_os_string();
+        name.push(".tdb");
+        resolved.set_file_name(name);
+    }
+    resolved.to_string_lossy().to_string()
 }
 
 /// Update a test result

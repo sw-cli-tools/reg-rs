@@ -3,11 +3,12 @@ use std::process::Command;
 
 mod common;
 
-/// Helper to run a command and return (status_code, stdout, stderr)
+/// Helper to run a command with REG_RS_DATA_DIR set and return (status_code, stdout, stderr)
 fn run_command(cmd: &str) -> (i32, String, String) {
     let output = Command::new("sh")
         .arg("-c")
         .arg(cmd)
+        .env("REG_RS_DATA_DIR", common::test_data_dir())
         .output()
         .expect("failed to execute process");
     let status_code = output.status.code().unwrap_or(-1);
@@ -101,20 +102,17 @@ fn integration_test_status_help() {
 fn integration_test_create_and_run() {
     common::setup();
 
-    // Tests must be in data/ directory with .tdb extension (per finder.rs)
-    let _ = fs::create_dir_all("./data");
-    let test_db = "data/integration_test.tdb";
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("integration_test.tdb");
     let test_pattern = "integration_test";
 
     // Clean up any existing test file (including lock file)
-    let _ = fs::remove_file(test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db));
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
 
-    // Create a new test
-    let (status_code, _stdout, stderr) = run_command(&format!(
-        "./target/debug/reg-rs create -t {} -c 'echo hello'",
-        test_db
-    ));
+    // Create a new test (just a name - placed in data dir automatically)
+    let (status_code, _stdout, stderr) =
+        run_command("./target/debug/reg-rs create -t integration_test -c 'echo hello'");
 
     if status_code != 0 {
         eprintln!("create failed: {}", stderr);
@@ -122,20 +120,21 @@ fn integration_test_create_and_run() {
     }
     assert_eq!(0, status_code, "create failed: {}", stderr);
 
-    // Verify the test database was created
+    // Verify the test database was created in the data directory
     assert!(
-        std::path::Path::new(test_db).exists(),
-        "Test database should exist after create"
+        test_db.exists(),
+        "Test database should exist at {}",
+        test_db.display()
     );
 
-    // Run the test (use pattern matching, not full path)
+    // Run the test (use pattern matching)
     let (status_code, stdout, stderr) =
         run_command(&format!("./target/debug/reg-rs run -p {}", test_pattern));
 
     if status_code != 0 {
         eprintln!("run failed: {}", stderr);
-        let _ = fs::remove_file(test_db);
-        let _ = fs::remove_file(format!("{}.lock", test_db));
+        let _ = fs::remove_file(&test_db);
+        let _ = fs::remove_file(format!("{}.lock", test_db.display()));
         return;
     }
     assert_eq!(0, status_code, "run failed: {}", stderr);
@@ -151,8 +150,8 @@ fn integration_test_create_and_run() {
 
     if status_code != 0 {
         eprintln!("report failed: {}", stderr);
-        let _ = fs::remove_file(test_db);
-        let _ = fs::remove_file(format!("{}.lock", test_db));
+        let _ = fs::remove_file(&test_db);
+        let _ = fs::remove_file(format!("{}.lock", test_db.display()));
         return;
     }
     assert_eq!(0, status_code, "report failed: {}", stderr);
@@ -163,6 +162,6 @@ fn integration_test_create_and_run() {
     );
 
     // Clean up
-    let _ = fs::remove_file(test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db));
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
 }
