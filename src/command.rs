@@ -1,3 +1,4 @@
+use crate::ai;
 use crate::config;
 use crate::db;
 use crate::finder;
@@ -11,20 +12,42 @@ use crate::status;
 /// If the test path is just a filename (no directory separators), it is
 /// placed in the default data directory (`~/.local/reg-rs/`). The `.tdb`
 /// extension is appended automatically if missing.
+///
+/// Supports two modes:
+/// - `--command`: use the provided shell command directly
+/// - `--describe`: use AI to generate a command from a natural language description
 pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
     log::info!("command/create_original");
     log::debug!("create_original config: {:?}", &config);
-    if let Some((test, command)) = config.extract_test_and_command() {
-        let db_name = resolve_test_path(&test);
-        if let Some(test_result) = runner::run_one(&db_name, &command, false)? {
-            db::reset_differences(&db_name)?;
-            db::reset_latest_results(&db_name)?;
-            db::store_results(
-                &db_name,
-                &test_result,
-                queries::StatementContext::original(),
-            )?;
+
+    let (test, command) = if let Some(tc) = config.extract_test_and_command() {
+        tc
+    } else if let Some((test, description)) = config.extract_test_and_describe() {
+        let command = ai::generate_command(&description)?;
+        eprintln!("AI generated command: {}", &command);
+        eprint!("Proceed? [y/n] ");
+        let mut input = String::new();
+        std::io::stdin()
+            .read_line(&mut input)
+            .map_err(|e| crate::error::RegError::Other(format!("Failed to read input: {}", e)))?;
+        if !input.trim().eq_ignore_ascii_case("y") {
+            eprintln!("Aborted.");
+            return Ok(());
         }
+        (test, command)
+    } else {
+        return Ok(());
+    };
+
+    let db_name = resolve_test_path(&test);
+    if let Some(test_result) = runner::run_one(&db_name, &command, false)? {
+        db::reset_differences(&db_name)?;
+        db::reset_latest_results(&db_name)?;
+        db::store_results(
+            &db_name,
+            &test_result,
+            queries::StatementContext::original(),
+        )?;
     }
     Ok(())
 }

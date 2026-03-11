@@ -48,18 +48,26 @@ pub enum Subcommands {
 The command's stdout, stderr, and exit code are captured and stored in a
 SQLite database file. This becomes the baseline for future regression tests.
 
+Use --command to specify an explicit shell command, or --describe to have
+an AI generate the command from a natural language description.
+Requires ANTHROPIC_API_KEY environment variable when using --describe.
+
 EXAMPLES:
   reg-rs create -t pwd_test -c 'pwd'
   reg-rs create -t version -c 'git --version'
-  reg-rs c -t ls_test -c 'ls -la'     # using alias"
+  reg-rs c -t ls_test -c 'ls -la'     # using alias
+  reg-rs create -t status -D 'show git status of current directory'"
     )]
     Create {
         /// Test name (stored in ~/.local/reg-rs/ as name.tdb)
         #[clap(long, short)]
         test: String,
         /// Shell command to execute and capture (e.g., 'echo hello')
-        #[clap(long, short)]
-        command: String,
+        #[clap(long, short, required_unless_present = "describe")]
+        command: Option<String>,
+        /// Natural language description — AI generates the command (requires ANTHROPIC_API_KEY)
+        #[clap(long, short = 'D', conflicts_with = "command")]
+        describe: Option<String>,
     },
     /// Removes previously created test and run results if any.  Discards test and results!
     #[clap(
@@ -162,7 +170,8 @@ mod tests {
             Args {
                 command: Subcommands::Create {
                     test: "pat001".to_string(),
-                    command: "pwd".to_string(),
+                    command: Some("pwd".to_string()),
+                    describe: None,
                 },
                 debug: false,
                 logging: false,
@@ -177,7 +186,8 @@ mod tests {
             Args {
                 command: Subcommands::Create {
                     test: "pat001".to_string(),
-                    command: "pwd".to_string(),
+                    command: Some("pwd".to_string()),
+                    describe: None,
                 },
                 debug: true,
                 logging: false,

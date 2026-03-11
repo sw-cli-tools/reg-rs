@@ -69,6 +69,8 @@ mod tests {
     }
 }
 
+/// AI-powered command generation
+pub mod ai;
 /// Argument parsing
 pub mod args;
 /// Test Builder

@@ -32,11 +32,31 @@ impl Config {
         p
     }
 
-    /// extract test and command
+    /// extract test and command (command is present when using -c)
     pub fn extract_test_and_command(&self) -> Option<(String, String)> {
-        if let args::Subcommands::Create { test, command } = &self.mode {
+        if let args::Subcommands::Create {
+            test,
+            command: Some(command),
+            ..
+        } = &self.mode
+        {
             log::debug!("extract_test_and_command: {:?}, {:?}", &test, &command);
             Some((test.to_string(), command.to_string()))
+        } else {
+            None
+        }
+    }
+
+    /// extract test name and description (description is present when using -D)
+    pub fn extract_test_and_describe(&self) -> Option<(String, String)> {
+        if let args::Subcommands::Create {
+            test,
+            describe: Some(describe),
+            ..
+        } = &self.mode
+        {
+            log::debug!("extract_test_and_describe: {:?}, {:?}", &test, &describe);
+            Some((test.to_string(), describe.to_string()))
         } else {
             None
         }
@@ -107,7 +127,8 @@ mod tests {
         let config = Config {
             mode: args::Subcommands::Create {
                 test: "my_test".to_string(),
-                command: "echo hello".to_string(),
+                command: Some("echo hello".to_string()),
+                describe: None,
             },
             debug: false,
         };
