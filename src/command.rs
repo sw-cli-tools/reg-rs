@@ -23,7 +23,9 @@ pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
     let (test, command) = if let Some(tc) = config.extract_test_and_command() {
         tc
     } else if let Some((test, description)) = config.extract_test_and_describe() {
-        let command = ai::generate_command(&description)?;
+        let context = gather_context(config)?;
+        let existing = gather_existing_test_commands();
+        let command = ai::generate_command(&description, context.as_deref(), &existing)?;
         eprintln!("AI generated command: {}", &command);
         eprint!("Proceed? [y/n] ");
         let mut input = String::new();
@@ -132,6 +134,33 @@ pub async fn status_server(config: &config::Config) -> crate::error::Result<()> 
     status::start_client(config)?;
     status::start_server(config).await?; // loops
     Ok(())
+}
+
+/// Run the --context command and return its stdout, if provided.
+fn gather_context(config: &config::Config) -> crate::error::Result<Option<String>> {
+    if let Some(context_cmd) = config.extract_context() {
+        eprintln!("Running context command: {}", &context_cmd);
+        let (_, _, stdout) = crate::process::exec(context_cmd)?;
+        Ok(Some(stdout))
+    } else {
+        Ok(None)
+    }
+}
+
+/// Gather commands from existing tests in the data directory.
+fn gather_existing_test_commands() -> Vec<String> {
+    let pattern = String::new(); // match all
+    let tests = match finder::discover(pattern) {
+        Ok(t) => t.found,
+        Err(_) => return vec![],
+    };
+    let mut commands = Vec::new();
+    for test in tests.iter().take(20) {
+        if let Ok(result) = db::read_original_results(test) {
+            commands.push(result.command.clone());
+        }
+    }
+    commands
 }
 
 #[cfg(test)]

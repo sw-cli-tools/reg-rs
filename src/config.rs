@@ -63,6 +63,19 @@ impl Config {
         }
     }
 
+    /// extract optional context command from Create subcommand
+    pub fn extract_context(&self) -> Option<String> {
+        if let args::Subcommands::Create {
+            context: Some(context),
+            ..
+        } = &self.mode
+        {
+            Some(context.to_string())
+        } else {
+            None
+        }
+    }
+
     /// extract optional preprocess command from Create subcommand
     pub fn extract_preprocess(&self) -> Option<String> {
         if let args::Subcommands::Create {
@@ -161,6 +174,7 @@ mod tests {
                 test: "my_test".to_string(),
                 command: Some("echo hello".to_string()),
                 describe: None,
+                context: None,
                 preprocess: None,
                 diff_mode: "text".to_string(),
                 timeout: 300,

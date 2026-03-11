@@ -336,6 +336,16 @@ fn integration_test_create_help_shows_preprocess() {
 }
 
 #[test]
+fn integration_test_create_help_shows_context() {
+    common::setup();
+    reg_rs()
+        .args(["create", "-h"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("-C, --context"));
+}
+
+#[test]
 fn integration_test_create_with_diff_mode_json() {
     common::setup();
 

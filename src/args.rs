@@ -68,6 +68,9 @@ EXAMPLES:
         /// Natural language description — AI generates the command (requires ANTHROPIC_API_KEY)
         #[clap(long, short = 'D', conflicts_with = "command")]
         describe: Option<String>,
+        /// Shell command whose output provides context for AI generation (e.g., 'mytool --help')
+        #[clap(long, short = 'C', requires = "describe")]
+        context: Option<String>,
         /// Shell command to preprocess stdout/stderr before diffing (e.g., "jq --sort-keys")
         #[clap(long, short = 'P')]
         preprocess: Option<String>,
@@ -202,6 +205,7 @@ mod tests {
                     test: "pat001".to_string(),
                     command: Some("pwd".to_string()),
                     describe: None,
+                    context: None,
                     preprocess: None,
                     diff_mode: "text".to_string(),
                     timeout: 300,
@@ -221,6 +225,7 @@ mod tests {
                     test: "pat001".to_string(),
                     command: Some("pwd".to_string()),
                     describe: None,
+                    context: None,
                     preprocess: None,
                     diff_mode: "text".to_string(),
                     timeout: 300,
