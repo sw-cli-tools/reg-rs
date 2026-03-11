@@ -51,6 +51,43 @@ fn resolve_test_path(test: &str) -> String {
     resolved.to_string_lossy().to_string()
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_bare_name() {
+        let resolved = resolve_test_path("my_test");
+        let data_dir = crate::data_dir();
+        assert_eq!(resolved, data_dir.join("my_test.tdb").to_string_lossy());
+    }
+
+    #[test]
+    fn test_resolve_bare_name_with_tdb() {
+        let resolved = resolve_test_path("my_test.tdb");
+        let data_dir = crate::data_dir();
+        assert_eq!(resolved, data_dir.join("my_test.tdb").to_string_lossy());
+    }
+
+    #[test]
+    fn test_resolve_path_with_directory() {
+        let resolved = resolve_test_path("/tmp/tests/foo");
+        assert_eq!(resolved, "/tmp/tests/foo.tdb");
+    }
+
+    #[test]
+    fn test_resolve_path_with_directory_and_tdb() {
+        let resolved = resolve_test_path("/tmp/tests/foo.tdb");
+        assert_eq!(resolved, "/tmp/tests/foo.tdb");
+    }
+
+    #[test]
+    fn test_resolve_relative_path_with_directory() {
+        let resolved = resolve_test_path("subdir/foo");
+        assert_eq!(resolved, "subdir/foo.tdb");
+    }
+}
+
 /// Update a test result
 pub fn update_latest(
     config: &config::Config,

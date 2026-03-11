@@ -55,7 +55,10 @@ pub fn exec_with_timeout(
         buf
     });
 
-    // Wait for the child process with a timeout
+    // Wait for the child process with a timeout.
+    // Capture PID before moving child into the wait thread so we can
+    // kill by PID on timeout (joining the thread would block otherwise).
+    let child_pid = child.id();
     let (tx, rx) = mpsc::channel();
     let wait_handle = std::thread::spawn(move || {
         let result = child.wait();
@@ -80,11 +83,12 @@ pub fn exec_with_timeout(
             command, e
         )))),
         Err(mpsc::RecvTimeoutError::Timeout) => {
-            // Kill the child process
-            if let Ok(mut child) = wait_handle.join() {
-                let _ = child.kill();
-                let _ = child.wait();
-            }
+            // Kill the child process by PID first so the wait thread unblocks
+            let _ = Command::new("kill")
+                .args(["-9", &child_pid.to_string()])
+                .output();
+            // Now join the wait thread (child.wait() will return quickly)
+            let _ = wait_handle.join();
             Err(Box::new(RegError::CommandExecution(format!(
                 "command timed out after {:?}: '{}'",
                 timeout, command
@@ -94,5 +98,55 @@ pub fn exec_with_timeout(
             "channel error waiting for '{}': {}",
             command, e
         )))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_exec_captures_stdout() {
+        let (code, stderr, stdout) =
+            exec_with_timeout("echo hello".into(), Duration::from_secs(5)).unwrap();
+        assert_eq!(code, 0);
+        assert_eq!(stdout.trim(), "hello");
+        assert_eq!(stderr, "");
+    }
+
+    #[test]
+    fn test_exec_captures_stderr() {
+        let (code, stderr, _stdout) =
+            exec_with_timeout("echo oops >&2".into(), Duration::from_secs(5)).unwrap();
+        assert_eq!(code, 0);
+        assert_eq!(stderr.trim(), "oops");
+    }
+
+    #[test]
+    fn test_exec_captures_exit_code() {
+        let (code, _stderr, _stdout) =
+            exec_with_timeout("exit 42".into(), Duration::from_secs(5)).unwrap();
+        assert_eq!(code, 42);
+    }
+
+    #[test]
+    fn test_exec_timeout_kills_long_running_command() {
+        let result = exec_with_timeout("sleep 60".into(), Duration::from_millis(200));
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("timed out"),
+            "error should mention timeout: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn test_exec_fast_command_within_timeout() {
+        let result = exec_with_timeout("echo fast".into(), Duration::from_secs(5));
+        assert!(result.is_ok());
+        let (code, _stderr, stdout) = result.unwrap();
+        assert_eq!(code, 0);
+        assert_eq!(stdout.trim(), "fast");
     }
 }

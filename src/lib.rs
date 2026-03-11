@@ -46,6 +46,38 @@ pub fn data_dir() -> PathBuf {
     dir
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_data_dir_returns_path() {
+        // data_dir() should always return a non-empty path
+        let dir = data_dir();
+        assert!(!dir.as_os_str().is_empty());
+    }
+
+    #[test]
+    fn test_data_dir_ends_with_expected_component() {
+        // When REG_RS_DATA_DIR is set (by the test harness), it should be used.
+        // When not set, the path should end with "reg-rs" (from ~/.local/reg-rs/).
+        let dir = data_dir();
+        let last = dir.file_name().unwrap().to_string_lossy();
+        // Either "reg-rs" (default or env override) or "data" (HOME fallback)
+        assert!(
+            last == "reg-rs" || last == "data",
+            "unexpected data dir: {}",
+            dir.display()
+        );
+    }
+
+    #[test]
+    fn test_data_dir_creates_directory() {
+        let dir = data_dir();
+        assert!(dir.exists(), "data_dir() should create the directory");
+    }
+}
+
 /// Argument parsing
 pub mod args;
 /// Test Builder
