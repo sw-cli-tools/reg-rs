@@ -1,8 +1,6 @@
 //! reg-rs (regress) - Regression Test Tool
 #![deny(warnings, missing_docs)]
 
-#[macro_use]
-extern crate serde_derive;
 use std::env;
 use std::path::PathBuf;
 

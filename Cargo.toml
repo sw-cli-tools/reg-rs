@@ -17,13 +17,10 @@ env_logger = "0.10.1"
 fern = { version = "0.6.2", features = ["date-based"] }
 file-lock = "1.1.20"
 
-hyper = "0.14.28"
 log = "0.4.20"
-mime = "0.3.17"
 notify = "4.0.15"
 rusqlite = "0.30.0"
-serde = "1.0.193"
-serde_derive = "1.0.193"
+serde = { version = "1.0.193", features = ["derive"] }
 clap = { version = "4.4.6", features = ["derive"] }
 text-diff = "0.4.0"
 thiserror = "1.0.50"

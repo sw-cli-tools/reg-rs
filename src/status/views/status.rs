@@ -1,3 +1,4 @@
+use serde::Serialize;
 use tinytemplate::TinyTemplate;
 
 use crate::status::server;

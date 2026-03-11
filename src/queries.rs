@@ -1,3 +1,4 @@
+use serde::Serialize;
 use tinytemplate::TinyTemplate;
 
 pub use crate::templates::statements;

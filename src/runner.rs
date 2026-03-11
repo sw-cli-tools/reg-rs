@@ -26,10 +26,15 @@ pub struct TestResults {
 /// Run many tests
 pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("runner/run_many");
-    let tests = finder::discover(config.extract_pattern().to_string())?;
+    let pattern = config.extract_pattern().to_string();
+    let tests = finder::discover(pattern.clone())?;
     if config.debug {
         log::debug!("run_many config: {:?}", &config);
         log::debug!("run_many tests: {:?}", &tests);
+    }
+    if tests.found.is_empty() {
+        eprintln!("warning: no tests matched pattern '{}'", pattern);
+        return Ok(());
     }
     for test in tests.found {
         let prior_test_result = db::read_original_results(&test)?;

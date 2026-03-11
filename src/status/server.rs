@@ -5,6 +5,7 @@ use axum::{
     response::{Html, IntoResponse},
     routing::get,
 };
+use serde::Serialize;
 
 use std::net::SocketAddr;
 use std::path::PathBuf;

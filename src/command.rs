@@ -99,10 +99,23 @@ pub fn update_latest(
 /// remove test results
 pub fn remove_all(config: &config::Config) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("command/remove_all");
-    let tests = finder::discover(config.extract_pattern().to_string())?;
+    let pattern = config.extract_pattern().to_string();
+    let tests = finder::discover(pattern.clone())?;
     log::debug!("remove_all tests: {:?}", &tests);
-    for test in tests.found {
-        db::drop_all_results(&test)?;
+    if tests.found.is_empty() {
+        eprintln!("warning: no tests matched pattern '{}'", pattern);
+        return Ok(());
+    }
+    for test in &tests.found {
+        db::drop_all_results(test)?;
+        // Clean up the .tdb file and its .lock file
+        if let Err(e) = std::fs::remove_file(test) {
+            log::debug!("could not remove {}: {}", test, e);
+        }
+        let lock_path = format!("{}.lock", test);
+        if let Err(e) = std::fs::remove_file(&lock_path) {
+            log::debug!("could not remove {}: {}", lock_path, e);
+        }
     }
     log::info!("command/remove_all done");
     Ok(())

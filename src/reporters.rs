@@ -17,7 +17,12 @@ pub mod summary;
 pub fn generate_reports(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("reporters/generate_reports");
     log::debug!("generate_reports");
-    let test_names = finder::discover(config.extract_pattern().to_string())?;
+    let pattern = config.extract_pattern().to_string();
+    let test_names = finder::discover(pattern.clone())?;
+    if test_names.found.is_empty() {
+        eprintln!("warning: no tests matched pattern '{}'", pattern);
+        return Ok(());
+    }
     let total_count = test_names.found.len() as u32;
     let mut failed_test_names = vec![];
     let mut passed_test_names = vec![];
