@@ -55,7 +55,11 @@ This populates `./work/reg-rs/pjmai-tests/` with one `.tdb` file per test. Each 
 ### Running the tests
 
 ```bash
+# Sequential (default)
 REG_RS_DATA_DIR=./work/reg-rs/pjmai-tests ./target/debug/reg-rs run -p pjmai
+
+# Parallel (one thread per test)
+REG_RS_DATA_DIR=./work/reg-rs/pjmai-tests ./target/debug/reg-rs run -p pjmai --parallel
 ```
 
 ### Viewing results
@@ -191,6 +195,48 @@ These principles emerged from building this suite and apply to testing any CLI w
 6. **Document each test** — The setup script includes comments for every test: what it expects, whether it's flaky, and what could cause failure. reg-rs also supports `--desc`, `--expects`, and `--flaky-note` flags to store this alongside the test data.
 
 7. **Keep tests independent** — Each test creates its own sandbox. No test depends on another test's state. Tests can be run in any order or individually.
+
+## Parallel execution
+
+Because every test has its own `.tdb` database and its own sandbox (isolated `PJMAI_CONFIG_DIR` in a temp directory), there is no shared state between tests. This makes the pjmai-rs suite a natural fit for parallel execution.
+
+### How it works
+
+The `--parallel` flag on `reg-rs run` uses `std::thread::scope` to spawn one thread per test. Each thread independently:
+
+1. Reads the original baseline from its `.tdb` file
+2. Executes the test command (with timeout)
+3. Computes diffs between the new output and the baseline
+4. Writes results back to its `.tdb` file
+
+Since each `.tdb` is a separate SQLite database with its own file lock, there are no concurrency conflicts. The threads share no mutable state — only the final error collection uses a mutex.
+
+### Performance results
+
+Measured on the 11-test pjmai-rs suite (macOS, Apple Silicon):
+
+| Mode | Wall clock | CPU utilization |
+|------|-----------|-----------------|
+| Sequential | 0.179s | 90% |
+| Parallel | 0.046s | 516% |
+
+**3.9x speedup** — the parallel run saturates multiple cores since each test spawns an independent shell process. The speedup comes from overlapping the process launch and I/O wait times across tests.
+
+With larger suites or slower commands (e.g., network-dependent tests with longer runtimes), the speedup would be more dramatic since there's more idle time to overlap.
+
+### When to use parallel
+
+Parallel execution is safe when:
+
+- Each test has its own `.tdb` file (this is always the case with reg-rs)
+- Test commands don't share mutable state (files, ports, databases)
+- Test commands don't compete for scarce resources (e.g., all binding the same port)
+
+The pjmai-rs suite satisfies all three: each test creates an isolated temp directory, runs pjmai-rs against it, and cleans up. No test modifies anything outside its sandbox.
+
+### Meta-testing value
+
+Running the pjmai-rs suite in parallel also serves as a stress test of reg-rs itself — it exercises concurrent reads and writes to different `.tdb` files, concurrent process spawning, and concurrent diff computation. Any file-locking or thread-safety bugs in reg-rs would surface as flaky failures in the parallel pjmai-rs run.
 
 ## Extending the suite
 
