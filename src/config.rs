@@ -66,8 +66,93 @@ impl Config {
 mod tests {
     use super::*;
 
-    // TODO test is_dry_run
-    // TODO test extract_test_and_command
+    #[test]
+    fn test_is_dry_run_true() {
+        let config = Config {
+            mode: args::Subcommands::Run {
+                dry_run: true,
+                pattern: "foo".to_string(),
+            },
+            debug: false,
+        };
+        assert!(config.is_dry_run());
+    }
+
+    #[test]
+    fn test_is_dry_run_false() {
+        let config = Config {
+            mode: args::Subcommands::Run {
+                dry_run: false,
+                pattern: "foo".to_string(),
+            },
+            debug: false,
+        };
+        assert!(!config.is_dry_run());
+    }
+
+    #[test]
+    fn test_is_dry_run_non_run_command() {
+        let config = Config {
+            mode: args::Subcommands::Report {
+                pattern: "foo".to_string(),
+                verbosity: 0,
+            },
+            debug: false,
+        };
+        assert!(!config.is_dry_run());
+    }
+
+    #[test]
+    fn test_extract_test_and_command() {
+        let config = Config {
+            mode: args::Subcommands::Create {
+                test: "my_test".to_string(),
+                command: "echo hello".to_string(),
+            },
+            debug: false,
+        };
+        let result = config.extract_test_and_command();
+        assert_eq!(
+            result,
+            Some(("my_test".to_string(), "echo hello".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_extract_test_and_command_non_create() {
+        let config = Config {
+            mode: args::Subcommands::Run {
+                dry_run: false,
+                pattern: "foo".to_string(),
+            },
+            debug: false,
+        };
+        assert_eq!(config.extract_test_and_command(), None);
+    }
+
+    #[test]
+    fn test_status_port_default() {
+        let config = Config {
+            mode: args::Subcommands::Report {
+                pattern: "foo".to_string(),
+                verbosity: 0,
+            },
+            debug: false,
+        };
+        assert_eq!(config.status_port(), crate::DEFAULT_STATUS_PORT);
+    }
+
+    #[test]
+    fn test_status_port_custom() {
+        let config = Config {
+            mode: args::Subcommands::Status {
+                pattern: "foo".to_string(),
+                localhost_port: 8080,
+            },
+            debug: false,
+        };
+        assert_eq!(config.status_port(), 8080);
+    }
 
     #[test]
     fn test_extract_report_pattern() {

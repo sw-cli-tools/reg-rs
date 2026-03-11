@@ -24,7 +24,7 @@ pub struct TestResults {
 }
 
 /// Run many tests
-pub fn run_many(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_many(config: &config::Config) -> crate::error::Result<()> {
     log::info!("runner/run_many");
     let pattern = config.extract_pattern().to_string();
     let tests = finder::discover(pattern.clone())?;
@@ -53,7 +53,7 @@ pub fn run_one(
     test_name: &str,
     command: &str,
     dry_run: bool,
-) -> Result<Option<TestResults>, Box<dyn std::error::Error>> {
+) -> crate::error::Result<Option<TestResults>> {
     log::info!(
         "runner/run_one test_name {}, dry_run {}",
         &test_name,
@@ -86,7 +86,7 @@ pub fn run_one_with_executor(
     command: &str,
     dry_run: bool,
     executor: &dyn CommandExecutor,
-) -> Result<Option<TestResults>, Box<dyn std::error::Error>> {
+) -> crate::error::Result<Option<TestResults>> {
     log::info!(
         "runner/run_one_with_executor test_name {}, dry_run {}",
         &test_name,

@@ -51,7 +51,7 @@ fn watch(app_state: AppState) -> Result<(), RegError> {
     loop {
         index += 1;
         match rx.recv() {
-            Ok(event) => println!("monitor.rs {:?}", event),
+            Ok(event) => log::debug!("monitor/watch event: {:?}", event),
             Err(e) => {
                 log::error!("monitor/watch: channel closed: {}", e);
                 return Err(RegError::Notification(format!(

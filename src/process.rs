@@ -12,7 +12,7 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_secs(300);
 ///
 /// Commands are killed after the default timeout (5 minutes) to prevent
 /// hanging tests from blocking indefinitely and holding database locks.
-pub fn exec(command: String) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
+pub fn exec(command: String) -> crate::error::Result<(i32, String, String)> {
     exec_with_timeout(command, DEFAULT_TIMEOUT)
 }
 
@@ -20,7 +20,7 @@ pub fn exec(command: String) -> Result<(i32, String, String), Box<dyn std::error
 pub fn exec_with_timeout(
     command: String,
     timeout: Duration,
-) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
+) -> crate::error::Result<(i32, String, String)> {
     log::info!(
         "process/exec command: {} (timeout: {:?})",
         &command,
@@ -72,16 +72,16 @@ pub fn exec_with_timeout(
             let stderr = stderr_handle.join().unwrap_or_default();
             let status_code = status.code().unwrap_or(-1);
 
-            println!("status: {:#?} status_code:{}", status, status_code);
-            println!("stdout:\n{}", &stdout);
-            println!("stderr:\n{}", &stderr);
+            log::debug!("status: {:#?} status_code:{}", status, status_code);
+            log::debug!("stdout:\n{}", &stdout);
+            log::debug!("stderr:\n{}", &stderr);
 
             Ok((status_code, stderr, stdout))
         }
-        Ok(Err(e)) => Err(Box::new(RegError::CommandExecution(format!(
+        Ok(Err(e)) => Err(RegError::CommandExecution(format!(
             "failed waiting for '{}': {}",
             command, e
-        )))),
+        ))),
         Err(mpsc::RecvTimeoutError::Timeout) => {
             // Kill the child process by PID first so the wait thread unblocks
             let _ = Command::new("kill")
@@ -89,15 +89,15 @@ pub fn exec_with_timeout(
                 .output();
             // Now join the wait thread (child.wait() will return quickly)
             let _ = wait_handle.join();
-            Err(Box::new(RegError::CommandExecution(format!(
+            Err(RegError::CommandExecution(format!(
                 "command timed out after {:?}: '{}'",
                 timeout, command
-            ))))
+            )))
         }
-        Err(e) => Err(Box::new(RegError::CommandExecution(format!(
+        Err(e) => Err(RegError::CommandExecution(format!(
             "channel error waiting for '{}': {}",
             command, e
-        )))),
+        ))),
     }
 }
 

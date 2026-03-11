@@ -16,17 +16,14 @@ fn is_hidden(entry: &DirEntry) -> bool {
 }
 
 /// Discover tests matching a substring pattern in the data directory.
-pub fn discover(pattern: String) -> Result<TestNames, Box<dyn std::error::Error>> {
+pub fn discover(pattern: String) -> crate::error::Result<TestNames> {
     log::info!("finder/discover pattern {}", &pattern);
     let data_dir = crate::data_dir();
     discover_in(&data_dir, &pattern)
 }
 
 /// Discover tests matching a substring pattern in a specific directory.
-fn discover_in(
-    dir: &std::path::Path,
-    pattern: &str,
-) -> Result<TestNames, Box<dyn std::error::Error>> {
+fn discover_in(dir: &std::path::Path, pattern: &str) -> crate::error::Result<TestNames> {
     // Canonicalize to resolve symlinks (e.g., /var -> /private/var on macOS)
     let dir = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
     let found: Vec<String> = WalkDir::new(&dir)

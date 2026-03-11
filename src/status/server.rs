@@ -74,7 +74,7 @@ pub struct TestDetails {
 }
 
 /// start status server
-pub async fn start(config: &config::Config) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn start(config: &config::Config) -> crate::error::Result<()> {
     log::info!("server/start - BEGIN");
     let status_port = config.status_port();
     let pattern = config.extract_pattern().to_string();
@@ -192,7 +192,7 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 /// update shared state with test run data
-pub fn set_test_runs(app_state: AppState) -> Result<(), Box<dyn std::error::Error>> {
+pub fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
     log::info!("server/set_test_runs - acquiring lock");
     let mut state_data = app_state
         .state_data
@@ -244,7 +244,7 @@ pub fn set_test_runs(app_state: AppState) -> Result<(), Box<dyn std::error::Erro
 }
 
 /// get test result differences
-fn get_diffs(test_name: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+fn get_diffs(test_name: &str) -> crate::error::Result<Vec<String>> {
     log::info!("server/get_diffs test_name {}", &test_name);
     let differences = db::read_differences(test_name)?;
     let mut diffs = vec![];

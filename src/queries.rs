@@ -54,11 +54,82 @@ pub fn get_statement(statement_context: &StatementContext, statement_template: &
     })
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_statement_original_table() {
+        let stmt = get_statement(
+            &StatementContext::original(),
+            statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
+        );
+        assert!(stmt.contains("original_results_table"));
+    }
+
+    #[test]
+    fn test_get_statement_latest_table() {
+        let stmt = get_statement(
+            &StatementContext::latest(),
+            statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
+        );
+        assert!(stmt.contains("latest_results_table"));
+    }
+
+    #[test]
+    fn test_get_statement_differences_table() {
+        let stmt = get_statement(
+            &StatementContext::differences(),
+            statements::CREATE_DIFFERENCES_TABLE_TEMPLATE,
+        );
+        assert!(stmt.contains("differences_table"));
+    }
+
+    #[test]
+    fn test_get_statement_drop_table() {
+        let stmt = get_statement(
+            &StatementContext::original(),
+            statements::DROP_TABLE_TEMPLATE,
+        );
+        assert!(stmt.contains("DROP TABLE IF EXISTS"));
+        assert!(stmt.contains("original_results_table"));
+    }
+
+    #[test]
+    fn test_get_statement_count_diff_type() {
+        let stmt = get_statement(
+            &StatementContext::difference_count_by_type(3),
+            statements::COUNT_DIFF_TYPE_TEMPLATE,
+        );
+        assert!(stmt.contains("differences_table"));
+        assert!(stmt.contains("3"));
+    }
+
+    #[test]
+    fn test_get_statement_insert() {
+        let stmt = get_statement(
+            &StatementContext::latest(),
+            statements::INSERT_TEST_RESULTS_TEMPLATE,
+        );
+        assert!(stmt.contains("INSERT INTO latest_results_table"));
+    }
+
+    #[test]
+    fn test_get_statement_select() {
+        let stmt = get_statement(
+            &StatementContext::original(),
+            statements::SELECT_TEST_RESULTS_TEMPLATE,
+        );
+        assert!(stmt.contains("SELECT"));
+        assert!(stmt.contains("original_results_table"));
+    }
+}
+
 /// Fill in template, rendering it only once
 fn render(
     statement_context: &StatementContext,
     statement_template: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> crate::error::Result<String> {
     let mut tt = TinyTemplate::new();
     tt.add_template("statement_template", statement_template)?;
     let result = tt.render("statement_template", &statement_context)?;

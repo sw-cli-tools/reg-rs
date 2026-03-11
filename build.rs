@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 
 fn main() {
-    let out_dir = env::var_os("OUT_DIR").unwrap();
+    let out_dir = env::var_os("OUT_DIR").expect("OUT_DIR not set by cargo");
     let dest_path = Path::new(&out_dir).join("generated.rs");
     let version = format!("0.1.0-dev-{}", chrono::Local::now()); // build time
     let version_fn = "/// Version
@@ -13,5 +13,5 @@ pub fn generated_version() -> &'static str {
         + &version
         + "\"
 }";
-    fs::write(&dest_path, version_fn).unwrap();
+    fs::write(&dest_path, version_fn).expect("failed to write generated.rs");
 }

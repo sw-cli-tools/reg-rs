@@ -51,7 +51,7 @@ impl DetailsReportContext {
 pub fn show_details(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> crate::error::Result<()> {
     log::info!("details/show_details");
     let mut tt = TinyTemplate::new();
     tt.add_template("details_report_template", reports::DETAILS_REPORT_TEMPLATE)?;
@@ -70,7 +70,7 @@ pub fn show_details(
 fn show_failures(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> crate::error::Result<()> {
     log::info!("details/show_failures");
     let failed_test_names = &details_report_context.failed_test_names;
     if failed_test_names.is_empty() {
@@ -113,45 +113,17 @@ fn show_failures(
             latest_result.time_created.to_string(),
         ))?;
         if verbosity_level > 2 {
-            let mut display_differences = vec![];
-            for difference in differences {
-                if difference.0 == format!("{}", diff::RegressionType::ActualCode as u8) {
-                    display_differences.push(differences::DisplayDifference {
-                        type_name: format!("{:022}", "Actual exit code"),
-                        chunk: difference.1.to_string(),
-                    });
-                }
-                if difference.0 == format!("{}", diff::RegressionType::ExpectedCode as u8) {
-                    display_differences.push(differences::DisplayDifference {
-                        type_name: format!("{:022}", "Expected exit code"),
-                        chunk: difference.1.to_string(),
-                    });
-                }
-                if difference.0 == format!("{}", diff::RegressionType::StderrAdd as u8) {
-                    display_differences.push(differences::DisplayDifference {
-                        type_name: format!("{:022}", "stderr add"),
-                        chunk: difference.1.to_string(),
-                    });
-                }
-                if difference.0 == format!("{}", diff::RegressionType::StderrRemove as u8) {
-                    display_differences.push(differences::DisplayDifference {
-                        type_name: format!("{:022}", "stderr remove"),
-                        chunk: difference.1.to_string(),
-                    });
-                }
-                if difference.0 == format!("{}", diff::RegressionType::StdoutAdd as u8) {
-                    display_differences.push(differences::DisplayDifference {
-                        type_name: format!("{:022}", "stdout add"),
-                        chunk: difference.1.to_string(),
-                    });
-                }
-                if difference.0 == format!("{}", diff::RegressionType::StdoutRemove as u8) {
-                    display_differences.push(differences::DisplayDifference {
-                        type_name: format!("{:022}", "stdout remove"),
-                        chunk: difference.1.to_string(),
-                    });
-                }
-            }
+            let display_differences: Vec<_> = differences
+                .iter()
+                .filter_map(|difference| {
+                    diff::RegressionType::display_label(&difference.0).map(|label| {
+                        differences::DisplayDifference {
+                            type_name: format!("{:022}", label),
+                            chunk: difference.1.to_string(),
+                        }
+                    })
+                })
+                .collect();
             log::debug!(
                 "show_failures display_differences: {:?}",
                 &display_differences
@@ -169,7 +141,7 @@ fn show_failures(
 fn show_passes(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> crate::error::Result<()> {
     log::info!("details/show_passes");
     let passed_test_names = &details_report_context.passed_test_names;
     if passed_test_names.is_empty() {

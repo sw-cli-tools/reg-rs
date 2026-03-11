@@ -41,14 +41,41 @@ fn maybe_color(condition: bool, cb: &dyn Fn(&str) -> String, count: u32) -> Stri
     if condition { cb(&s) } else { s }
 }
 
-/// show summary template rendered output
-pub fn show_summary(
-    summary_report_context: &SummaryReportContext,
-) -> Result<(), Box<dyn std::error::Error>> {
-    log::info!("summary/show_summary");
+/// Render summary report to a string
+pub fn render(summary_report_context: &SummaryReportContext) -> crate::error::Result<String> {
     let mut tt = TinyTemplate::new();
     tt.add_template("summary_report_template", reports::SUMMARY_REPORT_TEMPLATE)?;
-    let rendered = tt.render("summary_report_template", &summary_report_context)?;
+    let rendered = tt.render("summary_report_template", summary_report_context)?;
+    Ok(rendered)
+}
+
+/// show summary template rendered output
+pub fn show_summary(summary_report_context: &SummaryReportContext) -> crate::error::Result<()> {
+    log::info!("summary/show_summary");
+    let rendered = render(summary_report_context)?;
     println!("{}", rendered);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_summary_render() {
+        let ctx = SummaryReportContext::new(1, 2, 3, "my_test", 6);
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("reg-rs Summary Report"));
+        assert!(output.contains("failed"));
+        assert!(output.contains("not yet run"));
+        assert!(output.contains("passed"));
+        assert!(output.contains("my_test"));
+    }
+
+    #[test]
+    fn test_summary_render_zero_counts() {
+        let ctx = SummaryReportContext::new(0, 0, 0, "empty", 0);
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("empty"));
+    }
 }

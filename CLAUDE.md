@@ -35,7 +35,9 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Status monitoring uses Axum web framework (async with Tokio)
 - Dependency injection via `CommandExecutor` trait (`executor.rs`) with `MockCommandExecutor` for tests
 - External `.lock` files prevent SQLite file-lock conflicts (one per `.tdb` database)
-- Custom `RegError` enum (`error.rs`) with `thiserror` — 10 error variants
+- DB functions use `with_lock()` RAII wrapper for consistent lock/unlock pattern
+- Custom `RegError` enum (`error.rs`) with `thiserror` — used consistently across all modules
+- `RegressionType::display_label()` converts stored type codes to human-readable labels
 - `build.rs` generates version string with timestamp into `$OUT_DIR/generated.rs`
 
 ## Code Style Guidelines

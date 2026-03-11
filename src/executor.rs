@@ -22,7 +22,7 @@ impl RealCommandExecutor {
 
 impl CommandExecutor for RealCommandExecutor {
     fn exec(&self, command: &str) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
-        crate::process::exec(command.to_string())
+        Ok(crate::process::exec(command.to_string())?)
     }
 }
 

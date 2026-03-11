@@ -11,9 +11,7 @@ use crate::status;
 /// If the test path is just a filename (no directory separators), it is
 /// placed in the default data directory (`~/.local/reg-rs/`). The `.tdb`
 /// extension is appended automatically if missing.
-pub fn create_original(
-    config: &config::Config,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
     log::info!("command/create_original");
     log::debug!("create_original config: {:?}", &config);
     if let Some((test, command)) = config.extract_test_and_command() {
@@ -88,16 +86,14 @@ mod tests {
 }
 
 /// Update a test result
-pub fn update_latest(
-    config: &config::Config,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub fn update_latest(config: &config::Config) -> crate::error::Result<()> {
     log::info!("command/update_latest");
     runner::run_many(config)?;
     Ok(())
 }
 
 /// remove test results
-pub fn remove_all(config: &config::Config) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub fn remove_all(config: &config::Config) -> crate::error::Result<()> {
     log::info!("command/remove_all");
     let pattern = config.extract_pattern().to_string();
     let tests = finder::discover(pattern.clone())?;
@@ -122,9 +118,7 @@ pub fn remove_all(config: &config::Config) -> std::result::Result<(), Box<dyn st
 }
 
 /// report latest test results
-pub fn report_latest(
-    config: &config::Config,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub fn report_latest(config: &config::Config) -> crate::error::Result<()> {
     log::info!("command/report_latest");
     generate_reports(config)?;
     log::info!("command/report_latest done");
@@ -132,9 +126,7 @@ pub fn report_latest(
 }
 
 /// start status client and server
-pub async fn status_server(
-    config: &config::Config,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub async fn status_server(config: &config::Config) -> crate::error::Result<()> {
     log::info!("command/status_server");
     status::start_client(config)?;
     status::start_server(config).await?; // loops
