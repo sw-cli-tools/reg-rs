@@ -19,6 +19,8 @@ pub enum DiffMode {
     Text,
     /// JSON-aware comparison: sort keys, normalize whitespace
     Json,
+    /// Line-order-insensitive comparison: sort lines before diffing
+    LinesUnordered,
 }
 
 impl fmt::Display for DiffMode {
@@ -26,6 +28,7 @@ impl fmt::Display for DiffMode {
         match self {
             Self::Text => write!(f, "text"),
             Self::Json => write!(f, "json"),
+            Self::LinesUnordered => write!(f, "lines-unordered"),
         }
     }
 }
@@ -37,8 +40,9 @@ impl FromStr for DiffMode {
         match s {
             "text" => Ok(Self::Text),
             "json" => Ok(Self::Json),
+            "lines-unordered" => Ok(Self::LinesUnordered),
             other => Err(RegError::Config(format!(
-                "Unknown diff mode '{}'. Valid modes: text, json",
+                "Unknown diff mode '{}'. Valid modes: text, json, lines-unordered",
                 other
             ))),
         }
@@ -54,7 +58,19 @@ pub fn apply(input: &str, mode: &DiffMode) -> Result<String> {
     match mode {
         DiffMode::Text => Ok(input.to_string()),
         DiffMode::Json => normalize_json(input),
+        DiffMode::LinesUnordered => Ok(sort_lines(input)),
     }
+}
+
+/// Sort lines alphabetically for order-insensitive comparison.
+fn sort_lines(input: &str) -> String {
+    let mut lines: Vec<&str> = input.lines().collect();
+    lines.sort();
+    let mut result = lines.join("\n");
+    if input.ends_with('\n') {
+        result.push('\n');
+    }
+    result
 }
 
 /// Attempt JSON normalization; return input unchanged if it's empty.
@@ -162,5 +178,47 @@ mod tests {
     #[test]
     fn test_default_is_text() {
         assert_eq!(DiffMode::default(), DiffMode::Text);
+    }
+
+    #[test]
+    fn test_lines_unordered_sorts() {
+        let input = "cherry\napple\nbanana\n";
+        let result = apply(input, &DiffMode::LinesUnordered).unwrap();
+        assert_eq!(result, "apple\nbanana\ncherry\n");
+    }
+
+    #[test]
+    fn test_lines_unordered_deterministic() {
+        let input1 = "c\na\nb\n";
+        let input2 = "b\nc\na\n";
+        let r1 = apply(input1, &DiffMode::LinesUnordered).unwrap();
+        let r2 = apply(input2, &DiffMode::LinesUnordered).unwrap();
+        assert_eq!(r1, r2);
+    }
+
+    #[test]
+    fn test_lines_unordered_empty() {
+        let result = apply("", &DiffMode::LinesUnordered).unwrap();
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn test_lines_unordered_no_trailing_newline() {
+        let input = "b\na";
+        let result = apply(input, &DiffMode::LinesUnordered).unwrap();
+        assert_eq!(result, "a\nb");
+    }
+
+    #[test]
+    fn test_display_lines_unordered() {
+        assert_eq!(DiffMode::LinesUnordered.to_string(), "lines-unordered");
+    }
+
+    #[test]
+    fn test_from_str_lines_unordered() {
+        assert_eq!(
+            "lines-unordered".parse::<DiffMode>().unwrap(),
+            DiffMode::LinesUnordered
+        );
     }
 }

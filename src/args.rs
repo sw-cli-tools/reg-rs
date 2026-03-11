@@ -74,7 +74,7 @@ EXAMPLES:
         /// Shell command to preprocess stdout/stderr before diffing (e.g., "jq --sort-keys")
         #[clap(long, short = 'P')]
         preprocess: Option<String>,
-        /// Built-in diff normalization mode: text (default) or json (sorts keys, normalizes whitespace)
+        /// Built-in diff normalization mode: text (default), json (sorts keys), or lines-unordered (sorts lines)
         #[clap(long, short = 'M', default_value = "text")]
         diff_mode: String,
         /// Command timeout in seconds (default: 300)

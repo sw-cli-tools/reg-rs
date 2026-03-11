@@ -396,6 +396,50 @@ fn integration_test_create_help_shows_diff_mode() {
         .stdout(predicate::str::contains("-M, --diff-mode"));
 }
 
+#[test]
+fn integration_test_create_with_diff_mode_lines_unordered() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("lines_test.tdb");
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+
+    // Create with lines-unordered — output lines in one order
+    reg_rs()
+        .args([
+            "create",
+            "-t",
+            "lines_test",
+            "-c",
+            "printf 'cherry\\napple\\nbanana\\n'",
+            "-M",
+            "lines-unordered",
+        ])
+        .assert()
+        .success();
+
+    assert!(test_db.exists());
+
+    // Run — same lines, should pass after sorting
+    reg_rs()
+        .args(["run", "-p", "lines_test"])
+        .assert()
+        .success();
+
+    reg_rs()
+        .args(["report", "-p", "lines_test"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("00001 passed"));
+
+    // Clean up
+    reg_rs()
+        .args(["remove", "-p", "lines_test"])
+        .assert()
+        .success();
+}
+
 // --- Demo script tests (dogfooding) ---
 // These run the demo shell scripts using the debug binary,
 // ensuring reg-rs can test itself and that demo scripts stay working.
