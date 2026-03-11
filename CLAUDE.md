@@ -34,6 +34,7 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Debug output via `log::debug!()`, enabled with `-d` flag (sets log level to debug via `env_logger`)
 - Status monitoring uses Axum web framework (async with Tokio)
 - Dependency injection via `CommandExecutor` trait (`executor.rs`) with `MockCommandExecutor` for tests
+- Internal functions use `pub(crate)` visibility; only types/functions needed by `main.rs` are `pub`
 - External `.lock` files prevent SQLite file-lock conflicts (one per `.tdb` database)
 - DB functions use `with_lock()` RAII wrapper for consistent lock/unlock pattern
 - Custom `RegError` enum (`error.rs`) with `thiserror` — used consistently across all modules

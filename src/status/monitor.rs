@@ -13,7 +13,7 @@ use crate::time;
 /// The monitor watches the data directory for file changes and updates
 /// the shared application state. Errors during setup are logged and
 /// the thread exits gracefully rather than panicking.
-pub fn launch_monitor(app_state: AppState) -> Vec<std::thread::JoinHandle<()>> {
+pub(crate) fn launch_monitor(app_state: AppState) -> Vec<std::thread::JoinHandle<()>> {
     log::info!("monitor/launch_monitor");
     let mut handles = vec![];
     handles.push({

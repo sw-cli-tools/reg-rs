@@ -74,7 +74,7 @@ pub struct TestDetails {
 }
 
 /// start status server
-pub async fn start(config: &config::Config) -> crate::error::Result<()> {
+pub(crate) async fn start(config: &config::Config) -> crate::error::Result<()> {
     log::info!("server/start - BEGIN");
     let status_port = config.status_port();
     let pattern = config.extract_pattern().to_string();
@@ -140,19 +140,8 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
         }
     };
 
-    let mut failed_test_names: Vec<String> = vec![];
-    let mut not_yet_run_test_names: Vec<String> = vec![];
-    let mut passed_test_names: Vec<String> = vec![];
-
-    for run in &state_data.runs {
-        if run.last_ran.is_none() {
-            not_yet_run_test_names.push(run.name.clone());
-        } else if run.diffs.is_none() {
-            passed_test_names.push(run.name.clone());
-        } else {
-            failed_test_names.push(run.name.clone());
-        }
-    }
+    let (failed_test_names, passed_test_names, not_yet_run_test_names) =
+        categorize_runs(&state_data.runs);
 
     let status_counts = status::StatusCounts {
         fail_count: format!(" {:05}", failed_test_names.len()),
@@ -192,7 +181,7 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 /// update shared state with test run data
-pub fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
+pub(crate) fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
     log::info!("server/set_test_runs - acquiring lock");
     let mut state_data = app_state
         .state_data
@@ -243,28 +232,140 @@ pub fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
     Ok(())
 }
 
+/// Format a single difference tuple into a display string.
+/// Returns None for "same" types (5, 8) that should be skipped.
+fn format_difference(type_code: &str, value: &str) -> Option<String> {
+    match type_code {
+        "5" | "8" => None,
+        "1" => Some(format!("+ Actual code: {}", value)),
+        "2" => Some(format!("- Expected code: {}", value)),
+        "3" => Some(format!("+ Stderr add: {}", value)),
+        "4" => Some(format!("- Stderr remove: {}", value)),
+        "6" => Some(format!("+ Stdout add: {}", value)),
+        "7" => Some(format!("- Stdout remove: {}", value)),
+        _ => Some(format!("not yet implemented: {} {}", type_code, value)),
+    }
+}
+
+/// Categorize test runs into failed, passed, and not-yet-run lists
+fn categorize_runs(runs: &[TestDetails]) -> (Vec<String>, Vec<String>, Vec<String>) {
+    let mut failed = vec![];
+    let mut not_yet_run = vec![];
+    let mut passed = vec![];
+    for run in runs {
+        if run.last_ran.is_none() {
+            not_yet_run.push(run.name.clone());
+        } else if run.diffs.is_none() {
+            passed.push(run.name.clone());
+        } else {
+            failed.push(run.name.clone());
+        }
+    }
+    (failed, passed, not_yet_run)
+}
+
 /// get test result differences
 fn get_diffs(test_name: &str) -> crate::error::Result<Vec<String>> {
     log::info!("server/get_diffs test_name {}", &test_name);
     let differences = db::read_differences(test_name)?;
-    let mut diffs = vec![];
-    for difference in differences {
-        match difference.0.as_ref() {
-            "5" => continue,
-            "8" => continue,
-            _ => (),
-        }
-        diffs.push(match difference.0.as_ref() {
-            "1" => format!("+ Actual code: {}", difference.1).to_string(),
-            "2" => format!("- Expected code: {}", difference.1).to_string(),
-            "3" => format!("+ Stderr add: {}", difference.1).to_string(),
-            "4" => format!("- Stderr remove: {}", difference.1).to_string(),
-            //   "5" => format!("= Stderr same: {}", difference.1).to_string(),
-            "6" => format!("+ Stdout add: {}", difference.1).to_string(),
-            "7" => format!("- Stdout remove: {}", difference.1).to_string(),
-            //   "8" => format!("= Stdout same: {}", difference.1).to_string(),
-            _ => format!("not yet implemented: {} {}", difference.0, difference.1).to_string(),
-        });
-    }
+    let diffs = differences
+        .iter()
+        .filter_map(|(code, value)| format_difference(code, value))
+        .collect();
     Ok(diffs)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_difference_actual_code() {
+        assert_eq!(
+            format_difference("1", "42"),
+            Some("+ Actual code: 42".to_string())
+        );
+    }
+
+    #[test]
+    fn test_format_difference_expected_code() {
+        assert_eq!(
+            format_difference("2", "0"),
+            Some("- Expected code: 0".to_string())
+        );
+    }
+
+    #[test]
+    fn test_format_difference_stderr() {
+        assert_eq!(
+            format_difference("3", "err"),
+            Some("+ Stderr add: err".to_string())
+        );
+        assert_eq!(
+            format_difference("4", "old"),
+            Some("- Stderr remove: old".to_string())
+        );
+    }
+
+    #[test]
+    fn test_format_difference_stdout() {
+        assert_eq!(
+            format_difference("6", "new"),
+            Some("+ Stdout add: new".to_string())
+        );
+        assert_eq!(
+            format_difference("7", "old"),
+            Some("- Stdout remove: old".to_string())
+        );
+    }
+
+    #[test]
+    fn test_format_difference_skips_same() {
+        assert_eq!(format_difference("5", "same"), None);
+        assert_eq!(format_difference("8", "same"), None);
+    }
+
+    #[test]
+    fn test_format_difference_unknown() {
+        assert_eq!(
+            format_difference("99", "data"),
+            Some("not yet implemented: 99 data".to_string())
+        );
+    }
+
+    #[test]
+    fn test_categorize_runs_empty() {
+        let (failed, passed, not_yet_run) = categorize_runs(&[]);
+        assert!(failed.is_empty());
+        assert!(passed.is_empty());
+        assert!(not_yet_run.is_empty());
+    }
+
+    #[test]
+    fn test_categorize_runs_mixed() {
+        let runs = vec![
+            TestDetails {
+                created: "2024-01-01".to_string(),
+                diffs: None,
+                last_ran: None,
+                name: "not_run".to_string(),
+            },
+            TestDetails {
+                created: "2024-01-01".to_string(),
+                diffs: None,
+                last_ran: Some("2024-01-02".to_string()),
+                name: "passed".to_string(),
+            },
+            TestDetails {
+                created: "2024-01-01".to_string(),
+                diffs: Some(vec!["diff".to_string()]),
+                last_ran: Some("2024-01-02".to_string()),
+                name: "failed".to_string(),
+            },
+        ];
+        let (failed, passed, not_yet_run) = categorize_runs(&runs);
+        assert_eq!(failed, vec!["failed"]);
+        assert_eq!(passed, vec!["passed"]);
+        assert_eq!(not_yet_run, vec!["not_run"]);
+    }
 }

@@ -160,3 +160,80 @@ fn integration_test_create_and_run() {
     let _ = fs::remove_file(&test_db);
     let _ = fs::remove_file(format!("{}.lock", test_db.display()));
 }
+
+#[test]
+fn integration_test_create_run_and_remove() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("remove_test.tdb");
+    let test_pattern = "remove_test";
+
+    // Clean up any leftover files
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+
+    // Create a test
+    let (status_code, _stdout, stderr) =
+        run_command("./target/debug/reg-rs create -t remove_test -c 'echo remove me'");
+    assert_eq!(0, status_code, "create failed: {}", stderr);
+    assert!(test_db.exists(), "Test database should exist");
+
+    // Remove the test
+    let (status_code, _stdout, stderr) =
+        run_command(&format!("./target/debug/reg-rs remove -p {}", test_pattern));
+    assert_eq!(0, status_code, "remove failed: {}", stderr);
+
+    // Verify the test database was removed
+    assert!(
+        !test_db.exists(),
+        "Test database should be removed at {}",
+        test_db.display()
+    );
+
+    // Verify the lock file was also removed
+    let lock_file = format!("{}.lock", test_db.display());
+    assert!(
+        !std::path::Path::new(&lock_file).exists(),
+        "Lock file should be removed"
+    );
+}
+
+#[test]
+fn integration_test_run_no_matching_tests() {
+    common::setup();
+    let (status_code, _stdout, stderr) =
+        run_command("./target/debug/reg-rs run -p nonexistent_pattern_xyz");
+    assert_eq!(0, status_code);
+    assert!(
+        stderr.contains("warning: no tests matched pattern"),
+        "should warn about no matches: {}",
+        stderr
+    );
+}
+
+#[test]
+fn integration_test_report_no_matching_tests() {
+    common::setup();
+    let (status_code, _stdout, stderr) =
+        run_command("./target/debug/reg-rs report -p nonexistent_pattern_xyz");
+    assert_eq!(0, status_code);
+    assert!(
+        stderr.contains("warning: no tests matched pattern"),
+        "should warn about no matches: {}",
+        stderr
+    );
+}
+
+#[test]
+fn integration_test_remove_no_matching_tests() {
+    common::setup();
+    let (status_code, _stdout, stderr) =
+        run_command("./target/debug/reg-rs remove -p nonexistent_pattern_xyz");
+    assert_eq!(0, status_code);
+    assert!(
+        stderr.contains("warning: no tests matched pattern"),
+        "should warn about no matches: {}",
+        stderr
+    );
+}

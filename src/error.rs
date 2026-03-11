@@ -95,3 +95,80 @@ impl From<&str> for RegError {
         RegError::Other(err.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_display_io_error() {
+        let err = RegError::Io(io::Error::new(io::ErrorKind::NotFound, "missing"));
+        assert!(err.to_string().contains("missing"));
+    }
+
+    #[test]
+    fn test_display_file_lock() {
+        let err = RegError::FileLock("locked".to_string());
+        assert_eq!(err.to_string(), "File lock error: locked");
+    }
+
+    #[test]
+    fn test_display_test_not_found() {
+        let err = RegError::TestNotFound("my_test".to_string());
+        assert_eq!(err.to_string(), "Test not found: my_test");
+    }
+
+    #[test]
+    fn test_display_command_execution() {
+        let err = RegError::CommandExecution("timeout".to_string());
+        assert_eq!(err.to_string(), "Command execution failed: timeout");
+    }
+
+    #[test]
+    fn test_display_path_error() {
+        let err = RegError::Path {
+            path: PathBuf::from("/tmp/test"),
+            message: "not found".to_string(),
+        };
+        assert!(err.to_string().contains("/tmp/test"));
+        assert!(err.to_string().contains("not found"));
+    }
+
+    #[test]
+    fn test_display_template() {
+        let err = RegError::Template("bad template".to_string());
+        assert_eq!(err.to_string(), "Template error: bad template");
+    }
+
+    #[test]
+    fn test_display_other() {
+        let err = RegError::Other("something".to_string());
+        assert_eq!(err.to_string(), "something");
+    }
+
+    #[test]
+    fn test_from_string() {
+        let err: RegError = "string error".to_string().into();
+        assert_eq!(err.to_string(), "string error");
+    }
+
+    #[test]
+    fn test_from_str() {
+        let err: RegError = "str error".into();
+        assert_eq!(err.to_string(), "str error");
+    }
+
+    #[test]
+    fn test_from_io_error() {
+        let io_err = io::Error::new(io::ErrorKind::PermissionDenied, "denied");
+        let err: RegError = io_err.into();
+        assert!(err.to_string().contains("denied"));
+    }
+
+    #[test]
+    fn test_from_box_dyn_error() {
+        let boxed: Box<dyn std::error::Error> = "boxed error".into();
+        let err: RegError = boxed.into();
+        assert_eq!(err.to_string(), "boxed error");
+    }
+}

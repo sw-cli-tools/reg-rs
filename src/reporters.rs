@@ -14,7 +14,7 @@ pub mod passes;
 pub mod summary;
 
 /// generate reports
-pub fn generate_reports(config: &config::Config) -> crate::error::Result<()> {
+pub(crate) fn generate_reports(config: &config::Config) -> crate::error::Result<()> {
     log::info!("reporters/generate_reports");
     log::debug!("generate_reports");
     let pattern = config.extract_pattern().to_string();

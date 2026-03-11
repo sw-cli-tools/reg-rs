@@ -47,15 +47,21 @@ impl DetailsReportContext {
     }
 }
 
+/// Render details report to a string
+pub fn render(details_report_context: &DetailsReportContext) -> crate::error::Result<String> {
+    let mut tt = TinyTemplate::new();
+    tt.add_template("details_report_template", reports::DETAILS_REPORT_TEMPLATE)?;
+    let rendered = tt.render("details_report_template", details_report_context)?;
+    Ok(rendered)
+}
+
 /// show test result report details
 pub fn show_details(
     details_report_context: &DetailsReportContext,
     verbosity_level: u8,
 ) -> crate::error::Result<()> {
     log::info!("details/show_details");
-    let mut tt = TinyTemplate::new();
-    tt.add_template("details_report_template", reports::DETAILS_REPORT_TEMPLATE)?;
-    let rendered = tt.render("details_report_template", &details_report_context)?;
+    let rendered = render(details_report_context)?;
     println!("{}", rendered);
     if verbosity_level > 1 {
         show_failures(details_report_context, verbosity_level)?;
@@ -169,4 +175,61 @@ fn show_passes(
         );
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_render_all_categories() {
+        let ctx = DetailsReportContext::new(
+            vec!["failed_test".to_string()],
+            false,
+            false,
+            false,
+            vec!["pending_test".to_string()],
+            vec!["passed_test".to_string()],
+        );
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("failed_test"));
+        assert!(output.contains("pending_test"));
+        assert!(output.contains("passed_test"));
+    }
+
+    #[test]
+    fn test_render_no_failures() {
+        let ctx = DetailsReportContext::new(
+            vec![],
+            true,
+            false,
+            false,
+            vec!["pending".to_string()],
+            vec!["ok".to_string()],
+        );
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("No Failed Tests"));
+    }
+
+    #[test]
+    fn test_render_no_passes() {
+        let ctx = DetailsReportContext::new(
+            vec!["broken".to_string()],
+            false,
+            true,
+            true,
+            vec![],
+            vec![],
+        );
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("No Passed Tests"));
+    }
+
+    #[test]
+    fn test_render_empty() {
+        let ctx = DetailsReportContext::new(vec![], true, true, true, vec![], vec![]);
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("No Failed Tests"));
+        assert!(output.contains("No Passed Tests"));
+    }
 }
