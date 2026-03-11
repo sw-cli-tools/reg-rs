@@ -213,10 +213,10 @@ src/
 
 ### Data Flow
 
-1. **Create**: `main.rs` -> `builder.rs` -> `process.rs` -> `db.rs`
-2. **Run**: `main.rs` -> `runner.rs` -> `process.rs` -> `diff.rs` -> `db.rs`
-3. **Report**: `main.rs` -> `reporters/` -> `db.rs`
-4. **Status**: `main.rs` -> `status/server.rs` -> `db.rs`
+1. **Create**: `main.rs` -> `command.rs` -> `runner.rs` -> `process.rs` -> `db.rs`
+2. **Run**: `main.rs` -> `command.rs` -> `runner.rs` -> `process.rs` -> `diff.rs` -> `db.rs`
+3. **Report**: `main.rs` -> `command.rs` -> `reporters/` -> `db.rs`
+4. **Status**: `main.rs` -> `command.rs` -> `status/server.rs` -> `db.rs`
 
 ## Development
 
@@ -261,27 +261,21 @@ cargo test -- --nocapture
 
 ### Self-Testing (Dogfooding)
 
-reg-rs tests its own CLI output for regressions. This catches any unintended changes to help text, command names, or flag descriptions.
+reg-rs tests its own CLI output for regressions. The demo scripts are run automatically as part of `cargo test`, so dogfooding is built into the routine test suite.
 
 ```bash
-# Run the dogfood script (creates, runs, and reports self-tests)
-# Uses REG_RS_DATA_DIR=./work/reg-rs to keep self-tests separate from user data
+# cargo test runs all demo scripts (dogfood, basic workflow, regression detection)
+cargo test
+
+# Or run a demo script standalone (builds release, uses ./work/reg-rs/ for data)
 bash demo/dogfood.sh
-
-# Or do it manually:
-cargo build --release
-export REG_RS_DATA_DIR=./work/reg-rs
-mkdir -p "$REG_RS_DATA_DIR"
-./target/release/reg-rs create -t reg_rs_help -c './target/release/reg-rs -h'
-./target/release/reg-rs create -t reg_rs_create_help -c './target/release/reg-rs create -h'
-# ... (repeat for run, report, remove, status)
-
-# Run and report
-./target/release/reg-rs run -p reg_rs
-./target/release/reg-rs report -p reg_rs -vv
+bash demo/test_basic.sh
+bash demo/test_workflow.sh
 ```
 
-After making CLI changes, run `reg-rs run -p reg_rs` to check if any help text changed unexpectedly. If the change was intentional, re-create the baselines with `demo/dogfood.sh`.
+The demo scripts accept `REG_RS_BIN` to use a specific binary (integration tests use the debug build automatically).
+
+After making CLI changes, run `cargo test` to check if any help text changed unexpectedly. If the change was intentional, re-create the baselines with `demo/dogfood.sh`.
 
 ## License
 

@@ -10,7 +10,7 @@ reg-rs (pronounced "regress") is a CLI utility for creating, running, and managi
 - Run: `cargo run -- [FLAGS] [SUBCOMMAND]`
 - Test all: `cargo test`
 - Run single test: `cargo test integration_test_reg_rs_help`
-- Lint: `cargo clippy`
+- Lint: `cargo clippy --tests`
 - Fix lints: `cargo clippy --fix`
 - Format: `cargo fmt`
 - Documentation: `cargo doc`
@@ -38,8 +38,10 @@ The codebase follows a modular architecture with clear separation of concerns:
 - External `.lock` files prevent SQLite file-lock conflicts (one per `.tdb` database)
 - DB functions use `with_lock()` RAII wrapper for consistent lock/unlock pattern
 - Custom `RegError` enum (`error.rs`) with `thiserror` — used consistently across all modules
-- `RegressionType::display_label()` converts stored type codes to human-readable labels
+- `RegressionType::from_code()` parses type codes; `display_label()` converts to human-readable labels
+- Magic strings extracted as constants: `TDB_EXTENSION`, `LOCK_EXTENSION`, `FILE_WATCH_DEBOUNCE_SECS`, `REQUIRED_BLANK`
 - `build.rs` generates version string with timestamp into `$OUT_DIR/generated.rs`
+- Demo scripts (`demo/*.sh`) are tested via `cargo test` — reg-rs dogfoods itself
 
 ## Code Style Guidelines
 - Formatting: Run `cargo fmt` before committing
