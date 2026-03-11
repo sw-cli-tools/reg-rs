@@ -13,7 +13,7 @@ const WRITING: bool = true;
 /// Get the path to the lock file for a given database file.
 /// Uses a separate .lock file to avoid conflicts with SQLite's file locking.
 fn lock_file_path(db_name: &str) -> String {
-    format!("{}.lock", db_name)
+    format!("{}.{}", db_name, crate::LOCK_EXTENSION)
 }
 
 /// Execute a closure while holding a file lock on the database.

@@ -39,7 +39,7 @@ fn watch(app_state: AppState) -> Result<(), RegError> {
     log::info!("monitor/watch pattern: {}", &pattern);
     log::info!("monitor/watch data_dir: {:?}", &data_dir);
     let (tx, rx) = channel();
-    let mut watcher = watcher(tx, Duration::from_secs(5))
+    let mut watcher = watcher(tx, Duration::from_secs(crate::FILE_WATCH_DEBOUNCE_SECS))
         .map_err(|e| RegError::Notification(format!("failed to create watcher: {}", e)))?;
     watcher
         .watch(&data_dir, RecursiveMode::Recursive)

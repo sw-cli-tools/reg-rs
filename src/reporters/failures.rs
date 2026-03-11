@@ -30,7 +30,7 @@ impl FailuresReportContext {
             differences_count,
             fail_symbol,
             failed_test_name,
-            required_blank: " ".to_string(),
+            required_blank: crate::REQUIRED_BLANK.to_string(),
             time_created,
             time_last_ran,
         }

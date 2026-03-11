@@ -31,7 +31,9 @@ fn discover_in(dir: &std::path::Path, pattern: &str) -> crate::error::Result<Tes
         .filter_entry(|e| !is_hidden(e))
         .filter_map(|e| e.ok())
         .map(|e| e.path().display().to_string())
-        .filter(|path| path.contains(pattern) && path.ends_with(".tdb"))
+        .filter(|path| {
+            path.contains(pattern) && path.ends_with(&format!(".{}", crate::TDB_EXTENSION))
+        })
         .collect();
     log::debug!("finder/discover_in found {:?}", &found);
     Ok(TestNames { found })

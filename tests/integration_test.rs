@@ -1,101 +1,119 @@
 use std::fs;
-use std::process::Command;
+
+use assert_cmd::Command;
+use predicates::prelude::*;
 
 mod common;
 
-/// Helper to run a command with REG_RS_DATA_DIR set and return (status_code, stdout, stderr)
-fn run_command(cmd: &str) -> (i32, String, String) {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg(cmd)
-        .env("REG_RS_DATA_DIR", common::test_data_dir())
-        .output()
-        .expect("failed to execute process");
-    let status_code = output.status.code().unwrap_or(-1);
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-    (status_code, stdout, stderr)
+/// Build a Command for the reg-rs binary with the test data dir set
+fn reg_rs() -> Command {
+    let mut cmd = Command::cargo_bin("reg-rs").unwrap();
+    cmd.env("REG_RS_DATA_DIR", common::test_data_dir());
+    cmd
 }
 
 #[test]
 fn integration_test_reg_rs_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs -h");
-    assert_eq!(0, status_code);
-    assert_eq!("", stderr);
-    // Check key parts of help output rather than exact match (to allow for minor formatting changes)
-    assert!(stdout.contains("Usage: reg-rs [OPTIONS] <COMMAND>"));
-    assert!(stdout.contains("create  Creates a new test of a specified command"));
-    assert!(stdout.contains("remove  Removes previously created test"));
-    assert!(stdout.contains("report  Reports counts/summary"));
-    assert!(stdout.contains("run     Runs a test"));
-    assert!(stdout.contains("status  Starts a server to monitor"));
-    assert!(stdout.contains("-d, --debug"));
-    assert!(stdout.contains("-l, --logging"));
-    assert!(stdout.contains("-h, --help"));
-    assert!(stdout.contains("-V, --version"));
+    reg_rs()
+        .arg("-h")
+        .assert()
+        .success()
+        .stderr("")
+        .stdout(predicate::str::contains(
+            "Usage: reg-rs [OPTIONS] <COMMAND>",
+        ))
+        .stdout(predicate::str::contains(
+            "create  Creates a new test of a specified command",
+        ))
+        .stdout(predicate::str::contains(
+            "remove  Removes previously created test",
+        ))
+        .stdout(predicate::str::contains("report  Reports counts/summary"))
+        .stdout(predicate::str::contains("run     Runs a test"))
+        .stdout(predicate::str::contains(
+            "status  Starts a server to monitor",
+        ))
+        .stdout(predicate::str::contains("-d, --debug"))
+        .stdout(predicate::str::contains("-l, --logging"))
+        .stdout(predicate::str::contains("-h, --help"))
+        .stdout(predicate::str::contains("-V, --version"));
 }
 
 #[test]
 fn integration_test_version() {
     common::setup();
-    let (status_code, stdout, _stderr) = run_command("./target/debug/reg-rs -V");
-    assert_eq!(0, status_code);
-    assert!(stdout.starts_with("reg-rs "));
+    reg_rs()
+        .arg("-V")
+        .assert()
+        .success()
+        .stdout(predicate::str::starts_with("reg-rs "));
 }
 
 #[test]
 fn integration_test_create_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs create -h");
-    assert_eq!(0, status_code);
-    assert_eq!("", stderr);
-    assert!(stdout.contains("Creates a new test of a specified command"));
-    assert!(stdout.contains("-t, --test"));
-    assert!(stdout.contains("-c, --command"));
+    reg_rs()
+        .args(["create", "-h"])
+        .assert()
+        .success()
+        .stderr("")
+        .stdout(predicate::str::contains(
+            "Creates a new test of a specified command",
+        ))
+        .stdout(predicate::str::contains("-t, --test"))
+        .stdout(predicate::str::contains("-c, --command"));
 }
 
 #[test]
 fn integration_test_run_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs run -h");
-    assert_eq!(0, status_code);
-    assert_eq!("", stderr);
-    assert!(stdout.contains("Runs a test"));
-    assert!(stdout.contains("-p, --pattern"));
-    assert!(stdout.contains("-n, --dry-run"));
+    reg_rs()
+        .args(["run", "-h"])
+        .assert()
+        .success()
+        .stderr("")
+        .stdout(predicate::str::contains("Runs a test"))
+        .stdout(predicate::str::contains("-p, --pattern"))
+        .stdout(predicate::str::contains("-n, --dry-run"));
 }
 
 #[test]
 fn integration_test_report_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs report -h");
-    assert_eq!(0, status_code);
-    assert_eq!("", stderr);
-    assert!(stdout.contains("Reports counts/summary"));
-    assert!(stdout.contains("-p, --pattern"));
-    assert!(stdout.contains("-v"));
+    reg_rs()
+        .args(["report", "-h"])
+        .assert()
+        .success()
+        .stderr("")
+        .stdout(predicate::str::contains("Reports counts/summary"))
+        .stdout(predicate::str::contains("-p, --pattern"))
+        .stdout(predicate::str::contains("-v"));
 }
 
 #[test]
 fn integration_test_remove_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs remove -h");
-    assert_eq!(0, status_code);
-    assert_eq!("", stderr);
-    assert!(stdout.contains("Removes previously created test"));
-    assert!(stdout.contains("-p, --pattern"));
+    reg_rs()
+        .args(["remove", "-h"])
+        .assert()
+        .success()
+        .stderr("")
+        .stdout(predicate::str::contains("Removes previously created test"))
+        .stdout(predicate::str::contains("-p, --pattern"));
 }
 
 #[test]
 fn integration_test_status_help() {
     common::setup();
-    let (status_code, stdout, stderr) = run_command("./target/debug/reg-rs status -h");
-    assert_eq!(0, status_code);
-    assert_eq!("", stderr);
-    assert!(stdout.contains("Starts a server to monitor"));
-    assert!(stdout.contains("-p, --pattern"));
-    assert!(stdout.contains("-l, --localhost-port"));
+    reg_rs()
+        .args(["status", "-h"])
+        .assert()
+        .success()
+        .stderr("")
+        .stdout(predicate::str::contains("Starts a server to monitor"))
+        .stdout(predicate::str::contains("-p, --pattern"))
+        .stdout(predicate::str::contains("-l, --localhost-port"));
 }
 
 #[test]
@@ -110,51 +128,30 @@ fn integration_test_create_and_run() {
     let _ = fs::remove_file(&test_db);
     let _ = fs::remove_file(format!("{}.lock", test_db.display()));
 
-    // Create a new test (just a name - placed in data dir automatically)
-    let (status_code, _stdout, stderr) =
-        run_command("./target/debug/reg-rs create -t integration_test -c 'echo hello'");
+    // Create a new test
+    reg_rs()
+        .args(["create", "-t", "integration_test", "-c", "echo hello"])
+        .assert()
+        .success();
 
-    if status_code != 0 {
-        eprintln!("create failed: {}", stderr);
-        return;
-    }
-    assert_eq!(0, status_code, "create failed: {}", stderr);
-
-    // Verify the test database was created in the data directory
     assert!(
         test_db.exists(),
         "Test database should exist at {}",
         test_db.display()
     );
 
-    // Run the test (use pattern matching)
-    let (status_code, _stdout, stderr) =
-        run_command(&format!("./target/debug/reg-rs run -p {}", test_pattern));
-
-    if status_code != 0 {
-        eprintln!("run failed: {}", stderr);
-        let _ = fs::remove_file(&test_db);
-        let _ = fs::remove_file(format!("{}.lock", test_db.display()));
-        return;
-    }
-    assert_eq!(0, status_code, "run failed: {}", stderr);
+    // Run the test
+    reg_rs()
+        .args(["run", "-p", test_pattern])
+        .assert()
+        .success();
 
     // Report on the test
-    let (status_code, stdout, stderr) =
-        run_command(&format!("./target/debug/reg-rs report -p {}", test_pattern));
-
-    if status_code != 0 {
-        eprintln!("report failed: {}", stderr);
-        let _ = fs::remove_file(&test_db);
-        let _ = fs::remove_file(format!("{}.lock", test_db.display()));
-        return;
-    }
-    assert_eq!(0, status_code, "report failed: {}", stderr);
-    assert!(
-        stdout.contains("matched pattern"),
-        "report should show matched pattern: {}",
-        stdout
-    );
+    reg_rs()
+        .args(["report", "-p", test_pattern])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("matched pattern"));
 
     // Clean up
     let _ = fs::remove_file(&test_db);
@@ -174,24 +171,25 @@ fn integration_test_create_run_and_remove() {
     let _ = fs::remove_file(format!("{}.lock", test_db.display()));
 
     // Create a test
-    let (status_code, _stdout, stderr) =
-        run_command("./target/debug/reg-rs create -t remove_test -c 'echo remove me'");
-    assert_eq!(0, status_code, "create failed: {}", stderr);
+    reg_rs()
+        .args(["create", "-t", "remove_test", "-c", "echo remove me"])
+        .assert()
+        .success();
+
     assert!(test_db.exists(), "Test database should exist");
 
     // Remove the test
-    let (status_code, _stdout, stderr) =
-        run_command(&format!("./target/debug/reg-rs remove -p {}", test_pattern));
-    assert_eq!(0, status_code, "remove failed: {}", stderr);
+    reg_rs()
+        .args(["remove", "-p", test_pattern])
+        .assert()
+        .success();
 
-    // Verify the test database was removed
     assert!(
         !test_db.exists(),
         "Test database should be removed at {}",
         test_db.display()
     );
 
-    // Verify the lock file was also removed
     let lock_file = format!("{}.lock", test_db.display());
     assert!(
         !std::path::Path::new(&lock_file).exists(),
@@ -202,38 +200,35 @@ fn integration_test_create_run_and_remove() {
 #[test]
 fn integration_test_run_no_matching_tests() {
     common::setup();
-    let (status_code, _stdout, stderr) =
-        run_command("./target/debug/reg-rs run -p nonexistent_pattern_xyz");
-    assert_eq!(0, status_code);
-    assert!(
-        stderr.contains("warning: no tests matched pattern"),
-        "should warn about no matches: {}",
-        stderr
-    );
+    reg_rs()
+        .args(["run", "-p", "nonexistent_pattern_xyz"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(
+            "warning: no tests matched pattern",
+        ));
 }
 
 #[test]
 fn integration_test_report_no_matching_tests() {
     common::setup();
-    let (status_code, _stdout, stderr) =
-        run_command("./target/debug/reg-rs report -p nonexistent_pattern_xyz");
-    assert_eq!(0, status_code);
-    assert!(
-        stderr.contains("warning: no tests matched pattern"),
-        "should warn about no matches: {}",
-        stderr
-    );
+    reg_rs()
+        .args(["report", "-p", "nonexistent_pattern_xyz"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(
+            "warning: no tests matched pattern",
+        ));
 }
 
 #[test]
 fn integration_test_remove_no_matching_tests() {
     common::setup();
-    let (status_code, _stdout, stderr) =
-        run_command("./target/debug/reg-rs remove -p nonexistent_pattern_xyz");
-    assert_eq!(0, status_code);
-    assert!(
-        stderr.contains("warning: no tests matched pattern"),
-        "should warn about no matches: {}",
-        stderr
-    );
+    reg_rs()
+        .args(["remove", "-p", "nonexistent_pattern_xyz"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(
+            "warning: no tests matched pattern",
+        ));
 }

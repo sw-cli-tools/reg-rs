@@ -40,9 +40,12 @@ fn resolve_test_path(test: &str) -> String {
         // Just a filename - put it in the data directory
         crate::data_dir().join(test)
     };
-    if resolved.extension().is_none_or(|ext| ext != "tdb") {
+    if resolved
+        .extension()
+        .is_none_or(|ext| ext != crate::TDB_EXTENSION)
+    {
         let mut name = resolved.file_name().unwrap_or_default().to_os_string();
-        name.push(".tdb");
+        name.push(format!(".{}", crate::TDB_EXTENSION));
         resolved.set_file_name(name);
     }
     resolved.to_string_lossy().to_string()
@@ -71,7 +74,7 @@ pub fn remove_all(config: &config::Config) -> crate::error::Result<()> {
         if let Err(e) = std::fs::remove_file(test) {
             log::debug!("could not remove {}: {}", test, e);
         }
-        let lock_path = format!("{}.lock", test);
+        let lock_path = format!("{}.{}", test, crate::LOCK_EXTENSION);
         if let Err(e) = std::fs::remove_file(&lock_path) {
             log::debug!("could not remove {}: {}", lock_path, e);
         }

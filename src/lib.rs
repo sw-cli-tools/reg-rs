@@ -8,6 +8,14 @@ use std::path::PathBuf;
 pub const DEFAULT_STATUS_PORT: u16 = 4111;
 /// Status banner
 pub const STATUS_BANNER: &str = "reg-rs Status Server";
+/// Test database file extension
+pub const TDB_EXTENSION: &str = "tdb";
+/// Lock file extension (appended to .tdb path)
+pub const LOCK_EXTENSION: &str = "lock";
+/// File watcher debounce interval in seconds
+pub const FILE_WATCH_DEBOUNCE_SECS: u64 = 5;
+/// Template spacer for report alignment
+pub const REQUIRED_BLANK: &str = " ";
 
 /// Return the data directory, creating it if needed.
 ///

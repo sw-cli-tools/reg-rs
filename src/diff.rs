@@ -25,33 +25,48 @@ pub enum RegressionType {
 }
 
 impl RegressionType {
+    /// Parse a type code string into a RegressionType variant.
+    /// Returns None for unknown codes.
+    pub fn from_code(type_code: &str) -> Option<Self> {
+        let code: u8 = type_code.parse().ok()?;
+        match code {
+            1 => Some(Self::ActualCode),
+            2 => Some(Self::ExpectedCode),
+            3 => Some(Self::StderrAdd),
+            4 => Some(Self::StderrRemove),
+            5 => Some(Self::StderrSame),
+            6 => Some(Self::StdoutAdd),
+            7 => Some(Self::StdoutRemove),
+            8 => Some(Self::StdoutSame),
+            _ => None,
+        }
+    }
+
     /// Convert a stored type code string to a human-readable label for display.
     /// Returns None for "same" types (5, 8) and unknown codes.
     pub fn display_label(type_code: &str) -> Option<&'static str> {
-        let code: u8 = type_code.parse().ok()?;
-        match code {
-            x if x == Self::ActualCode as u8 => Some("Actual exit code"),
-            x if x == Self::ExpectedCode as u8 => Some("Expected exit code"),
-            x if x == Self::StderrAdd as u8 => Some("stderr add"),
-            x if x == Self::StderrRemove as u8 => Some("stderr remove"),
-            x if x == Self::StdoutAdd as u8 => Some("stdout add"),
-            x if x == Self::StdoutRemove as u8 => Some("stdout remove"),
-            _ => None,
+        match Self::from_code(type_code)? {
+            Self::ActualCode => Some("Actual exit code"),
+            Self::ExpectedCode => Some("Expected exit code"),
+            Self::StderrAdd => Some("stderr add"),
+            Self::StderrRemove => Some("stderr remove"),
+            Self::StdoutAdd => Some("stdout add"),
+            Self::StdoutRemove => Some("stdout remove"),
+            Self::StderrSame | Self::StdoutSame => None,
         }
     }
 
     /// Check if a type code represents a "has differences" type for counting.
     pub fn has_differences(type_code: &str) -> bool {
-        let Ok(code) = type_code.parse::<u8>() else {
-            return false;
-        };
         matches!(
-            code,
-            x if x == Self::ActualCode as u8
-                || x == Self::StderrAdd as u8
-                || x == Self::StderrRemove as u8
-                || x == Self::StdoutAdd as u8
-                || x == Self::StdoutRemove as u8
+            Self::from_code(type_code),
+            Some(
+                Self::ActualCode
+                    | Self::StderrAdd
+                    | Self::StderrRemove
+                    | Self::StdoutAdd
+                    | Self::StdoutRemove
+            )
         )
     }
 }

@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::config;
 use crate::db;
+use crate::diff::RegressionType;
 use crate::error::RegError;
 use crate::finder;
 use crate::status::monitor;
@@ -140,29 +141,7 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
         }
     };
 
-    let (failed_test_names, passed_test_names, not_yet_run_test_names) =
-        categorize_runs(&state_data.runs);
-
-    let status_counts = status::StatusCounts {
-        fail_count: format!(" {:05}", failed_test_names.len()),
-        not_run_count: format!(" {:05}", not_yet_run_test_names.len()),
-        pass_count: format!(" {:05}", passed_test_names.len()),
-        test_count: format!(" {:05}", state_data.runs.len()),
-    };
-    let status_flags = status::StatusFlags {
-        no_failed_tests: failed_test_names.is_empty(),
-        no_not_yet_run_tests: not_yet_run_test_names.is_empty(),
-        no_passed_tests: passed_test_names.is_empty(),
-    };
-
-    let status_view = match status::render(&status::StatusViewContext::new(
-        state_data.server_started.clone(),
-        state_data.state_updated.clone(),
-        status_counts,
-        status_flags,
-        state_data.pattern.to_string(),
-        &state_data.runs,
-    )) {
+    let status_view = match build_status_view(&state_data) {
         Ok(view) => view,
         Err(e) => {
             log::error!("Failed to render status view: {}", e);
@@ -178,6 +157,35 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
         response_str.len()
     );
     (StatusCode::OK, Html(response_str))
+}
+
+/// Build the status view HTML from current state data
+fn build_status_view(
+    state_data: &std::sync::MutexGuard<'_, StateData>,
+) -> crate::error::Result<String> {
+    let (failed_test_names, passed_test_names, not_yet_run_test_names) =
+        categorize_runs(&state_data.runs);
+
+    let status_counts = status::StatusCounts {
+        fail_count: format!(" {:05}", failed_test_names.len()),
+        not_run_count: format!(" {:05}", not_yet_run_test_names.len()),
+        pass_count: format!(" {:05}", passed_test_names.len()),
+        test_count: format!(" {:05}", state_data.runs.len()),
+    };
+    let status_flags = status::StatusFlags {
+        no_failed_tests: failed_test_names.is_empty(),
+        no_not_yet_run_tests: not_yet_run_test_names.is_empty(),
+        no_passed_tests: passed_test_names.is_empty(),
+    };
+
+    status::render(&status::StatusViewContext::new(
+        state_data.server_started.clone(),
+        state_data.state_updated.clone(),
+        status_counts,
+        status_flags,
+        state_data.pattern.to_string(),
+        &state_data.runs,
+    ))
 }
 
 /// update shared state with test run data
@@ -196,32 +204,24 @@ pub(crate) fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
     for test_name in &test_names.found {
         let original_result = db::read_original_results(test_name)?;
         let latest_results_row_count = db::count_latest_results(test_name)?;
-        if latest_results_row_count == 0 {
-            test_runs.push(TestDetails {
-                created: original_result.time_created,
-                diffs: None,
-                name: test_name.to_string(),
-                last_ran: None,
-            });
+        let (last_ran, diffs) = if latest_results_row_count == 0 {
+            (None, None)
         } else {
             let latest_result = db::read_latest_results(test_name)?;
             let difference_count = db::count_differences(test_name)?;
-            if difference_count > 0 {
-                test_runs.push(TestDetails {
-                    created: original_result.time_created,
-                    diffs: Some(get_diffs(test_name)?),
-                    name: test_name.to_string(),
-                    last_ran: Some(latest_result.time_created),
-                });
+            let diffs = if difference_count > 0 {
+                Some(get_diffs(test_name)?)
             } else {
-                test_runs.push(TestDetails {
-                    created: original_result.time_created,
-                    diffs: None,
-                    name: test_name.to_string(),
-                    last_ran: Some(latest_result.time_created),
-                });
-            }
-        }
+                None
+            };
+            (Some(latest_result.time_created), diffs)
+        };
+        test_runs.push(TestDetails {
+            created: original_result.time_created,
+            diffs,
+            name: test_name.to_string(),
+            last_ran,
+        });
     }
     state_data.runs = test_runs;
     state_data.state_updated = time::now();
@@ -233,17 +233,16 @@ pub(crate) fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
 }
 
 /// Format a single difference tuple into a display string.
-/// Returns None for "same" types (5, 8) that should be skipped.
+/// Returns None for "same" types and unknown codes.
 fn format_difference(type_code: &str, value: &str) -> Option<String> {
-    match type_code {
-        "5" | "8" => None,
-        "1" => Some(format!("+ Actual code: {}", value)),
-        "2" => Some(format!("- Expected code: {}", value)),
-        "3" => Some(format!("+ Stderr add: {}", value)),
-        "4" => Some(format!("- Stderr remove: {}", value)),
-        "6" => Some(format!("+ Stdout add: {}", value)),
-        "7" => Some(format!("- Stdout remove: {}", value)),
-        _ => Some(format!("not yet implemented: {} {}", type_code, value)),
+    match RegressionType::from_code(type_code)? {
+        RegressionType::ActualCode => Some(format!("+ Actual code: {}", value)),
+        RegressionType::ExpectedCode => Some(format!("- Expected code: {}", value)),
+        RegressionType::StderrAdd => Some(format!("+ Stderr add: {}", value)),
+        RegressionType::StderrRemove => Some(format!("- Stderr remove: {}", value)),
+        RegressionType::StdoutAdd => Some(format!("+ Stdout add: {}", value)),
+        RegressionType::StdoutRemove => Some(format!("- Stdout remove: {}", value)),
+        RegressionType::StderrSame | RegressionType::StdoutSame => None,
     }
 }
 
@@ -327,10 +326,8 @@ mod tests {
 
     #[test]
     fn test_format_difference_unknown() {
-        assert_eq!(
-            format_difference("99", "data"),
-            Some("not yet implemented: 99 data".to_string())
-        );
+        assert_eq!(format_difference("99", "data"), None);
+        assert_eq!(format_difference("abc", "data"), None);
     }
 
     #[test]
