@@ -11,7 +11,6 @@ use crate::status;
 /// If the test path is just a filename (no directory separators), it is
 /// placed in the default data directory (`~/.local/reg-rs/`). The `.tdb`
 /// extension is appended automatically if missing.
-#[allow(clippy::collapsible_if)]
 pub fn create_original(
     config: &config::Config,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
