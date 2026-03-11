@@ -74,3 +74,94 @@ pub fn render(status_view_context: &StatusViewContext) -> crate::error::Result<S
     let rendered = tt.render("status_view_template", status_view_context)?;
     Ok(rendered)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_render_empty_runs() {
+        let ctx = StatusViewContext::new(
+            "2024-01-01T00:00:00".to_string(),
+            "2024-01-01T00:00:01".to_string(),
+            StatusCounts {
+                fail_count: " 00000".to_string(),
+                not_run_count: " 00000".to_string(),
+                pass_count: " 00000".to_string(),
+                test_count: " 00000".to_string(),
+            },
+            StatusFlags {
+                no_failed_tests: true,
+                no_not_yet_run_tests: true,
+                no_passed_tests: true,
+            },
+            "my_test".to_string(),
+            &[],
+        );
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("reg-rs Status Server"));
+        assert!(output.contains("my_test"));
+        assert!(output.contains("No Failed Tests"));
+        assert!(output.contains("No Passed Tests"));
+    }
+
+    #[test]
+    fn test_render_with_passed_test() {
+        let runs = vec![server::TestDetails {
+            created: "2024-01-01".to_string(),
+            diffs: None,
+            last_ran: Some("2024-01-02".to_string()),
+            name: "passing_test".to_string(),
+        }];
+        let ctx = StatusViewContext::new(
+            "2024-01-01T00:00:00".to_string(),
+            "2024-01-01T00:00:01".to_string(),
+            StatusCounts {
+                fail_count: " 00000".to_string(),
+                not_run_count: " 00000".to_string(),
+                pass_count: " 00001".to_string(),
+                test_count: " 00001".to_string(),
+            },
+            StatusFlags {
+                no_failed_tests: true,
+                no_not_yet_run_tests: true,
+                no_passed_tests: false,
+            },
+            "test".to_string(),
+            &runs,
+        );
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("passing_test"));
+        assert!(output.contains("Passed"));
+    }
+
+    #[test]
+    fn test_render_with_failed_test() {
+        let runs = vec![server::TestDetails {
+            created: "2024-01-01".to_string(),
+            diffs: Some(vec!["+ stdout add: changed".to_string()]),
+            last_ran: Some("2024-01-02".to_string()),
+            name: "failing_test".to_string(),
+        }];
+        let ctx = StatusViewContext::new(
+            "2024-01-01T00:00:00".to_string(),
+            "2024-01-01T00:00:01".to_string(),
+            StatusCounts {
+                fail_count: " 00001".to_string(),
+                not_run_count: " 00000".to_string(),
+                pass_count: " 00000".to_string(),
+                test_count: " 00001".to_string(),
+            },
+            StatusFlags {
+                no_failed_tests: false,
+                no_not_yet_run_tests: true,
+                no_passed_tests: true,
+            },
+            "test".to_string(),
+            &runs,
+        );
+        let output = render(&ctx).unwrap();
+        assert!(output.contains("failing_test"));
+        assert!(output.contains("Failures"));
+    }
+}

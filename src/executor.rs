@@ -1,12 +1,14 @@
 //! Command executor trait and implementations for dependency injection
 
+use crate::error::Result;
+
 /// Trait for executing shell commands
 ///
 /// This trait enables dependency injection for testing by allowing
 /// mock implementations to be substituted for the real command executor.
 pub trait CommandExecutor: Send + Sync {
     /// Execute a shell command and return (exit_code, stderr, stdout)
-    fn exec(&self, command: &str) -> Result<(i32, String, String), Box<dyn std::error::Error>>;
+    fn exec(&self, command: &str) -> Result<(i32, String, String)>;
 }
 
 /// Real command executor that runs commands via the shell
@@ -21,8 +23,8 @@ impl RealCommandExecutor {
 }
 
 impl CommandExecutor for RealCommandExecutor {
-    fn exec(&self, command: &str) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
-        Ok(crate::process::exec(command.to_string())?)
+    fn exec(&self, command: &str) -> Result<(i32, String, String)> {
+        crate::process::exec(command.to_string())
     }
 }
 
@@ -58,10 +60,7 @@ pub mod mock {
     }
 
     impl CommandExecutor for MockCommandExecutor {
-        fn exec(
-            &self,
-            _command: &str,
-        ) -> Result<(i32, String, String), Box<dyn std::error::Error>> {
+        fn exec(&self, _command: &str) -> Result<(i32, String, String)> {
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {
                 Ok((0, String::new(), String::new()))
