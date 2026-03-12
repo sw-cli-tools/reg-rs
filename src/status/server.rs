@@ -111,30 +111,105 @@ pub(crate) async fn start(config: &config::Config) -> crate::error::Result<()> {
     Ok(())
 }
 
-/// Serve the landing page with links to available views
+/// Serve the landing page with summary and links to views
 async fn serve_landing(State(state): State<AppState>) -> impl IntoResponse {
-    let pattern = match state.state_data.lock() {
-        Ok(guard) => guard.pattern.clone(),
-        Err(_) => "unknown".to_string(),
+    // Refresh state before reading
+    let _ = set_test_runs(state.clone());
+
+    let (pattern, server_started, fail, pass, pending, total) = match state.state_data.lock() {
+        Ok(guard) => {
+            let (failed, passed, not_run) = categorize_runs(&guard.runs);
+            (
+                guard.pattern.clone(),
+                guard.server_started.clone(),
+                failed.len(),
+                passed.len(),
+                not_run.len(),
+                guard.runs.len(),
+            )
+        }
+        Err(_) => ("unknown".to_string(), String::new(), 0, 0, 0, 0),
     };
+
+    let status_line = if fail > 0 {
+        format!(
+            r#"<span class="status-indicator fail">&#10007; {fail} failed</span>"#
+        )
+    } else if total == 0 {
+        r#"<span class="status-indicator pending">No tests found</span>"#.to_string()
+    } else if pending > 0 {
+        format!(
+            r#"<span class="status-indicator pending">? {pending} not yet run</span>"#
+        )
+    } else {
+        format!(
+            r#"<span class="status-indicator pass">&#10003; All {pass} tests passing</span>"#
+        )
+    };
+
     let html = format!(
-        r#"<!DOCTYPE html>
-<html><head><title>reg-rs</title>
+        r##"<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reg-rs</title>
 <style>
-  body {{ font-family: system-ui, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }}
-  h1 {{ border-bottom: 1px solid #ccc; padding-bottom: 10px; }}
-  ul {{ list-style: none; padding: 0; }}
-  li {{ margin: 12px 0; }}
-  a {{ font-size: 1.2em; }}
-  .meta {{ color: #666; font-size: 0.9em; }}
+  :root {{
+    --pass: #16a34a; --fail: #dc2626; --warn: #d97706; --muted: #6b7280;
+    --bg: #f9fafb; --card: #fff; --border: #e5e7eb;
+    --font: system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }}
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{ font-family: var(--font); background: var(--bg); color: #111; padding: 40px 20px; }}
+  .container {{ max-width: 600px; margin: 0 auto; }}
+  h1 {{ font-size: 1.6em; margin-bottom: 4px; }}
+  .meta {{ color: var(--muted); font-size: 0.85em; margin-bottom: 20px; }}
+  .meta code {{ font-family: var(--mono); background: #f3f4f6; padding: 1px 5px;
+               border-radius: 3px; }}
+  .summary {{ background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+              padding: 20px; margin-bottom: 24px; }}
+  .status-indicator {{ font-size: 1.1em; font-weight: 600; }}
+  .status-indicator.pass {{ color: var(--pass); }}
+  .status-indicator.fail {{ color: var(--fail); }}
+  .status-indicator.pending {{ color: var(--warn); }}
+  .counts {{ display: flex; gap: 20px; margin-top: 12px; font-size: 0.9em; color: var(--muted); }}
+  .counts span {{ font-family: var(--mono); }}
+  .views {{ list-style: none; padding: 0; }}
+  .views li {{ margin-bottom: 12px; }}
+  .views a {{ display: block; background: var(--card); border: 1px solid var(--border);
+              border-radius: 8px; padding: 16px; text-decoration: none; color: #111;
+              transition: border-color 0.15s; }}
+  .views a:hover {{ border-color: #3b82f6; }}
+  .views .view-title {{ font-size: 1.05em; font-weight: 600; }}
+  .views .view-desc {{ color: var(--muted); font-size: 0.85em; margin-top: 4px; }}
+  footer {{ text-align: center; color: var(--muted); font-size: 0.8em; margin-top: 32px; }}
 </style>
 </head><body>
-<h1>reg-rs</h1>
-<p class="meta">pattern: <code>{pattern}</code></p>
-<ul>
-  <li><a href="/status">Status Dashboard</a> — pass/fail summary, diffs, test details</li>
-</ul>
-</body></html>"#
+<div class="container">
+  <h1>reg-rs</h1>
+  <div class="meta">pattern: <code>{pattern}</code></div>
+
+  <div class="summary">
+    {status_line}
+    <div class="counts">
+      <span>{pass} passed</span>
+      <span>{fail} failed</span>
+      <span>{pending} pending</span>
+      <span>{total} total</span>
+    </div>
+  </div>
+
+  <ul class="views">
+    <li><a href="/status">
+      <div class="view-title">Status Dashboard</div>
+      <div class="view-desc">Pass/fail details, collapsible sections, diffs for failures</div>
+    </a></li>
+  </ul>
+
+  <footer>started {server_started}</footer>
+</div>
+</body></html>"##
     );
     (StatusCode::OK, Html(html))
 }
