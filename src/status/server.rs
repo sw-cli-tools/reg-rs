@@ -97,7 +97,8 @@ pub(crate) async fn start(config: &config::Config) -> crate::error::Result<()> {
 
     log::info!("server/start - creating router");
     let app = Router::new()
-        .route("/", get(serve_status_view))
+        .route("/", get(serve_landing))
+        .route("/status", get(serve_status_view))
         .with_state(app_state);
 
     log::info!("server/start - binding TCP listener to {}", addr);
@@ -108,6 +109,34 @@ pub(crate) async fn start(config: &config::Config) -> crate::error::Result<()> {
 
     log::info!("server/start - END (server stopped)");
     Ok(())
+}
+
+/// Serve the landing page with links to available views
+async fn serve_landing(State(state): State<AppState>) -> impl IntoResponse {
+    let pattern = match state.state_data.lock() {
+        Ok(guard) => guard.pattern.clone(),
+        Err(_) => "unknown".to_string(),
+    };
+    let html = format!(
+        r#"<!DOCTYPE html>
+<html><head><title>reg-rs</title>
+<style>
+  body {{ font-family: system-ui, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }}
+  h1 {{ border-bottom: 1px solid #ccc; padding-bottom: 10px; }}
+  ul {{ list-style: none; padding: 0; }}
+  li {{ margin: 12px 0; }}
+  a {{ font-size: 1.2em; }}
+  .meta {{ color: #666; font-size: 0.9em; }}
+</style>
+</head><body>
+<h1>reg-rs</h1>
+<p class="meta">pattern: <code>{pattern}</code></p>
+<ul>
+  <li><a href="/status">Status Dashboard</a> — pass/fail summary, diffs, test details</li>
+</ul>
+</body></html>"#
+    );
+    (StatusCode::OK, Html(html))
 }
 
 /// Serve the status view

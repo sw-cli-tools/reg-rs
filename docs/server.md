@@ -47,7 +47,7 @@ http://localhost:4740/
 
 The server will display a message like:
 ```
-open: http://127.0.0.1:4740/status
+open: http://127.0.0.1:4740/
 Listening at 127.0.0.1:4740.  Ctrl-C to terminate server
 ```
 
