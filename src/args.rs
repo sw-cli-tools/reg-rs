@@ -189,7 +189,7 @@ The page auto-updates when test files change.
 Open http://localhost:<port> in a browser to view the status page.
 
 EXAMPLES:
-  reg-rs status -p my_test                 # start on default port 4111
+  reg-rs status -p my_test                 # start on default port 4740
   reg-rs status -p my_test -l 8080         # use custom port
   reg-rs s -p test                         # using alias"
     )]
@@ -197,8 +197,8 @@ EXAMPLES:
         /// Substring pattern to match test names to monitor
         #[clap(long, short)]
         pattern: String,
-        /// Port number for the web server (default: 4111)
-        #[clap(default_value = "4111", long, short)]
+        /// Port number for the web server (default: 4740)
+        #[clap(default_value = "4740", long, short)]
         localhost_port: u16,
     },
 }

@@ -5,7 +5,7 @@ use std::env;
 use std::path::PathBuf;
 
 /// Default status port for web
-pub const DEFAULT_STATUS_PORT: u16 = 4111;
+pub const DEFAULT_STATUS_PORT: u16 = 4740;
 /// Status banner
 pub const STATUS_BANNER: &str = "reg-rs Status Server";
 /// Test database file extension

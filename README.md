@@ -172,7 +172,7 @@ reg-rs status -p <pattern> [-l <port>]
 
 # Options:
 #   -p, --pattern <pat>           Pattern to match tests to monitor
-#   -l, --localhost-port <port>   Port number (default: 4111)
+#   -l, --localhost-port <port>   Port number (default: 4740)
 
 # Examples:
 reg-rs status -p test
@@ -180,7 +180,7 @@ reg-rs status -p test -l 8080
 reg-rs s -p test                      # 's' is alias for 'status'
 ```
 
-Open http://localhost:4111 (or your chosen port) to view the status page.
+Open http://localhost:4740 (or your chosen port) to view the status page.
 
 ## Architecture
 

@@ -24,7 +24,7 @@ During development, keep the status server running in the background. As you mak
 # Basic usage - monitor all tests matching a pattern
 reg-rs status -p "_test"
 
-# Specify a custom port (default is 4111)
+# Specify a custom port (default is 4740)
 reg-rs status -p "_test" -l 8080
 
 # Using the alias
@@ -36,19 +36,19 @@ reg-rs s -p "my_tests"
 | Option | Description |
 |--------|-------------|
 | `-p, --pattern <pattern>` | Substring pattern to match test names (required) |
-| `-l, --localhost-port <port>` | Port number for the web server (default: 4111) |
+| `-l, --localhost-port <port>` | Port number for the web server (default: 4740) |
 
 ### Accessing the Dashboard
 
 Once the server starts, open your browser to:
 ```
-http://localhost:4111/
+http://localhost:4740/
 ```
 
 The server will display a message like:
 ```
-open: http://127.0.0.1:4111/status
-Listening at 127.0.0.1:4111.  Ctrl-C to terminate server
+open: http://127.0.0.1:4740/status
+Listening at 127.0.0.1:4740.  Ctrl-C to terminate server
 ```
 
 ## Dashboard Views
@@ -96,7 +96,7 @@ The dashboard will reflect these changes on the next page refresh.
 
 ```bash
 # Terminal 1: Start the status server
-reg-rs status -p "_test" -l 4111
+reg-rs status -p "_test" -l 4740
 
 # Terminal 2: Create and run tests
 reg-rs create -t hello_test -c 'echo hello'

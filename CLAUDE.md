@@ -25,7 +25,7 @@ The codebase follows a modular architecture with clear separation of concerns:
 - **AI Integration**: `src/ai.rs` - Natural language test creation via Claude API (`--describe` flag)
 - **Database Layer**: `src/db.rs` + `src/sqlite.rs` + `src/queries.rs` - SQLite storage for test results
 - **Reporting**: `src/reporters/*.rs` - Different report formats (summary, details, passes, failures, differences)
-- **Status Server**: `src/status/*.rs` - Web-based monitoring server (port 4111)
+- **Status Server**: `src/status/*.rs` - Web-based monitoring server (port 4740)
 - **Templates**: `src/templates/*.rs` - SQL and HTML template generation
 
 ## Key Patterns
