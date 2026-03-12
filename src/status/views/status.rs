@@ -31,15 +31,12 @@ pub struct StatusFlags {
 /// Status view template data
 #[derive(Serialize)]
 pub struct StatusViewContext<'a> {
-    fail_symbol: String,
-    pass_symbol: String,
     server_started: String,
     state_updated: String,
     status_counts: StatusCounts,
     status_flags: StatusFlags,
     test_pattern: String,
     test_runs: &'a [server::TestDetails],
-    warn_symbol: String,
 }
 
 impl<'a> StatusViewContext<'a> {
@@ -53,15 +50,12 @@ impl<'a> StatusViewContext<'a> {
         test_runs: &'a [server::TestDetails],
     ) -> Self {
         StatusViewContext {
-            fail_symbol: "-".to_string(),
-            pass_symbol: "+".to_string(),
             server_started,
             state_updated,
             status_counts,
             status_flags,
             test_pattern,
             test_runs,
-            warn_symbol: "?".to_string(),
         }
     }
 }
@@ -99,10 +93,10 @@ mod tests {
             &[],
         );
         let output = render(&ctx).unwrap();
-        assert!(output.contains("reg-rs Status Server"));
+        assert!(output.contains("reg-rs"));
         assert!(output.contains("my_test"));
-        assert!(output.contains("No Failed Tests"));
-        assert!(output.contains("No Passed Tests"));
+        assert!(output.contains("No failed tests"));
+        assert!(output.contains("No passed tests"));
     }
 
     #[test]
@@ -132,7 +126,7 @@ mod tests {
         );
         let output = render(&ctx).unwrap();
         assert!(output.contains("passing_test"));
-        assert!(output.contains("Passed"));
+        assert!(output.contains("Passes"));
     }
 
     #[test]

@@ -180,12 +180,12 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
             );
         }
     };
-    let response_str = format!("<div>{}</div>", status_view);
+    let page = wrap_in_page(&state_data.pattern, &state_data.server_started, &status_view);
     log::info!(
         "server/serve_status_view - END, response len={}",
-        response_str.len()
+        page.len()
     );
-    (StatusCode::OK, Html(response_str))
+    (StatusCode::OK, Html(page))
 }
 
 /// Build the status view HTML from current state data
@@ -261,18 +261,127 @@ pub(crate) fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
     Ok(())
 }
 
-/// Format a single difference tuple into a display string.
+/// Format a single difference tuple into an HTML string with diff styling.
 /// Returns None for "same" types and unknown codes.
 fn format_difference(type_code: &str, value: &str) -> Option<String> {
+    let escaped = html_escape(value);
     match RegressionType::from_code(type_code)? {
-        RegressionType::ActualCode => Some(format!("+ Actual code: {}", value)),
-        RegressionType::ExpectedCode => Some(format!("- Expected code: {}", value)),
-        RegressionType::StderrAdd => Some(format!("+ Stderr add: {}", value)),
-        RegressionType::StderrRemove => Some(format!("- Stderr remove: {}", value)),
-        RegressionType::StdoutAdd => Some(format!("+ Stdout add: {}", value)),
-        RegressionType::StdoutRemove => Some(format!("- Stdout remove: {}", value)),
+        RegressionType::ActualCode => {
+            Some(format!(r#"<div class="diff-add">+ Actual code: {}</div>"#, escaped))
+        }
+        RegressionType::ExpectedCode => {
+            Some(format!(r#"<div class="diff-remove">- Expected code: {}</div>"#, escaped))
+        }
+        RegressionType::StderrAdd => {
+            Some(format!(r#"<div class="diff-add">+ Stderr add: {}</div>"#, escaped))
+        }
+        RegressionType::StderrRemove => {
+            Some(format!(r#"<div class="diff-remove">- Stderr remove: {}</div>"#, escaped))
+        }
+        RegressionType::StdoutAdd => {
+            Some(format!(r#"<div class="diff-add">+ Stdout add: {}</div>"#, escaped))
+        }
+        RegressionType::StdoutRemove => {
+            Some(format!(r#"<div class="diff-remove">- Stdout remove: {}</div>"#, escaped))
+        }
         RegressionType::StderrSame | RegressionType::StdoutSame => None,
     }
+}
+
+/// Wrap rendered template body in a full HTML page with CSS
+fn wrap_in_page(pattern: &str, server_started: &str, body: &str) -> String {
+    format!(
+        r##"<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reg-rs — {pattern}</title>
+<style>
+  :root {{
+    --pass: #16a34a; --fail: #dc2626; --warn: #d97706; --muted: #6b7280;
+    --bg: #f9fafb; --card: #fff; --border: #e5e7eb;
+    --font: system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }}
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{ font-family: var(--font); background: var(--bg); color: #111; padding: 20px; }}
+  .container {{ max-width: 960px; margin: 0 auto; }}
+  header {{ display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px;
+            border-bottom: 2px solid var(--border); padding-bottom: 12px; }}
+  header h1 {{ font-size: 1.4em; }}
+  .meta {{ color: var(--muted); font-size: 0.85em; }}
+  .meta code {{ font-family: var(--mono); background: #f3f4f6; padding: 1px 5px;
+               border-radius: 3px; }}
+  nav {{ display: flex; gap: 12px; margin-bottom: 20px; font-size: 0.9em; }}
+  nav a {{ color: var(--muted); text-decoration: none; padding: 4px 8px; border-radius: 4px; }}
+  nav a:hover {{ background: var(--border); color: #111; }}
+  .overview {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+               gap: 12px; margin-bottom: 24px; }}
+  .stat {{ background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+           padding: 16px; text-align: center; }}
+  .stat .number {{ font-size: 2em; font-weight: 700; font-family: var(--mono); }}
+  .stat .label {{ font-size: 0.85em; color: var(--muted); margin-top: 4px; }}
+  .stat.pass {{ border-left: 4px solid var(--pass); }}
+  .stat.fail {{ border-left: 4px solid var(--fail); }}
+  .stat.pending {{ border-left: 4px solid var(--warn); }}
+  .stat.total {{ border-left: 4px solid var(--border); }}
+  .section {{ background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+              margin-bottom: 16px; }}
+  .section-header {{ padding: 12px 16px; cursor: pointer; display: flex;
+                     align-items: center; gap: 8px; user-select: none;
+                     border-bottom: 1px solid var(--border); }}
+  .section-header:hover {{ background: #f3f4f6; }}
+  .section-header h2 {{ font-size: 1em; font-weight: 600; }}
+  .section-header .badge {{ font-size: 0.8em; font-family: var(--mono); padding: 2px 8px;
+                            border-radius: 10px; font-weight: 600; }}
+  .section-header .arrow {{ color: var(--muted); font-size: 0.8em; transition: transform 0.2s; }}
+  .section-body {{ padding: 0; }}
+  .section.collapsed .section-body {{ display: none; }}
+  .section.collapsed .arrow {{ transform: rotate(-90deg); }}
+  .badge-pass {{ background: #dcfce7; color: var(--pass); }}
+  .badge-fail {{ background: #fef2f2; color: var(--fail); }}
+  .badge-warn {{ background: #fffbeb; color: var(--warn); }}
+  .test-item {{ padding: 10px 16px; border-bottom: 1px solid var(--border);
+                display: flex; align-items: flex-start; gap: 10px; font-size: 0.9em; }}
+  .test-item:last-child {{ border-bottom: none; }}
+  .icon {{ flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+           display: flex; align-items: center; justify-content: center;
+           font-size: 0.75em; font-weight: 700; color: #fff; }}
+  .icon-pass {{ background: var(--pass); }}
+  .icon-fail {{ background: var(--fail); }}
+  .icon-warn {{ background: var(--warn); }}
+  .test-name {{ font-family: var(--mono); font-weight: 500; word-break: break-all; }}
+  .test-time {{ color: var(--muted); font-size: 0.85em; }}
+  .diffs {{ margin-top: 8px; background: #1e1e2e; color: #cdd6f4; border-radius: 6px;
+            padding: 10px 14px; font-family: var(--mono); font-size: 0.82em;
+            line-height: 1.5; overflow-x: auto; }}
+  .diff-add {{ color: #a6e3a1; }}
+  .diff-remove {{ color: #f38ba8; }}
+  .empty {{ padding: 16px; color: var(--muted); font-style: italic; }}
+  footer {{ text-align: center; color: var(--muted); font-size: 0.8em; margin-top: 24px; }}
+  footer a {{ color: var(--muted); }}
+</style>
+</head><body>
+<div class="container">
+{body}
+<footer><a href="/">reg-rs</a> &middot; started {server_started}</footer>
+</div>
+<script>
+document.querySelectorAll('.section').forEach(function(s) {{
+  var badge = s.querySelector('.badge');
+  if (badge && badge.textContent.trim() === '0') s.classList.add('collapsed');
+}});
+</script>
+</body></html>"##
+    )
+}
+
+/// Escape HTML special characters to prevent XSS
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// Categorize test runs into failed, passed, and not-yet-run lists
@@ -309,42 +418,43 @@ mod tests {
 
     #[test]
     fn test_format_difference_actual_code() {
-        assert_eq!(
-            format_difference("1", "42"),
-            Some("+ Actual code: 42".to_string())
-        );
+        let result = format_difference("1", "42").unwrap();
+        assert!(result.contains("diff-add"));
+        assert!(result.contains("+ Actual code: 42"));
     }
 
     #[test]
     fn test_format_difference_expected_code() {
-        assert_eq!(
-            format_difference("2", "0"),
-            Some("- Expected code: 0".to_string())
-        );
+        let result = format_difference("2", "0").unwrap();
+        assert!(result.contains("diff-remove"));
+        assert!(result.contains("- Expected code: 0"));
     }
 
     #[test]
     fn test_format_difference_stderr() {
-        assert_eq!(
-            format_difference("3", "err"),
-            Some("+ Stderr add: err".to_string())
-        );
-        assert_eq!(
-            format_difference("4", "old"),
-            Some("- Stderr remove: old".to_string())
-        );
+        let result = format_difference("3", "err").unwrap();
+        assert!(result.contains("diff-add"));
+        assert!(result.contains("+ Stderr add: err"));
+        let result = format_difference("4", "old").unwrap();
+        assert!(result.contains("diff-remove"));
+        assert!(result.contains("- Stderr remove: old"));
     }
 
     #[test]
     fn test_format_difference_stdout() {
-        assert_eq!(
-            format_difference("6", "new"),
-            Some("+ Stdout add: new".to_string())
-        );
-        assert_eq!(
-            format_difference("7", "old"),
-            Some("- Stdout remove: old".to_string())
-        );
+        let result = format_difference("6", "new").unwrap();
+        assert!(result.contains("diff-add"));
+        assert!(result.contains("+ Stdout add: new"));
+        let result = format_difference("7", "old").unwrap();
+        assert!(result.contains("diff-remove"));
+        assert!(result.contains("- Stdout remove: old"));
+    }
+
+    #[test]
+    fn test_format_difference_escapes_html() {
+        let result = format_difference("6", "<script>alert('xss')</script>").unwrap();
+        assert!(result.contains("&lt;script&gt;"));
+        assert!(!result.contains("<script>alert"));
     }
 
     #[test]
