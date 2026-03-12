@@ -1,6 +1,12 @@
-# Subject Study: Testing pjmai-rs with reg-rs
+# Subject Study: Testing CLI tools with reg-rs
 
-This document describes how reg-rs is used to regression-test [pjmai-rs](https://github.com/sw-cli-tools/pjmai-rs), a Rust CLI tool for managing and switching between development projects. It serves as both a reference for maintaining the pjmai-rs test suite and a worked example for anyone setting up reg-rs against their own CLI tool.
+This document describes how reg-rs is used to regression-test CLI tools from the [sw-cli-tools](https://github.com/sw-cli-tools) suite. It covers two case studies — pjmai-rs (text output) and favicon (binary/image output) — and serves as a reference for setting up reg-rs against your own tools.
+
+---
+
+# Part 1: pjmai-rs (text output)
+
+[pjmai-rs](https://github.com/sw-cli-tools/pjmai-rs) is a Rust CLI tool for managing and switching between development projects.
 
 ## Why pjmai-rs is a good subject
 
@@ -283,3 +289,244 @@ create_test "pjmai_new_test" \
 ```
 
 These metadata fields are stored in the `.tdb` database and displayed in failure reports at `-vv` verbosity, helping developers (or AI agents analyzing failures via `reg-rs analyze`) understand what went wrong without reading the setup script.
+
+---
+
+# Part 2: favicon (binary/image output)
+
+[favicon](https://github.com/sw-cli-tools/favicon) is a Rust CLI tool that generates favicon images from text, emoji, or symbols using Skia rendering. It produces PNG and ICO files — binary output that cannot be compared with line-oriented text diffs.
+
+## Why favicon is a good subject
+
+favicon complements pjmai-rs by exercising a completely different testing challenge: binary output verification.
+
+- **Binary output** — PNGs are not human-readable text; line diffs are meaningless
+- **Deterministic rendering** — same Skia version + same fonts + same input = byte-identical output
+- **Many parameters** — symbols, colors, rotation, font selection all affect the rendered image
+- **No state** — unlike pjmai-rs, favicon is stateless (no config files, no sandbox needed)
+- **Visual semantics** — a human (or vision model) can look at the output and judge correctness
+
+## Test suite overview
+
+The suite is defined in `tests/regression/favicon_setup.sh` and creates 12 regression tests across five categories:
+
+| Category | Tests | Strategy | Storage per test |
+|----------|-------|----------|-----------------|
+| Text output | 3 | Standard reg-rs text comparison | ~1 KB |
+| SHA-256 checksum | 3 | Checksum for fast pass/fail | ~100 bytes |
+| Base64 encoding | 2 | Full image as text (AI-decodable) | ~33 KB |
+| Hybrid | 2 | Checksum + golden file on disk | ~100 bytes + ~25 KB golden |
+| Error injection | 2 | Controlled failure via env var | ~100 bytes or ~33 KB |
+
+### Text output tests
+
+| Test | What it verifies |
+|------|-----------------|
+| `favicon_help` | Help text is stable |
+| `favicon_version_format` | Version format (masked) |
+| `favicon_list_symbols` | Symbol count is stable |
+
+### Binary output tests
+
+| Test | Approach | Input |
+|------|----------|-------|
+| `favicon_sha_heart_png` | SHA-256 | Heart emoji |
+| `favicon_sha_star_rotated` | SHA-256 | Star rotated 45° |
+| `favicon_sha_colored` | SHA-256 | Red A on blue background |
+| `favicon_b64_heart_png` | Base64 | Heart emoji |
+| `favicon_b64_rocket_png` | Base64 | Rocket emoji |
+| `favicon_hybrid_heart` | Hybrid | Heart emoji |
+| `favicon_hybrid_dice` | Hybrid | Dice emoji |
+
+### Error injection tests
+
+| Test | Approach | Purpose |
+|------|----------|---------|
+| `favicon_inject_heart_sha` | SHA-256 | Detects FAVICON_WATERMARK |
+| `favicon_inject_heart_b64` | Base64 | Detects watermark + enables AI visual diff |
+
+## Setup and execution
+
+### Prerequisites
+
+Both binaries must be built:
+
+```bash
+# In reg-rs repo
+cargo build
+
+# In favicon repo
+cd ~/github/sw-cli-tools/favicon/components/app && cargo build
+```
+
+### Creating the baseline
+
+```bash
+bash tests/regression/favicon_setup.sh
+```
+
+This populates `./work/reg-rs/favicon-tests/` with one `.tdb` per test, plus a `golden/` subdirectory for hybrid tests.
+
+### Running the tests
+
+```bash
+# Normal run (all tests should pass)
+REG_RS_DATA_DIR=./work/reg-rs/favicon-tests ./target/debug/reg-rs run -p favicon --parallel
+
+# Error injection (inject tests will fail)
+FAVICON_WATERMARK=SAMPLE REG_RS_DATA_DIR=./work/reg-rs/favicon-tests ./target/debug/reg-rs run -p favicon_inject --parallel
+```
+
+### Viewing results
+
+```bash
+# Summary
+REG_RS_DATA_DIR=./work/reg-rs/favicon-tests ./target/debug/reg-rs report -p favicon
+
+# Full detail with diffs
+REG_RS_DATA_DIR=./work/reg-rs/favicon-tests ./target/debug/reg-rs report -p favicon -vvv
+
+# AI-powered failure analysis
+REG_RS_DATA_DIR=./work/reg-rs/favicon-tests ./target/debug/reg-rs analyze -p favicon
+```
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `REG_RS_BIN` | `./target/debug/reg-rs` | Path to reg-rs binary |
+| `FAVICON_BIN` | `~/github/sw-cli-tools/favicon/components/app/target/debug/favicon` | Path to favicon binary |
+| `REG_RS_DATA_DIR` | `./work/reg-rs/favicon-tests` | Where `.tdb` files are stored |
+| `FAVICON_WATERMARK` | (unset) | When set, favicon overlays a watermark — used for error injection |
+
+## Three approaches to binary comparison
+
+### Approach 1: SHA-256 checksum
+
+The simplest approach. Generate the image, compute its checksum, capture the checksum as stdout:
+
+```bash
+favicon -u heart -T --png -o $T.png 2>&1
+shasum -a 256 $T.png | cut -d' ' -f1
+rm -f $T.png
+```
+
+The `.tdb` stores approximately 100 bytes: the "Saved:" log line plus a 64-character hex checksum. Comparison is fast — if the checksum matches, the image is byte-identical.
+
+**Tradeoff**: Cannot reconstruct the image from the stored data. When a test fails, you see that the checksum changed but cannot visually inspect what changed. A human (or AI) must re-run the command and manually examine the output.
+
+### Approach 2: Base64 encoding
+
+Encode the entire image as base64 text, which reg-rs stores and compares as regular text:
+
+```bash
+favicon -u heart -T --png -o $T.png 2>&1
+base64 < $T.png
+rm -f $T.png
+```
+
+The `.tdb` stores approximately 33 KB per test. Comparison is slower (string comparison of ~33K characters) but the stored data can be decoded back to an image.
+
+**Tradeoff**: Larger storage, slower comparison. But when a test fails, both the golden and failing images can be reconstructed by decoding the base64. A vision model can then compare the two images and describe the visual difference — enabling AI-powered triage without human intervention.
+
+### Approach 3: Hybrid (checksum + golden file)
+
+Combine checksum comparison with a golden reference file stored on disk:
+
+```bash
+favicon -u heart -T --png -o $T.png 2>&1
+cp $T.png $GOLDEN_DIR/heart.png
+shasum -a 256 $T.png | cut -d' ' -f1
+rm -f $T.png
+```
+
+The `.tdb` stores ~100 bytes (checksum). The golden file (~25 KB) lives in `$REG_RS_DATA_DIR/golden/`. Comparison uses the fast checksum path. When a test fails, the golden file is available for visual inspection or AI analysis.
+
+**Tradeoff**: Requires managing files outside the `.tdb` database. The golden directory must be preserved alongside the test data. But it gets the best of both worlds: fast comparison and visual triage capability.
+
+### Measured results
+
+| Metric | SHA-256 | Base64 | Hybrid |
+|--------|---------|--------|--------|
+| `.tdb` size | ~32 KB | 98–176 KB | ~32 KB |
+| Golden file | — | — | 4–25 KB |
+| Comparison speed | Fast (64 chars) | Slower (~33K chars) | Fast (64 chars) |
+| Image recoverable | No | Yes (decode base64) | Yes (golden file) |
+| AI visual triage | No | Yes | Yes |
+
+### Performance
+
+| Execution | Tests | Time |
+|-----------|-------|------|
+| Sequential | 12 | 0.522s |
+| Parallel | 12 | 0.132s |
+| Speedup | — | 4.0x |
+
+## Error injection with FAVICON_WATERMARK
+
+favicon supports a hidden environment variable `FAVICON_WATERMARK` for controlled test failure. When set, favicon overlays a semi-transparent red diagonal watermark across the rendered image after normal rendering but before PNG encoding.
+
+The watermark changes the image bytes → different checksum → detected regression. The watermark is visually obvious, making it ideal for testing AI visual triage: a vision model comparing the clean and watermarked images should immediately identify the red "SAMPLE" text.
+
+### How it works in tests
+
+Error injection tests use bash parameter expansion to conditionally pass the env var:
+
+```bash
+env ${FAVICON_WATERMARK:+FAVICON_WATERMARK=$FAVICON_WATERMARK} favicon -u heart -T --png -o $T.png 2>&1
+```
+
+When `FAVICON_WATERMARK` is unset, this expands to just `env favicon ...` (no watermark). When set to "SAMPLE", it expands to `env FAVICON_WATERMARK=SAMPLE favicon ...` (watermark applied).
+
+This means:
+- **Baseline creation**: Run without `FAVICON_WATERMARK` → clean image stored
+- **Normal test run**: Run without `FAVICON_WATERMARK` → clean image → passes
+- **Error injection run**: Run with `FAVICON_WATERMARK=SAMPLE` → watermarked image → fails
+
+### Running error injection
+
+```bash
+# These two inject tests will fail (by design)
+FAVICON_WATERMARK=SAMPLE REG_RS_DATA_DIR=./work/reg-rs/favicon-tests \
+  ./target/debug/reg-rs run -p favicon_inject --parallel
+```
+
+The SHA test (`favicon_inject_heart_sha`) reports a checksum mismatch. The base64 test (`favicon_inject_heart_b64`) reports a base64 mismatch — and the stored base64 can be decoded for visual comparison.
+
+## Key techniques
+
+### Capturing stdout alongside binary verification
+
+favicon prints a "Saved: /path/to/file.png" message to stdout. This message is valuable — it confirms the command ran successfully, and any new warnings would appear here. Rather than suppressing stdout, all tests capture it:
+
+```bash
+favicon -u heart -T --png -o $T.png 2>&1
+shasum -a 256 $T.png | cut -d' ' -f1
+```
+
+The `2>&1` merges stderr into stdout so both are captured. The checksum (or base64) appears on the next line after the "Saved:" message.
+
+### Normalizing temp paths with --preprocess
+
+The "Saved:" message contains a PID-based temp path (`/tmp/favicon-reg-12345.png`) that changes every run. The `--preprocess` flag normalizes this:
+
+```bash
+-P "sed 's|/tmp/favicon-reg-[0-9]*|/tmp/favicon-reg-PID|g'"
+```
+
+This replaces only the variable PID portion while preserving the rest of the output. If favicon starts emitting new warnings, they will be captured and compared — producing a detected regression.
+
+### No sandbox needed
+
+Unlike pjmai-rs, favicon is stateless. It reads no config files, writes only to the specified output path, and has no interactive prompts. This eliminates the need for sandbox isolation — making favicon tests simpler to set up and naturally safe for parallel execution.
+
+## Choosing an approach
+
+| Use case | Recommended approach |
+|----------|---------------------|
+| CI/fast feedback | SHA-256 checksum — minimal storage, fastest comparison |
+| AI-assisted triage | Base64 — image recoverable from test data alone |
+| Long-lived test suites | Hybrid — fast comparison + golden files for inspection |
+| Error injection demos | Both SHA + base64 — demonstrate detection and triage |
+
+For most projects, start with SHA-256 checksums. Add base64 or hybrid tests for critical images where you want AI triage capability on failure.
