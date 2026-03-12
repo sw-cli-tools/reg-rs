@@ -32,7 +32,11 @@ pub fn analyze_failures(pattern: &str) -> Result<()> {
 
     let tests = finder::discover(pattern.to_string())?;
     if tests.found.is_empty() {
-        eprintln!("warning: no tests matched pattern '{}'", pattern);
+        eprintln!(
+            "warning: no tests matched pattern '{}' in {}",
+            pattern,
+            tests.data_dir.display()
+        );
         return Ok(());
     }
 

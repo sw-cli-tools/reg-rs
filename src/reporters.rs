@@ -20,7 +20,11 @@ pub(crate) fn generate_reports(config: &config::Config) -> crate::error::Result<
     let pattern = config.extract_pattern().to_string();
     let test_names = finder::discover(pattern.clone())?;
     if test_names.found.is_empty() {
-        eprintln!("warning: no tests matched pattern '{}'", pattern);
+        eprintln!(
+            "warning: no tests matched pattern '{}' in {}",
+            pattern,
+            test_names.data_dir.display()
+        );
         return Ok(());
     }
     let total_count = test_names.found.len() as u32;

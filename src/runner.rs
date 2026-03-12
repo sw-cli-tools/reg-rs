@@ -30,15 +30,20 @@ pub struct TestResults {
 pub fn run_many(config: &config::Config) -> crate::error::Result<()> {
     log::info!("runner/run_many");
     let pattern = config.extract_pattern().to_string();
-    let tests = finder::discover(pattern.clone())?;
+    let result = finder::discover(pattern.clone())?;
     if config.debug {
         log::debug!("run_many config: {:?}", &config);
-        log::debug!("run_many tests: {:?}", &tests);
+        log::debug!("run_many tests: {:?}", &result);
     }
-    if tests.found.is_empty() {
-        eprintln!("warning: no tests matched pattern '{}'", pattern);
+    if result.found.is_empty() {
+        eprintln!(
+            "warning: no tests matched pattern '{}' in {}",
+            pattern,
+            result.data_dir.display()
+        );
         return Ok(());
     }
+    let tests = result;
     if config.is_parallel() {
         run_many_parallel(&tests.found, config.is_dry_run())
     } else {

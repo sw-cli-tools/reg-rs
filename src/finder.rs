@@ -16,10 +16,33 @@ fn is_hidden(entry: &DirEntry) -> bool {
 }
 
 /// Discover tests matching a substring pattern in the data directory.
-pub fn discover(pattern: String) -> crate::error::Result<TestNames> {
+///
+/// Returns both the matched test paths and the data directory that was searched,
+/// so callers can include the path in diagnostic messages.
+pub fn discover(pattern: String) -> crate::error::Result<DiscoverResult> {
     log::info!("finder/discover pattern {}", &pattern);
     let data_dir = crate::data_dir();
-    discover_in(&data_dir, &pattern)
+    if !data_dir.exists() {
+        return Err(crate::error::RegError::Other(format!(
+            "data directory does not exist: {}\n\
+             hint: set REG_RS_DATA_DIR to the directory containing your .tdb files",
+            data_dir.display()
+        )));
+    }
+    let names = discover_in(&data_dir, &pattern)?;
+    Ok(DiscoverResult {
+        found: names.found,
+        data_dir,
+    })
+}
+
+/// Result of test discovery, including the directory that was searched.
+#[derive(Debug)]
+pub struct DiscoverResult {
+    /// Paths of matched .tdb files
+    pub found: Vec<String>,
+    /// The data directory that was searched
+    pub data_dir: std::path::PathBuf,
 }
 
 /// Discover tests matching a substring pattern in a specific directory.
