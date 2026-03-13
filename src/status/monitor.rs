@@ -78,6 +78,7 @@ fn watch(app_state: AppState) -> Result<(), RegError> {
         if let Err(e) = server::set_test_runs(app_state.clone()) {
             log::error!("monitor/watch: Failed to set test runs: {}", e);
         }
+        app_state.notify_update();
         log::debug!("monitor loop {}", index);
     }
 }

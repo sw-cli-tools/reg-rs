@@ -2,14 +2,19 @@ use axum::{
     Router,
     extract::State,
     http::StatusCode,
-    response::{Html, IntoResponse},
+    response::{
+        Html, IntoResponse,
+        sse::{Event, KeepAlive, Sse},
+    },
     routing::get,
 };
+use futures_util::stream::Stream;
 use serde::Serialize;
 
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use tokio::sync::broadcast;
 
 use crate::config;
 use crate::db;
@@ -25,12 +30,23 @@ use crate::time;
 pub struct AppState {
     /// Shared state data
     pub state_data: Arc<Mutex<StateData>>,
+    /// Broadcast channel for SSE updates
+    pub update_tx: broadcast::Sender<()>,
 }
 
 impl AppState {
     fn new(pattern: String) -> Self {
         let state_data = Arc::new(Mutex::new(StateData::new(pattern.clone())));
-        Self { state_data }
+        let (update_tx, _) = broadcast::channel(16);
+        Self {
+            state_data,
+            update_tx,
+        }
+    }
+
+    /// Notify all SSE subscribers that state has changed
+    pub fn notify_update(&self) {
+        let _ = self.update_tx.send(());
     }
 }
 
@@ -99,6 +115,7 @@ pub(crate) async fn start(config: &config::Config) -> crate::error::Result<()> {
     let app = Router::new()
         .route("/", get(serve_landing))
         .route("/status", get(serve_status_view))
+        .route("/events", get(serve_sse))
         .with_state(app_state);
 
     log::info!("server/start - binding TCP listener to {}", addr);
@@ -209,9 +226,37 @@ async fn serve_landing(State(state): State<AppState>) -> impl IntoResponse {
 
   <footer>started {server_started}</footer>
 </div>
+<script>
+if (typeof EventSource !== 'undefined') {{
+  var es = new EventSource('/events');
+  es.onmessage = function() {{ location.reload(); }};
+  es.onerror = function() {{ setTimeout(function() {{ es.close(); }}, 5000); }};
+}}
+</script>
 </body></html>"##
     );
     (StatusCode::OK, Html(html))
+}
+
+/// Serve SSE stream for real-time updates
+async fn serve_sse(
+    State(state): State<AppState>,
+) -> Sse<impl Stream<Item = Result<Event, std::convert::Infallible>>> {
+    let mut rx = state.update_tx.subscribe();
+    let stream = async_stream::stream! {
+        loop {
+            match rx.recv().await {
+                Ok(()) => {
+                    yield Ok(Event::default().data("update"));
+                }
+                Err(broadcast::error::RecvError::Lagged(_)) => {
+                    yield Ok(Event::default().data("update"));
+                }
+                Err(broadcast::error::RecvError::Closed) => break,
+            }
+        }
+    };
+    Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
 /// Serve the status view
@@ -336,30 +381,107 @@ pub(crate) fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
     Ok(())
 }
 
-/// Format a single difference tuple into an HTML string with diff styling.
+/// Classify a difference tuple into a kind, label, and value.
 /// Returns None for "same" types and unknown codes.
-fn format_difference(type_code: &str, value: &str) -> Option<String> {
+fn classify_difference(type_code: &str, value: &str) -> Option<(DiffKind, &'static str, String)> {
     let escaped = html_escape(value);
     match RegressionType::from_code(type_code)? {
-        RegressionType::ActualCode => {
-            Some(format!(r#"<div class="diff-add">+ Actual code: {}</div>"#, escaped))
-        }
-        RegressionType::ExpectedCode => {
-            Some(format!(r#"<div class="diff-remove">- Expected code: {}</div>"#, escaped))
-        }
-        RegressionType::StderrAdd => {
-            Some(format!(r#"<div class="diff-add">+ Stderr add: {}</div>"#, escaped))
-        }
-        RegressionType::StderrRemove => {
-            Some(format!(r#"<div class="diff-remove">- Stderr remove: {}</div>"#, escaped))
-        }
-        RegressionType::StdoutAdd => {
-            Some(format!(r#"<div class="diff-add">+ Stdout add: {}</div>"#, escaped))
-        }
-        RegressionType::StdoutRemove => {
-            Some(format!(r#"<div class="diff-remove">- Stdout remove: {}</div>"#, escaped))
-        }
+        RegressionType::ActualCode => Some((DiffKind::Add, "Actual exit code", escaped)),
+        RegressionType::ExpectedCode => Some((DiffKind::Remove, "Expected exit code", escaped)),
+        RegressionType::StderrAdd => Some((DiffKind::Add, "Stderr", escaped)),
+        RegressionType::StderrRemove => Some((DiffKind::Remove, "Stderr", escaped)),
+        RegressionType::StdoutAdd => Some((DiffKind::Add, "Stdout", escaped)),
+        RegressionType::StdoutRemove => Some((DiffKind::Remove, "Stdout", escaped)),
         RegressionType::StderrSame | RegressionType::StdoutSame => None,
+    }
+}
+
+/// Diff direction
+#[derive(Debug, PartialEq)]
+enum DiffKind {
+    /// Added (actual/new)
+    Add,
+    /// Removed (expected/baseline)
+    Remove,
+}
+
+/// Format diffs into HTML with inline character highlighting.
+/// Pairs up consecutive remove/add entries and highlights changed characters.
+fn format_diffs_html(diffs: &[(String, String)]) -> Vec<String> {
+    let classified: Vec<_> = diffs
+        .iter()
+        .filter_map(|(code, value)| classify_difference(code, value))
+        .collect();
+
+    let mut result = Vec::new();
+    let mut i = 0;
+    while i < classified.len() {
+        let (kind, label, value) = &classified[i];
+        // Try to pair a remove with the next add for inline highlighting
+        if *kind == DiffKind::Remove && i + 1 < classified.len() && classified[i + 1].0 == DiffKind::Add {
+            let (_, add_label, add_value) = &classified[i + 1];
+            let (hl_old, hl_new) = highlight_diff(value, add_value);
+            result.push(format!(
+                r#"<div class="diff-pair"><div class="diff-label">{label}</div><div class="diff-remove">- expected: {hl_old}</div><div class="diff-add">+ actual:&nbsp;&nbsp; {hl_new}</div></div>"#
+            ));
+            let _ = add_label; // both labels shown via the pair
+            i += 2;
+        } else {
+            let (class, prefix) = match kind {
+                DiffKind::Add => ("diff-add", "+ actual"),
+                DiffKind::Remove => ("diff-remove", "- expected"),
+            };
+            result.push(format!(
+                r#"<div class="{class}">{prefix} ({label}): {value}</div>"#
+            ));
+            i += 1;
+        }
+    }
+    result
+}
+
+/// Highlight character-level differences between two strings.
+/// Returns (old_html, new_html) with `<mark>` around changed segments.
+fn highlight_diff(old: &str, new: &str) -> (String, String) {
+    // Find common prefix
+    let prefix_len = old
+        .chars()
+        .zip(new.chars())
+        .take_while(|(a, b)| a == b)
+        .count();
+
+    // Find common suffix (from the remaining chars after prefix)
+    let old_rest: Vec<char> = old.chars().skip(prefix_len).collect();
+    let new_rest: Vec<char> = new.chars().skip(prefix_len).collect();
+    let suffix_len = old_rest
+        .iter()
+        .rev()
+        .zip(new_rest.iter().rev())
+        .take_while(|(a, b)| a == b)
+        .count();
+
+    let old_chars: Vec<char> = old.chars().collect();
+    let new_chars: Vec<char> = new.chars().collect();
+
+    let old_mid_end = old_chars.len().saturating_sub(suffix_len);
+    let new_mid_end = new_chars.len().saturating_sub(suffix_len);
+
+    let old_prefix: String = old_chars[..prefix_len].iter().collect();
+    let old_mid: String = old_chars[prefix_len..old_mid_end].iter().collect();
+    let old_suffix: String = old_chars[old_mid_end..].iter().collect();
+
+    let new_prefix: String = new_chars[..prefix_len].iter().collect();
+    let new_mid: String = new_chars[prefix_len..new_mid_end].iter().collect();
+    let new_suffix: String = new_chars[new_mid_end..].iter().collect();
+
+    if old_mid.is_empty() && new_mid.is_empty() {
+        // Identical strings
+        (old.to_string(), new.to_string())
+    } else {
+        (
+            format!("{old_prefix}<mark>{old_mid}</mark>{old_suffix}"),
+            format!("{new_prefix}<mark>{new_mid}</mark>{new_suffix}"),
+        )
     }
 }
 
@@ -432,6 +554,9 @@ fn wrap_in_page(pattern: &str, server_started: &str, body: &str) -> String {
             line-height: 1.5; overflow-x: auto; }}
   .diff-add {{ color: #a6e3a1; }}
   .diff-remove {{ color: #f38ba8; }}
+  .diff-pair {{ margin-bottom: 6px; }}
+  .diff-label {{ color: #89b4fa; font-weight: 600; margin-bottom: 2px; }}
+  .diffs mark {{ background: rgba(255,255,100,0.3); color: inherit; padding: 0 1px; border-radius: 2px; }}
   .empty {{ padding: 16px; color: var(--muted); font-style: italic; }}
   footer {{ text-align: center; color: var(--muted); font-size: 0.8em; margin-top: 24px; }}
   footer a {{ color: var(--muted); }}
@@ -446,6 +571,11 @@ document.querySelectorAll('.section').forEach(function(s) {{
   var badge = s.querySelector('.badge');
   if (badge && badge.textContent.trim() === '0') s.classList.add('collapsed');
 }});
+if (typeof EventSource !== 'undefined') {{
+  var es = new EventSource('/events');
+  es.onmessage = function() {{ location.reload(); }};
+  es.onerror = function() {{ setTimeout(function() {{ es.close(); }}, 5000); }};
+}}
 </script>
 </body></html>"##
     )
@@ -480,11 +610,7 @@ fn categorize_runs(runs: &[TestDetails]) -> (Vec<String>, Vec<String>, Vec<Strin
 fn get_diffs(test_name: &str) -> crate::error::Result<Vec<String>> {
     log::info!("server/get_diffs test_name {}", &test_name);
     let differences = db::read_differences(test_name)?;
-    let diffs = differences
-        .iter()
-        .filter_map(|(code, value)| format_difference(code, value))
-        .collect();
-    Ok(diffs)
+    Ok(format_diffs_html(&differences))
 }
 
 #[cfg(test)]
@@ -492,56 +618,60 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_format_difference_actual_code() {
-        let result = format_difference("1", "42").unwrap();
-        assert!(result.contains("diff-add"));
-        assert!(result.contains("+ Actual code: 42"));
+    fn test_classify_difference_known_types() {
+        let (kind, label, _) = classify_difference("1", "42").unwrap();
+        assert_eq!(kind, DiffKind::Add);
+        assert_eq!(label, "Actual exit code");
+
+        let (kind, label, _) = classify_difference("2", "0").unwrap();
+        assert_eq!(kind, DiffKind::Remove);
+        assert_eq!(label, "Expected exit code");
     }
 
     #[test]
-    fn test_format_difference_expected_code() {
-        let result = format_difference("2", "0").unwrap();
-        assert!(result.contains("diff-remove"));
-        assert!(result.contains("- Expected code: 0"));
+    fn test_classify_difference_skips_same() {
+        assert!(classify_difference("5", "same").is_none());
+        assert!(classify_difference("8", "same").is_none());
     }
 
     #[test]
-    fn test_format_difference_stderr() {
-        let result = format_difference("3", "err").unwrap();
-        assert!(result.contains("diff-add"));
-        assert!(result.contains("+ Stderr add: err"));
-        let result = format_difference("4", "old").unwrap();
-        assert!(result.contains("diff-remove"));
-        assert!(result.contains("- Stderr remove: old"));
+    fn test_classify_difference_unknown() {
+        assert!(classify_difference("99", "data").is_none());
+        assert!(classify_difference("abc", "data").is_none());
     }
 
     #[test]
-    fn test_format_difference_stdout() {
-        let result = format_difference("6", "new").unwrap();
-        assert!(result.contains("diff-add"));
-        assert!(result.contains("+ Stdout add: new"));
-        let result = format_difference("7", "old").unwrap();
-        assert!(result.contains("diff-remove"));
-        assert!(result.contains("- Stdout remove: old"));
+    fn test_classify_difference_escapes_html() {
+        let (_, _, value) = classify_difference("6", "<b>xss</b>").unwrap();
+        assert!(value.contains("&lt;b&gt;"));
+        assert!(!value.contains("<b>xss"));
     }
 
     #[test]
-    fn test_format_difference_escapes_html() {
-        let result = format_difference("6", "<script>alert('xss')</script>").unwrap();
-        assert!(result.contains("&lt;script&gt;"));
-        assert!(!result.contains("<script>alert"));
+    fn test_format_diffs_html_pairs_remove_add() {
+        let diffs = vec![
+            ("7".to_string(), "old_value".to_string()),
+            ("6".to_string(), "new_value".to_string()),
+        ];
+        let result = format_diffs_html(&diffs);
+        assert_eq!(result.len(), 1);
+        assert!(result[0].contains("diff-pair"));
+        assert!(result[0].contains("expected"));
+        assert!(result[0].contains("actual"));
     }
 
     #[test]
-    fn test_format_difference_skips_same() {
-        assert_eq!(format_difference("5", "same"), None);
-        assert_eq!(format_difference("8", "same"), None);
+    fn test_highlight_diff_marks_changed_chars() {
+        let (old_html, new_html) = highlight_diff("abc123def", "abc456def");
+        assert!(old_html.contains("<mark>123</mark>"));
+        assert!(new_html.contains("<mark>456</mark>"));
     }
 
     #[test]
-    fn test_format_difference_unknown() {
-        assert_eq!(format_difference("99", "data"), None);
-        assert_eq!(format_difference("abc", "data"), None);
+    fn test_highlight_diff_identical() {
+        let (old_html, new_html) = highlight_diff("same", "same");
+        assert!(!old_html.contains("<mark>"));
+        assert!(!new_html.contains("<mark>"));
     }
 
     #[test]
