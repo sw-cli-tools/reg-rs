@@ -28,6 +28,12 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 - External file locking for concurrent access
 - `list` subcommand for quick test enumeration with status
 - `show` subcommand with verbosity levels for test details, baselines, and diffs
+- `.rgt` text format: TOML-based test specs with `.out`/`.err` baselines (git-friendly)
+- `migrate` subcommand: converts `.tdb` → `.rgt`+`.out`+`.err`
+- `rebase` subcommand: accepts latest output as new baseline
+- `reset` subcommand: clears `.tdb` cache while preserving baselines
+- `complete` subcommand: outputs test names for shell tab-completion
+- Shell aliases (`bin/source-rg.sh`): `rnrg`, `lsrg`, `shrg`, `uprg`, etc.
 - `bin/regress` wrapper script for ergonomic usage
 - Conditional debug output (-d flag)
 - File-based logging (-l flag)
@@ -39,7 +45,6 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 - **Non-atomic operations** (runner.rs): Clear + store of latest results is two transactions; crash between them loses data
 
 #### Medium Priority
-- **No `show` subcommand**: Cannot view stored test commands without using sqlite3 directly (see docs/gaps.md)
 - **Substring-only pattern matching**: `-p` uses literal substring match, not regex/glob
 - **Inconsistent error types**: command.rs uses Box<dyn Error>, lower layers use RegError
 - **No exit codes**: reg-rs always returns 0 even when regressions are detected
@@ -90,12 +95,22 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 - [ ] Store timing data in database (duration, timeout status)
 - [ ] Report timing information at appropriate verbosity levels
 
-### Phase 4: Smarter Diff and Golden File Management *(partially complete)*
+### Phase 4: Smarter Diff and Golden File Management *(mostly complete)*
 
 - [x] Output preprocessing (`--preprocess` flag for external commands)
 - [x] Built-in diff modes (text, json key sorting, lines-unordered)
+- [x] `.rgt` text format with `.out`/`.err` baselines (git-friendly)
+- [x] `migrate` subcommand (`.tdb` → `.rgt`+`.out`+`.err`)
+- [x] `rebase` subcommand (accept latest output as new baseline)
+- [x] `reset` subcommand (clear `.tdb` cache)
 - [ ] Regex-based diff exclusion patterns
 - [ ] Recovery mechanism for corrupt or inconsistent test databases
+
+### Phase 4.5: Shell Integration *(complete)*
+
+- [x] Shell aliases (`bin/source-rg.sh`)
+- [x] `complete` subcommand for tab-completion
+- [x] zsh and bash completion support
 
 ### Phase 5: Web Dashboard *(complete)*
 
