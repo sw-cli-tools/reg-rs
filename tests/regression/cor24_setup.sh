@@ -18,6 +18,7 @@ set -euo pipefail
 REG_RS_BIN="${REG_RS_BIN:-./target/debug/reg-rs}"
 COR24_DIR="${COR24_DIR:-$HOME/github/sw-embed/cor24-rs}"
 export REG_RS_DATA_DIR="${REG_RS_DATA_DIR:-./work/reg-rs/cor24-tests}"
+export RUST_LOG="${RUST_LOG:-warn}"
 
 DBG="$COR24_DIR/target/debug/cor24-dbg"
 RUN="$COR24_DIR/rust-to-cor24/target/release/cor24-run"
@@ -40,7 +41,7 @@ if [ ! -x "$RUN" ]; then
   exit 1
 fi
 
-echo "Creating cor24-rs regression tests..."
+echo "=== cor24-rs Regression Tests ==="
 echo "  reg-rs:    $REG_RS_BIN"
 echo "  cor24-dbg: $DBG"
 echo "  cor24-run: $RUN"
@@ -60,10 +61,9 @@ create_test() {
 # Assembler demos via cor24-dbg (piped stdin commands)
 # ============================================================
 
+echo "--- Creating tests ---"
+
 # TEST: Hello World — basic UART output
-# EXPECTS: "Hello, World!" in UART buffer, CPU halts after 93 instructions
-# FLAKY: No — deterministic execution of fixed program
-# FAILURE CAUSES: Emulator instruction execution, UART peripheral, halt detection
 create_test "cor24_hello_world" \
   "$DBG $PROGRAMS/hello_world.lgo <<'CMDS'
 run 1000
@@ -76,9 +76,6 @@ CMDS" \
   --expects "UART buffer contains 'Hello, World!' after 93 instructions"
 
 # TEST: Count Down — UART numeric output
-# EXPECTS: "54321" in UART buffer, CPU halts after 36 instructions
-# FLAKY: No — deterministic loop counting
-# FAILURE CAUSES: Loop logic, UART write, decrement/branch instructions
 create_test "cor24_count_down" \
   "$DBG $PROGRAMS/count_down.lgo <<'CMDS'
 run 1000
@@ -91,9 +88,6 @@ CMDS" \
   --expects "UART buffer contains '54321' after 36 instructions"
 
 # TEST: LED Blink — hardware I/O peripherals
-# EXPECTS: "LLLLL" UART output, LED D2 OFF at end
-# FLAKY: No — deterministic I/O register toggling
-# FAILURE CAUSES: LED peripheral, I/O memory mapping, UART output
 create_test "cor24_led_blink" \
   "$DBG $PROGRAMS/led_blink.lgo <<'CMDS'
 run 10000
@@ -107,9 +101,6 @@ CMDS" \
   --expects "UART contains 'LLLLL', LED D2 OFF, CPU halted after 1577 instructions"
 
 # TEST: Count Down with breakpoints and stepping
-# EXPECTS: Disassembly, breakpoint hit, register values, "54321" UART
-# FLAKY: No — deterministic debugger interaction
-# FAILURE CAUSES: Breakpoint logic, disassembler, register display, continue command
 create_test "cor24_debug_session" \
   "$DBG $PROGRAMS/count_down.lgo <<'CMDS'
 disas 0 14
@@ -129,9 +120,6 @@ CMDS" \
   --expects "Disassembly output, breakpoint hit at 0x0B, r1 value, UART '54321'"
 
 # TEST: Disassembly of hello_world
-# EXPECTS: Stable instruction disassembly for the hello_world program
-# FLAKY: No — disassembly is deterministic
-# FAILURE CAUSES: Disassembler formatting, instruction decoding
 create_test "cor24_disassembly" \
   "$DBG $PROGRAMS/hello_world.lgo <<'CMDS'
 disas 0 20
@@ -143,9 +131,6 @@ CMDS" \
   --expects "20 disassembled instructions with addresses and mnemonics"
 
 # TEST: Sieve of Eratosthenes — compute-intensive benchmark
-# EXPECTS: "1000 iterations" UART output, stops after 1M instruction limit
-# FLAKY: No — deterministic execution with fixed instruction limit
-# FAILURE CAUSES: Branch instructions, memory operations, instruction counter
 SIEVE_LGO="$COR24_DIR/docs/research/asld24/sieve.lgo"
 if [ -f "$SIEVE_LGO" ]; then
   create_test "cor24_sieve" \
@@ -164,14 +149,9 @@ fi
 
 # ============================================================
 # Rust pipeline demos via cor24-run (headless emulator)
-# Uses pre-compiled .cor24.s assembly files — no Rust compilation
-# needed. Tests the assembler + emulator, not the Rust compiler.
 # ============================================================
 
 # TEST: Rust demo_add — arithmetic result in registers
-# EXPECTS: r2 = 0x6C (108 = 42+66), 12 instructions, halted
-# FLAKY: No — deterministic arithmetic
-# FAILURE CAUSES: ALU operations, register file, program loading
 create_test "cor24_rust_add" \
   "$RUN --run $DEMOS/demo_add/demo_add.cor24.s --dump --speed 0 --time 5 2>&1" \
   --timeout 15 \
@@ -179,9 +159,6 @@ create_test "cor24_rust_add" \
   --expects "r2=0x6C (108), 12 instructions, halted"
 
 # TEST: Rust demo_uart_hello — UART output from Rust program
-# EXPECTS: UART TX log contains "Hello\n", 79 instructions
-# FLAKY: No — deterministic UART writes
-# FAILURE CAUSES: UART peripheral, Rust runtime init, string handling
 create_test "cor24_rust_uart_hello" \
   "$RUN --run $DEMOS/demo_uart_hello/demo_uart_hello.cor24.s --dump --speed 0 --time 5 2>&1" \
   --timeout 15 \
@@ -189,9 +166,6 @@ create_test "cor24_rust_uart_hello" \
   --expects "UART TX log shows 'Hello', 79 instructions, halted"
 
 # TEST: Rust demo_fibonacci — recursive computation
-# EXPECTS: LED register shows fibonacci result, 4764 instructions
-# FLAKY: No — deterministic recursion
-# FAILURE CAUSES: Stack operations, function calls, recursion depth
 create_test "cor24_rust_fibonacci" \
   "$RUN --run $DEMOS/demo_fibonacci/demo_fibonacci.cor24.s --dump --speed 0 --time 5 2>&1" \
   --timeout 15 \
@@ -199,18 +173,38 @@ create_test "cor24_rust_fibonacci" \
   --expects "LED shows result (0x59), 4764 instructions, halted"
 
 # TEST: Rust demo_countdown — loop with UART output
-# EXPECTS: 80332 instructions, halted, countdown via UART-mapped I/O
-# FLAKY: No — deterministic loop execution
-# FAILURE CAUSES: Loop control flow, branch instructions, memory-mapped I/O
 create_test "cor24_rust_countdown" \
   "$RUN --run $DEMOS/demo_countdown/demo_countdown.cor24.s --dump --speed 0 --time 5 2>&1" \
   --timeout 15 \
   --desc "Rust pipeline: countdown loop" \
   --expects "80332 instructions, halted"
 
+# ============================================================
+# Run tests and report
+# ============================================================
+
 echo ""
-echo "Done! Created $(ls "$REG_RS_DATA_DIR"/*.tdb 2>/dev/null | wc -l | tr -d ' ') regression tests"
+echo "--- Running tests ---"
+"$REG_RS_BIN" run -p cor24
+
 echo ""
-echo "Run:     REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN run -p cor24"
-echo "Report:  REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN report -p cor24 -vvv"
-echo "Analyze: REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN analyze -p cor24"
+echo "--- Report ---"
+REPORT=$("$REG_RS_BIN" report -p cor24 -v)
+echo "$REPORT"
+
+FAILED=$(echo "$REPORT" | grep -o '[0-9]* failed' | head -1 | grep -o '[0-9]*' | sed 's/^0*//')
+PASSED=$(echo "$REPORT" | grep -o '[0-9]* passed' | head -1 | grep -o '[0-9]*' | sed 's/^0*//')
+
+echo ""
+if [ "${FAILED:-0}" -gt 0 ]; then
+    echo "=== FAILED: ${FAILED} cor24 test(s) failed ==="
+    echo ""
+    echo "To see diffs:   REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN show -p cor24 -vv"
+    echo "To rebase:      REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN rebase -p cor24"
+    exit 1
+elif [ "${PASSED:-0}" -eq 0 ]; then
+    echo "=== ERROR: No tests were run ==="
+    exit 2
+else
+    echo "=== PASSED: All ${PASSED} cor24 test(s) passed ==="
+fi

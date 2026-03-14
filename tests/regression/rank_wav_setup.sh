@@ -28,6 +28,7 @@ set -euo pipefail
 REG_RS_BIN="${REG_RS_BIN:-./target/debug/reg-rs}"
 RANK_WAV_BIN="${RANK_WAV_BIN:-$HOME/github/sw-cli-tools/rank-wav-rs/target/debug/rank-wav}"
 export REG_RS_DATA_DIR="${REG_RS_DATA_DIR:-./work/reg-rs/rank-wav-tests}"
+export RUST_LOG="${RUST_LOG:-warn}"
 WAVS_DIR="$REG_RS_DATA_DIR/wavs"
 WAVS_SUB="$WAVS_DIR/sub"
 
@@ -47,7 +48,7 @@ if ! command -v sox &>/dev/null; then
   exit 1
 fi
 
-echo "Creating rank-wav regression tests..."
+echo "=== rank-wav Regression Tests ==="
 echo "  reg-rs:    $REG_RS_BIN"
 echo "  rank-wav:  $RANK_WAV_BIN"
 echo "  data dir:  $REG_RS_DATA_DIR"
@@ -55,27 +56,22 @@ echo "  wavs dir:  $WAVS_DIR"
 echo ""
 
 # ============================================================
-# Generate test WAV fixtures (once — persist between runs)
+# Generate test WAV fixtures
 # ============================================================
 
-echo "Generating WAV test fixtures..."
+echo "--- Generating WAV test fixtures ---"
 
-# Pure sine waves at different frequencies
 sox -n -r 44100 -b 16 "$WAVS_DIR/sine_220hz.wav" synth 0.5 sine 220 2>/dev/null
 sox -n -r 44100 -b 16 "$WAVS_DIR/sine_440hz.wav" synth 0.5 sine 440 2>/dev/null
 sox -n -r 44100 -b 16 "$WAVS_DIR/sine_880hz.wav" synth 0.5 sine 880 2>/dev/null
-
-# White noise
 sox -n -r 44100 -b 16 "$WAVS_DIR/noise.wav" synth 0.5 whitenoise 2>/dev/null
-
-# A file in a subdirectory (for recursive scan tests)
 sox -n -r 44100 -b 16 "$WAVS_SUB/deep_tone.wav" synth 0.5 sine 110 2>/dev/null
 
 echo "  Created $(find "$WAVS_DIR" -name '*.wav' | wc -l | tr -d ' ') WAV files"
 echo ""
 
 # ============================================================
-# Helper
+# Create tests
 # ============================================================
 
 create_test() {
@@ -89,106 +85,61 @@ create_test() {
 R="$RANK_WAV_BIN"
 W="$WAVS_DIR"
 
-# Preprocess: normalize the wavs directory path so the absolute path
-# doesn't cause false failures on different machines or data dirs.
 NORM_PATH="sed 's|$WAVS_DIR|<WAVS>|g; s|$WAVS_SUB|<WAVS>/sub|g'"
 
-# ============================================================
-# Text output tests
-# ============================================================
+echo "--- Creating tests ---"
 
-# TEST: Help text is stable
-# EXPECTS: Usage line, flag list
-# FLAKY: No
-# FAILURE CAUSES: CLI arg change, clap version bump
+# Text output tests
 create_test "rank_wav_help" \
   "$R --help 2>&1" \
   --timeout 10 \
   --desc "Help text is stable" \
   --expects "Usage line, flag list"
 
-# TEST: Version format
-# EXPECTS: "Version: X.Y.Z" with masked version, hash, date
-# FLAKY: No after masking
-# FAILURE CAUSES: version format change, copyright change
 create_test "rank_wav_version_format" \
   "$R --version 2>&1 | sed 's/[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*/X.Y.Z/g; s/[0-9a-f]\\{7,\\}/HASH/g; s/[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}T[0-9:+.]*)/DATETIME)/g'" \
   --timeout 10 \
   --desc "Version string format (volatile parts masked)" \
   --expects "Version: X.Y.Z with masked hash and build date"
 
-# ============================================================
-# Table output tests (default pleasing sort)
-# ============================================================
-
-# TEST: Default table output with 4 WAV files
-# EXPECTS: Table with 4 rows, ranked by pleasing score
-# FLAKY: No — same WAV files, same binary
-# FAILURE CAUSES: scoring formula change, table format change, metric computation change
+# Table output tests
 create_test "rank_wav_table_default" \
   "$R $W 2>&1" \
   --timeout 10 \
   --desc "Default table output (4 files, pleasing sort)" \
   --expects "4-row table ranked by pleasing score"
 
-# TEST: Table output with best sort
-# EXPECTS: Table with 4 rows, different ranking order
-# FLAKY: No
-# FAILURE CAUSES: best scoring formula change
 create_test "rank_wav_table_best" \
   "$R $W -s best 2>&1" \
   --timeout 10 \
   --desc "Table output with best sort mode" \
   --expects "4-row table ranked by best score"
 
-# TEST: Extended metrics table
-# EXPECTS: Table with additional columns (Rolloff, Flatness, Crest)
-# FLAKY: No
-# FAILURE CAUSES: extended metric computation change, column format change
 create_test "rank_wav_table_extended" \
   "$R $W -e 2>&1" \
   --timeout 10 \
   --desc "Extended metrics table (rolloff, flatness, crest)" \
   --expects "4-row table with extra columns"
 
-# TEST: Recursive scan finds subdirectory files
-# EXPECTS: Table with 5 rows (4 in root + 1 in sub/)
-# FLAKY: No
-# FAILURE CAUSES: recursive traversal change, walkdir behavior change
 create_test "rank_wav_recursive" \
   "$R $W -r 2>&1" \
   --timeout 10 \
   --desc "Recursive scan finds files in subdirectories" \
   --expects "5-row table including sub/deep_tone.wav"
 
-# TEST: File count difference between recursive and non-recursive
-# EXPECTS: "non_recursive=4 recursive=5"
-# FLAKY: No
-# FAILURE CAUSES: recursive flag broken, file discovery change
 create_test "rank_wav_recursive_count" \
   "echo non_recursive=\$($R $W 2>&1 | grep -c '|.*wav.*|') recursive=\$($R $W -r 2>&1 | grep -c '|.*wav.*|')" \
   --timeout 10 \
   --desc "Recursive scan finds more files than non-recursive" \
   --expects "non_recursive=4 recursive=5"
 
-# ============================================================
 # JSON output tests
-# ============================================================
-
-# TEST: JSON output structure (key count, not values)
-# EXPECTS: Valid JSON array with 4 entries, specific keys present
-# FLAKY: No
-# FAILURE CAUSES: JSON schema change, field rename, field add/remove
 create_test "rank_wav_json_keys" \
   "$R $W --json 2>&1 | python3 -c \"import sys,json; d=json.load(sys.stdin); print('count='+str(len(d))); print('keys='+','.join(sorted(d[0].keys())))\"" \
   --timeout 10 \
   --desc "JSON output has expected structure (field names, count)" \
   --expects "count=4 and list of field names"
 
-# TEST: JSON output scores match table (spot check)
-# EXPECTS: Pleasing scores from JSON match table
-# FLAKY: No
-# FAILURE CAUSES: scoring inconsistency between output modes
 create_test "rank_wav_json_scores" \
   "$R $W --json 2>&1 | python3 -c \"import sys,json; d=json.load(sys.stdin); [print(f'{e[\\\"path\\\"].split(\\\"/\\\")[-1]}:{e[\\\"pleasing_score\\\"]:.3f}') for e in sorted(d, key=lambda x: -x['pleasing_score'])]\"" \
   --timeout 10 \
@@ -196,24 +147,13 @@ create_test "rank_wav_json_scores" \
   --desc "JSON pleasing scores (sorted, 3 decimal places)" \
   --expects "filename:score pairs matching table output"
 
-# TEST: JSON with extended metrics includes extra fields
-# EXPECTS: JSON has spectral_rolloff, spectral_flatness, crest_factor
-# FLAKY: No
-# FAILURE CAUSES: extended metric field rename or removal
 create_test "rank_wav_json_extended" \
   "$R $W --json -e 2>&1 | python3 -c \"import sys,json; d=json.load(sys.stdin); ext=['spectral_rolloff','spectral_flatness','crest_factor']; print('extended_keys=' + ','.join(k for k in ext if k in d[0]))\"" \
   --timeout 10 \
   --desc "JSON extended metrics include extra fields" \
   --expects "extended_keys=spectral_rolloff,spectral_flatness,crest_factor"
 
-# ============================================================
 # Edge case tests
-# ============================================================
-
-# TEST: Empty directory
-# EXPECTS: "No WAV files found" message
-# FLAKY: No
-# FAILURE CAUSES: empty-dir handling change
 create_test "rank_wav_empty_dir" \
   "D=\$(mktemp -d) && $R \"\$D\" 2>&1; echo exit=\$?; rm -rf \"\$D\"" \
   --timeout 10 \
@@ -221,42 +161,51 @@ create_test "rank_wav_empty_dir" \
   --desc "Empty directory produces 'No WAV files found'" \
   --expects "No WAV files found message, exit=0"
 
-# TEST: Nonexistent directory
-# EXPECTS: Error message, exit 1
-# FLAKY: No
-# FAILURE CAUSES: error handling change
 create_test "rank_wav_nonexistent_dir" \
   "$R /nonexistent_dir_xyz 2>&1; echo exit=\$?" \
   --timeout 10 \
   --desc "Nonexistent directory produces error" \
   --expects "Error: Directory does not exist, exit=1"
 
-# ============================================================
-# Sort order verification
-# ============================================================
-
-# TEST: Pleasing sort ranks low-freq sine highest
-# EXPECTS: First file in pleasing sort is a low-frequency sine
-# FLAKY: No
-# FAILURE CAUSES: pleasing scoring formula change
+# Sort order tests
 create_test "rank_wav_pleasing_rank_order" \
   "$R $W 2>&1 | grep '| 1 |'" \
   --timeout 10 \
   --desc "Pleasing sort ranks low-frequency sine highest" \
   --expects "Row 1 contains sine_220hz.wav"
 
-# TEST: Noise always ranks last in pleasing
-# EXPECTS: noise.wav is rank 4 (last)
-# FLAKY: No
-# FAILURE CAUSES: pleasing scoring formula change
 create_test "rank_wav_noise_ranks_last" \
   "$R $W 2>&1 | grep '| 4 |'" \
   --timeout 10 \
   --desc "Noise ranks last in pleasing sort" \
   --expects "Row 4 contains noise.wav"
 
+# ============================================================
+# Run tests and report
+# ============================================================
+
 echo ""
-echo "Done! Created $(ls "$REG_RS_DATA_DIR"/*.tdb 2>/dev/null | wc -l | tr -d ' ') regression tests"
+echo "--- Running tests ---"
+"$REG_RS_BIN" run -p rank_wav --parallel
+
 echo ""
-echo "Run:     REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN run -p rank_wav --parallel"
-echo "Report:  REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN report -p rank_wav -vvv"
+echo "--- Report ---"
+REPORT=$("$REG_RS_BIN" report -p rank_wav -v)
+echo "$REPORT"
+
+FAILED=$(echo "$REPORT" | grep -o '[0-9]* failed' | head -1 | grep -o '[0-9]*' | sed 's/^0*//')
+PASSED=$(echo "$REPORT" | grep -o '[0-9]* passed' | head -1 | grep -o '[0-9]*' | sed 's/^0*//')
+
+echo ""
+if [ "${FAILED:-0}" -gt 0 ]; then
+    echo "=== FAILED: ${FAILED} rank-wav test(s) failed ==="
+    echo ""
+    echo "To see diffs:   REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN show -p rank_wav -vv"
+    echo "To rebase:      REG_RS_DATA_DIR=$REG_RS_DATA_DIR $REG_RS_BIN rebase -p rank_wav"
+    exit 1
+elif [ "${PASSED:-0}" -eq 0 ]; then
+    echo "=== ERROR: No tests were run ==="
+    exit 2
+else
+    echo "=== PASSED: All ${PASSED} rank-wav test(s) passed ==="
+fi
