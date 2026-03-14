@@ -11,9 +11,23 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 - Run tests against baseline with diff detection
 - Report results at 4 verbosity levels (summary, names, failures, diffs)
 - Remove tests by pattern
-- Web-based status server with file-system monitoring (Axum/Tokio)
+- Parallel test execution (`--parallel` flag)
+- Auto-discovery of data directory (`./work/reg-rs/` → cwd → `~/.local/reg-rs/`)
+- Optional `-p` pattern (defaults to all tests); tests run in alphabetical order
+- Output preprocessing (`--preprocess` flag) and diff modes (text, json, lines-unordered)
+- AI-powered test creation (`--describe` flag) and failure analysis (`analyze` subcommand)
+- Self-documenting test metadata (`--desc`, `--expects`, `--flaky-note`)
+- Web-based status dashboard with real-time SSE updates
+  - Landing page with summary counts and status indicator
+  - Status dashboard with collapsible sections, colored indicators, nav links
+  - Character-level diff highlighting for failed tests
+  - Automatic DOM updates via Server-Sent Events (no manual refresh)
+  - SSE event counter displayed in footer
+  - JSON API endpoint (`/api/status`) for programmatic access
 - SQLite storage per test (.tdb files)
 - External file locking for concurrent access
+- `list` subcommand for quick test enumeration with status
+- `bin/regress` wrapper script for ergonomic usage
 - Conditional debug output (-d flag)
 - File-based logging (-l flag)
 
@@ -21,58 +35,77 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 
 #### High Priority
 - **Race condition in test execution** (runner.rs): Read-execute-store sequence is not atomic; concurrent runs can corrupt results
-- **Lock contention in status server** (server.rs): Mutex held during filesystem walks and DB reads blocks HTTP handler
-- **Panics crash server** (monitor.rs): panic!() on mutex poison kills the entire status server process
-- **No command timeout** (process.rs): Hanging test commands block indefinitely and hold DB locks
 - **Non-atomic operations** (runner.rs): Clear + store of latest results is two transactions; crash between them loses data
 
 #### Medium Priority
-- **Hardcoded data directory** (finder.rs): Tests must live in ./data/ -- TODO to use cwd or make configurable
+- **No `show` subcommand**: Cannot view stored test commands without using sqlite3 directly (see docs/gaps.md)
+- **Substring-only pattern matching**: `-p` uses literal substring match, not regex/glob
 - **Inconsistent error types**: command.rs uses Box<dyn Error>, lower layers use RegError
 - **No exit codes**: reg-rs always returns 0 even when regressions are detected
 - **No command execution timing**: Test duration is not measured or stored
-- **Empty pattern matches everything**: Undocumented behavior in finder.rs
 
 #### Low Priority
 - **Double template render** (queries.rs): Template rendered twice when debug mode is on
 - **No validation of test inputs**: Empty test names/commands are accepted
-- **Version TBD in status view** (templates/views.rs)
+
+### Recently Resolved
+- ~~Hardcoded data directory~~: Auto-discovery now checks `$REG_RS_DATA_DIR` → `./work/reg-rs/` → cwd → `~/.local/reg-rs/`
+- ~~Pattern required on all commands~~: `-p` now defaults to `.tdb` (match all)
+- ~~Panics crash server~~: Monitor thread uses graceful error recovery
+- ~~No command timeout~~: `--timeout` flag added to process execution
+- ~~Lock contention in status server~~: Lock scope reduced, SSE uses broadcast channel
+- ~~Unhelpful error messages~~: Data directory path included in "no tests matched" warnings
+- ~~No real-time web updates~~: SSE pushes updates, JS swaps DOM without reload
 
 ---
 
 ## Future Roadmap
 
-### Phase 1: Reliability and Polish
+### Phase 1: Reliability and Polish *(mostly complete)*
 
-- Fix non-atomic database operations (wrap clear+store in single transaction)
-- Add command execution timeout with configurable watchdog
-- Replace panics in monitor thread with graceful error recovery
-- Reduce lock contention in status server (read state outside lock, update inside)
-- Add meaningful exit codes (0=all pass, 1=regressions found, 2=error)
-- Make data directory configurable (--data-dir flag or env var)
-- Standardize on RegError throughout (remove Box<dyn Error> from public API)
+- [x] Add command execution timeout with configurable watchdog
+- [x] Replace panics in monitor thread with graceful error recovery
+- [x] Reduce lock contention in status server
+- [x] Make data directory auto-discoverable
+- [x] Default pattern to match all tests
+- [ ] Fix non-atomic database operations (wrap clear+store in single transaction)
+- [ ] Add meaningful exit codes (0=all pass, 1=regressions found, 2=error)
+- [ ] Standardize on RegError throughout (remove Box<dyn Error> from public API)
+- [ ] Add `show` subcommand to view stored test commands and metadata
+- [x] Add `list` subcommand for quick test enumeration
 
-### Phase 2: Dogfooding and Self-Testing
+### Phase 2: Dogfooding and Self-Testing *(complete)*
 
-- Create regression tests for reg-rs's own CLI output (help, version, subcommands)
-- Generate VHS demo GIFs and link from README.md
-- Add self-test Makefile target or script
-- Document self-testing workflow as a usage example
+- [x] Create regression tests for reg-rs's own CLI output
+- [x] Generate VHS demo GIFs and link from README.md
+- [x] Demo scripts run as part of `cargo test`
+- [x] Document self-testing workflow
+- [x] Regression test suites for external projects (pjmai-rs, favicon, rank-wav)
 
-### Phase 3: Parallel Execution and Timing
+### Phase 3: Parallel Execution and Timing *(partially complete)*
 
-- Run tests in parallel (configurable thread pool)
-- Measure and store test execution duration
-- Add timeout per test (--timeout flag)
-- Store timing data in database (duration, timeout status)
-- Report timing information at appropriate verbosity levels
+- [x] Run tests in parallel (`--parallel` flag)
+- [ ] Measure and store test execution duration
+- [ ] Store timing data in database (duration, timeout status)
+- [ ] Report timing information at appropriate verbosity levels
 
-### Phase 4: Smarter Diff and Golden File Management
+### Phase 4: Smarter Diff and Golden File Management *(partially complete)*
 
-- Add mechanism to ignore allowed differences (timestamps, durations, paths)
-- Regex-based diff exclusion patterns
-- Support for ordered vs unordered output comparison
-- Recovery mechanism for corrupt or inconsistent test databases
+- [x] Output preprocessing (`--preprocess` flag for external commands)
+- [x] Built-in diff modes (text, json key sorting, lines-unordered)
+- [ ] Regex-based diff exclusion patterns
+- [ ] Recovery mechanism for corrupt or inconsistent test databases
+
+### Phase 5: Web Dashboard *(complete)*
+
+- [x] Landing page with summary counts and status indicator
+- [x] Status dashboard with collapsible sections, colored stat cards, nav links
+- [x] Character-level diff highlighting (expected vs actual with `<mark>` tags)
+- [x] Real-time updates via Server-Sent Events (no manual refresh)
+- [x] SSE event counter in footer
+- [x] JSON API endpoint (`/api/status`)
+- [x] Accessible design (shapes + colors for colorblind users)
+- [ ] Yew/WASM frontend (see docs/plan-yew-frontend.md — possible future feature)
 
 ---
 

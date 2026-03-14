@@ -54,6 +54,12 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 
 *reg-rs tests its own CLI help output for regressions. Generate with `vhs demo/dogfood.tape`.*
 
+### Web Status Dashboard
+
+![Web Status Dashboard](images/web-screen.png?ts=1773373732623)
+
+*Live status dashboard showing 21 tests across multiple suites — failures with character-level diff highlighting, passing tests, and pending tests. Updates in real time via SSE.*
+
 ## Installation
 
 ### Requirements
@@ -76,19 +82,29 @@ cargo build --release
 
 ## Quick Start
 
-Tests are stored in `~/.local/reg-rs/` by default. Override with `REG_RS_DATA_DIR`.
+Tests are stored as `.tdb` files. reg-rs auto-discovers them by checking (in order):
+
+1. `$REG_RS_DATA_DIR` (if set)
+2. `./work/reg-rs/` (if it exists)
+3. Current directory (if it contains `.tdb` files)
+4. `~/.local/reg-rs/` (default)
+
+The `-p` pattern flag is optional — omit it to run all tests.
 
 ```bash
 # 1. Create a test that captures the output of a command
 reg-rs create -t my_test -c "echo hello world"
 
-# 2. Run the test again to check for regressions (use pattern matching)
+# 2. Run all tests (auto-discovers data dir, matches all)
+reg-rs run
+
+# 3. Run specific tests by pattern
 reg-rs run -p my_test
 
-# 3. View the test results
-reg-rs report -p my_test -v
+# 4. View test results
+reg-rs report -v
 
-# 4. If you modify the expected behavior, remove and recreate the test
+# 5. If you modify the expected behavior, remove and recreate
 reg-rs remove -p my_test
 reg-rs create -t my_test -c "echo hello world"
 ```
@@ -276,6 +292,14 @@ bash demo/test_workflow.sh
 The demo scripts accept `REG_RS_BIN` to use a specific binary (integration tests use the debug build automatically).
 
 After making CLI changes, run `cargo test` to check if any help text changed unexpectedly. If the change was intentional, re-create the baselines with `demo/dogfood.sh`.
+
+## Known Gaps
+
+See [docs/gaps.md](docs/gaps.md) for known limitations and proposed fixes, including:
+
+- No way to view or edit stored test commands (need a `show` subcommand)
+- Pattern matching is substring-only (not regex/glob)
+- No auto-discovery of project-local data directory
 
 ## License
 

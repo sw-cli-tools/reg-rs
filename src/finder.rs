@@ -49,7 +49,7 @@ pub struct DiscoverResult {
 fn discover_in(dir: &std::path::Path, pattern: &str) -> crate::error::Result<TestNames> {
     // Canonicalize to resolve symlinks (e.g., /var -> /private/var on macOS)
     let dir = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
-    let found: Vec<String> = WalkDir::new(&dir)
+    let mut found: Vec<String> = WalkDir::new(&dir)
         .into_iter()
         .filter_entry(|e| !is_hidden(e))
         .filter_map(|e| e.ok())
@@ -58,6 +58,7 @@ fn discover_in(dir: &std::path::Path, pattern: &str) -> crate::error::Result<Tes
             path.contains(pattern) && path.ends_with(&format!(".{}", crate::TDB_EXTENSION))
         })
         .collect();
+    found.sort();
     log::debug!("finder/discover_in found {:?}", &found);
     Ok(TestNames { found })
 }

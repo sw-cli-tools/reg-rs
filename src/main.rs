@@ -17,6 +17,9 @@ async fn main() -> Result<(), RegError> {
         args::Subcommands::Create { .. } => {
             command::create_original(&config)?;
         }
+        args::Subcommands::List { .. } => {
+            command::list_tests(&config)?;
+        }
         args::Subcommands::Remove { .. } => {
             command::remove_all(&config)?;
         }

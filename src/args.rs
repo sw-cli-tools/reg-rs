@@ -107,8 +107,29 @@ EXAMPLES:
   reg-rs a -p failing_test"
     )]
     Analyze {
-        /// Substring pattern to match test names to analyze
-        #[clap(long, short)]
+        /// Substring pattern to match test names to analyze (default: all)
+        #[clap(long, short, default_value = ".tdb")]
+        pattern: String,
+    },
+    /// Lists tests matching a pattern with their command and status (alias l)
+    #[clap(
+        name = "list",
+        alias = "l",
+        long_about = "Lists all tests matching a pattern with their name, command, and status.
+
+STATUS VALUES:
+  PASS     - Latest run matched baseline
+  FAIL     - Latest run differs from baseline
+  pending  - Test created but never run
+
+EXAMPLES:
+  reg-rs list                        # list all tests
+  reg-rs list -p my_test             # list matching tests
+  reg-rs l -p pjmai                  # using alias"
+    )]
+    List {
+        /// Substring pattern to match test names (default: all)
+        #[clap(long, short, default_value = ".tdb")]
         pattern: String,
     },
     /// Removes previously created test and run results if any.  Discards test and results!
@@ -122,8 +143,8 @@ EXAMPLES:
   reg-rs remove -p 'temp_'"
     )]
     Remove {
-        /// Substring pattern to match test names to remove
-        #[clap(long, short)]
+        /// Substring pattern to match test names to remove (default: all)
+        #[clap(long, short, default_value = ".tdb")]
         pattern: String,
     },
     /// Reports counts/summary of specified test(s) (alias p)
@@ -144,8 +165,8 @@ EXAMPLES:
   reg-rs p -p my_test -vvv            # full details (using alias)"
     )]
     Report {
-        /// Substring pattern to match test names
-        #[clap(long, short)]
+        /// Substring pattern to match test names (default: all)
+        #[clap(long, short, default_value = ".tdb")]
         pattern: String,
         /// Verbosity: -v adds names, -vv adds failures, -vvv adds differences
         #[clap(short, action = clap::ArgAction::Count)]
@@ -167,8 +188,8 @@ EXAMPLES:
   reg-rs r -p test --parallel              # run all matching tests in parallel"
     )]
     Run {
-        /// Substring pattern to match test names to run
-        #[clap(long, short)]
+        /// Substring pattern to match test names to run (default: all)
+        #[clap(long, short, default_value = ".tdb")]
         pattern: String,
         /// Show what would be run without actually executing
         #[clap(long, short = 'n')]
@@ -194,8 +215,8 @@ EXAMPLES:
   reg-rs s -p test                         # using alias"
     )]
     Status {
-        /// Substring pattern to match test names to monitor
-        #[clap(long, short)]
+        /// Substring pattern to match test names to monitor (default: all)
+        #[clap(long, short, default_value = ".tdb")]
         pattern: String,
         /// Port number for the web server (default: 4740)
         #[clap(default_value = "4740", long, short)]
@@ -328,6 +349,51 @@ mod tests {
             },
             Args::try_parse_from(["test", "run", "-p", "pat001"]).unwrap()
         );
+    }
+
+    #[test]
+    fn test_list_defaults() {
+        let args = Args::try_parse_from(["test", "list"]).unwrap();
+        match args.command {
+            Subcommands::List { pattern } => assert_eq!(pattern, ".tdb"),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn test_list_with_pattern() {
+        let args = Args::try_parse_from(["test", "list", "-p", "hello"]).unwrap();
+        match args.command {
+            Subcommands::List { pattern } => assert_eq!(pattern, "hello"),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn test_list_alias() {
+        let args = Args::try_parse_from(["test", "l", "-p", "foo"]).unwrap();
+        match args.command {
+            Subcommands::List { pattern } => assert_eq!(pattern, "foo"),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn test_run_default_pattern() {
+        let args = Args::try_parse_from(["test", "run"]).unwrap();
+        match args.command {
+            Subcommands::Run { pattern, .. } => assert_eq!(pattern, ".tdb"),
+            _ => panic!("expected Run"),
+        }
+    }
+
+    #[test]
+    fn test_report_default_pattern() {
+        let args = Args::try_parse_from(["test", "report"]).unwrap();
+        match args.command {
+            Subcommands::Report { pattern, .. } => assert_eq!(pattern, ".tdb"),
+            _ => panic!("expected Report"),
+        }
     }
 
     #[test]

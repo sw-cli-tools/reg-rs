@@ -21,11 +21,17 @@ pub const REQUIRED_BLANK: &str = " ";
 ///
 /// Resolution order:
 /// 1. `REG_RS_DATA_DIR` environment variable (if set)
-/// 2. `~/.local/reg-rs/` (default)
-/// 3. `./data/` (fallback when HOME is unavailable)
+/// 2. `./work/reg-rs/` (if it exists under cwd)
+/// 3. Current directory (if it contains `.tdb` files)
+/// 4. `~/.local/reg-rs/` (default)
+/// 5. `./data/` (fallback when HOME is unavailable)
 pub fn data_dir() -> PathBuf {
     let dir = if let Ok(custom) = env::var("REG_RS_DATA_DIR") {
         PathBuf::from(custom)
+    } else if PathBuf::from("work/reg-rs").exists() {
+        PathBuf::from("work/reg-rs")
+    } else if has_tdb_files(".") {
+        PathBuf::from(".")
     } else {
         env::var("HOME")
             .map(|h| PathBuf::from(h).join(".local").join("reg-rs"))
@@ -35,6 +41,17 @@ pub fn data_dir() -> PathBuf {
         let _ = std::fs::create_dir_all(&dir);
     }
     dir
+}
+
+/// Check if a directory contains any `.tdb` files (non-recursive).
+fn has_tdb_files(path: &str) -> bool {
+    std::fs::read_dir(path)
+        .map(|entries| {
+            entries
+                .filter_map(|e| e.ok())
+                .any(|e| e.path().extension().is_some_and(|ext| ext == TDB_EXTENSION))
+        })
+        .unwrap_or(false)
 }
 
 #[cfg(test)]
@@ -51,13 +68,13 @@ mod tests {
     #[test]
     fn test_data_dir_ends_with_expected_component() {
         // When REG_RS_DATA_DIR is set (by the test harness), it should be used.
-        // When not set, the path should end with "reg-rs" (from ~/.local/reg-rs/).
+        // When not set, auto-discovery may find work/reg-rs/ or cwd,
+        // otherwise falls back to ~/.local/reg-rs/ or ./data/.
         let dir = data_dir();
-        let last = dir.file_name().unwrap().to_string_lossy();
-        // Either "reg-rs" (default or env override) or "data" (HOME fallback)
+        // The path should be non-empty and valid
         assert!(
-            last == "reg-rs" || last == "data",
-            "unexpected data dir: {}",
+            !dir.as_os_str().is_empty(),
+            "data dir should not be empty: {}",
             dir.display()
         );
     }

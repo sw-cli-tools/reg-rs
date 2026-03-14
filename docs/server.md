@@ -35,7 +35,7 @@ reg-rs s -p "my_tests"
 
 | Option | Description |
 |--------|-------------|
-| `-p, --pattern <pattern>` | Substring pattern to match test names (required) |
+| `-p, --pattern <pattern>` | Substring pattern to match test names (default: all) |
 | `-l, --localhost-port <port>` | Port number for the web server (default: 4740) |
 
 ### Accessing the Dashboard
@@ -84,13 +84,30 @@ The dashboard displays:
 
 ## Real-Time Updates
 
-The status server automatically detects changes to test database files in the data directory (`~/.local/reg-rs/` by default, override with `REG_RS_DATA_DIR`). When you:
+The status server automatically detects changes to test database files via filesystem watching and pushes updates to the browser using **Server-Sent Events (SSE)**. When you:
 
 1. Create a new test (`reg-rs create ...`)
 2. Run tests (`reg-rs run ...`)
 3. Remove tests (`reg-rs remove ...`)
 
-The dashboard will reflect these changes on the next page refresh.
+The dashboard updates automatically — no manual refresh needed. The footer shows an SSE event counter (`live ● N updates`) confirming the connection is active.
+
+### How it works
+
+1. A file-watcher thread (using `notify`) monitors the data directory for changes
+2. Changes are broadcast via a `tokio::sync::broadcast` channel
+3. The `/events` SSE endpoint streams update notifications to connected browsers
+4. Client-side JavaScript fetches the updated page and swaps the DOM content
+5. The SSE counter increments with each update
+
+### API Endpoint
+
+A JSON API is available for programmatic access:
+
+```bash
+curl http://localhost:4740/api/status
+# {"pattern":"...","tests":[...],"fail_count":0,"pass_count":5,...}
+```
 
 ## Example Workflow
 
@@ -142,9 +159,9 @@ Another process is using the port. Either:
 
 ### No tests found
 Ensure your tests:
-1. Are in the data directory (`~/.local/reg-rs/` or `$REG_RS_DATA_DIR`)
+1. Are in an auto-discovered data directory (`./work/reg-rs/`, cwd, or `$REG_RS_DATA_DIR`)
 2. Have the `.tdb` extension
 3. Match your pattern (remember: substring matching, not glob)
 
 ### Page shows stale data
-Refresh the browser page to get the latest test status.
+The page should auto-update via SSE. If it doesn't, check the footer — if it shows "disconnected", the SSE connection was lost. Refresh the page to reconnect.

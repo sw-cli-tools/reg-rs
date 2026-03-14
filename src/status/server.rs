@@ -1,5 +1,5 @@
 use axum::{
-    Router,
+    Json, Router,
     extract::State,
     http::StatusCode,
     response::{
@@ -115,6 +115,7 @@ pub(crate) async fn start(config: &config::Config) -> crate::error::Result<()> {
     let app = Router::new()
         .route("/", get(serve_landing))
         .route("/status", get(serve_status_view))
+        .route("/api/status", get(serve_api_status))
         .route("/events", get(serve_sse))
         .with_state(app_state);
 
@@ -149,19 +150,13 @@ async fn serve_landing(State(state): State<AppState>) -> impl IntoResponse {
     };
 
     let status_line = if fail > 0 {
-        format!(
-            r#"<span class="status-indicator fail">&#10007; {fail} failed</span>"#
-        )
+        format!(r#"<span class="status-indicator fail">&#10007; {fail} failed</span>"#)
     } else if total == 0 {
         r#"<span class="status-indicator pending">No tests found</span>"#.to_string()
     } else if pending > 0 {
-        format!(
-            r#"<span class="status-indicator pending">? {pending} not yet run</span>"#
-        )
+        format!(r#"<span class="status-indicator pending">? {pending} not yet run</span>"#)
     } else {
-        format!(
-            r#"<span class="status-indicator pass">&#10003; All {pass} tests passing</span>"#
-        )
+        format!(r#"<span class="status-indicator pass">&#10003; All {pass} tests passing</span>"#)
     };
 
     let html = format!(
@@ -178,29 +173,30 @@ async fn serve_landing(State(state): State<AppState>) -> impl IntoResponse {
     --mono: ui-monospace, "SF Mono", Menlo, monospace;
   }}
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  body {{ font-family: var(--font); background: var(--bg); color: #111; padding: 40px 20px; }}
-  .container {{ max-width: 600px; margin: 0 auto; }}
-  h1 {{ font-size: 1.6em; margin-bottom: 4px; }}
-  .meta {{ color: var(--muted); font-size: 0.85em; margin-bottom: 20px; }}
-  .meta code {{ font-family: var(--mono); background: #f3f4f6; padding: 1px 5px;
+  body {{ font-family: var(--font); background: var(--bg); color: #111; padding: 40px 20px;
+          font-size: 18px; }}
+  .container {{ max-width: 680px; margin: 0 auto; }}
+  h1 {{ font-size: 2em; margin-bottom: 4px; }}
+  .meta {{ color: var(--muted); font-size: 1em; margin-bottom: 20px; }}
+  .meta code {{ font-family: var(--mono); background: #f3f4f6; padding: 2px 6px;
                border-radius: 3px; }}
   .summary {{ background: var(--card); border: 1px solid var(--border); border-radius: 8px;
-              padding: 20px; margin-bottom: 24px; }}
-  .status-indicator {{ font-size: 1.1em; font-weight: 600; }}
+              padding: 24px; margin-bottom: 24px; }}
+  .status-indicator {{ font-size: 1.3em; font-weight: 600; }}
   .status-indicator.pass {{ color: var(--pass); }}
   .status-indicator.fail {{ color: var(--fail); }}
   .status-indicator.pending {{ color: var(--warn); }}
-  .counts {{ display: flex; gap: 20px; margin-top: 12px; font-size: 0.9em; color: var(--muted); }}
+  .counts {{ display: flex; gap: 24px; margin-top: 14px; font-size: 1.05em; color: var(--muted); }}
   .counts span {{ font-family: var(--mono); }}
   .views {{ list-style: none; padding: 0; }}
   .views li {{ margin-bottom: 12px; }}
   .views a {{ display: block; background: var(--card); border: 1px solid var(--border);
-              border-radius: 8px; padding: 16px; text-decoration: none; color: #111;
+              border-radius: 8px; padding: 18px; text-decoration: none; color: #111;
               transition: border-color 0.15s; }}
   .views a:hover {{ border-color: #3b82f6; }}
-  .views .view-title {{ font-size: 1.05em; font-weight: 600; }}
-  .views .view-desc {{ color: var(--muted); font-size: 0.85em; margin-top: 4px; }}
-  footer {{ text-align: center; color: var(--muted); font-size: 0.8em; margin-top: 32px; }}
+  .views .view-title {{ font-size: 1.15em; font-weight: 600; }}
+  .views .view-desc {{ color: var(--muted); font-size: 1em; margin-top: 4px; }}
+  footer {{ text-align: center; color: var(--muted); font-size: 1em; margin-top: 32px; }}
 </style>
 </head><body>
 <div class="container">
@@ -227,15 +223,82 @@ async fn serve_landing(State(state): State<AppState>) -> impl IntoResponse {
   <footer>started {server_started}</footer>
 </div>
 <script>
-if (typeof EventSource !== 'undefined') {{
-  var es = new EventSource('/events');
-  es.onmessage = function() {{ location.reload(); }};
-  es.onerror = function() {{ setTimeout(function() {{ es.close(); }}, 5000); }};
-}}
+(function() {{
+  var eventCount = 0;
+  function addCounter() {{
+    var footer = document.querySelector('footer');
+    if (footer && !document.getElementById('sse-count')) {{
+      var span = document.createElement('span');
+      span.id = 'sse-count';
+      span.style.cssText = 'display:block;margin-top:8px;font-family:var(--mono);font-size:1em;opacity:0.8;';
+      span.textContent = 'live ● 0 updates';
+      footer.appendChild(span);
+    }}
+  }}
+  function updateCounter() {{
+    var el = document.getElementById('sse-count');
+    if (el) el.textContent = 'live ● ' + eventCount + ' update' + (eventCount === 1 ? '' : 's');
+  }}
+  addCounter();
+  if (typeof EventSource !== 'undefined') {{
+    var es = new EventSource('/events');
+    es.onmessage = function() {{
+      eventCount++;
+      fetch(location.href).then(function(r) {{ return r.text(); }}).then(function(html) {{
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var newBody = doc.querySelector('.container');
+        var oldBody = document.querySelector('.container');
+        if (newBody && oldBody) {{
+          oldBody.innerHTML = newBody.innerHTML;
+          addCounter();
+          updateCounter();
+        }}
+      }});
+    }};
+    es.onerror = function() {{
+      var el = document.getElementById('sse-count');
+      if (el) el.textContent = 'disconnected ○ ' + eventCount + ' updates';
+      setTimeout(function() {{ es.close(); }}, 5000);
+    }};
+  }}
+}})();
 </script>
 </body></html>"##
     );
     (StatusCode::OK, Html(html))
+}
+
+/// JSON API response for status
+#[derive(Serialize)]
+struct ApiStatusResponse {
+    pattern: String,
+    tests: Vec<TestDetails>,
+    fail_count: usize,
+    pass_count: usize,
+    pending_count: usize,
+    total_count: usize,
+    updated: String,
+}
+
+/// Serve JSON status for API clients and tests
+async fn serve_api_status(State(state): State<AppState>) -> impl IntoResponse {
+    let _ = set_test_runs(state.clone());
+    match state.state_data.lock() {
+        Ok(guard) => {
+            let (failed, passed, not_run) = categorize_runs(&guard.runs);
+            let resp = ApiStatusResponse {
+                pattern: guard.pattern.clone(),
+                tests: guard.runs.clone(),
+                fail_count: failed.len(),
+                pass_count: passed.len(),
+                pending_count: not_run.len(),
+                total_count: guard.runs.len(),
+                updated: guard.state_updated.clone(),
+            };
+            (StatusCode::OK, Json(resp)).into_response()
+        }
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
 }
 
 /// Serve SSE stream for real-time updates
@@ -300,7 +363,11 @@ async fn serve_status_view(State(state): State<AppState>) -> impl IntoResponse {
             );
         }
     };
-    let page = wrap_in_page(&state_data.pattern, &state_data.server_started, &status_view);
+    let page = wrap_in_page(
+        &state_data.pattern,
+        &state_data.server_started,
+        &status_view,
+    );
     log::info!(
         "server/serve_status_view - END, response len={}",
         page.len()
@@ -418,7 +485,10 @@ fn format_diffs_html(diffs: &[(String, String)]) -> Vec<String> {
     while i < classified.len() {
         let (kind, label, value) = &classified[i];
         // Try to pair a remove with the next add for inline highlighting
-        if *kind == DiffKind::Remove && i + 1 < classified.len() && classified[i + 1].0 == DiffKind::Add {
+        if *kind == DiffKind::Remove
+            && i + 1 < classified.len()
+            && classified[i + 1].0 == DiffKind::Add
+        {
             let (_, add_label, add_value) = &classified[i + 1];
             let (hl_old, hl_new) = highlight_diff(value, add_value);
             result.push(format!(
@@ -501,15 +571,16 @@ fn wrap_in_page(pattern: &str, server_started: &str, body: &str) -> String {
     --mono: ui-monospace, "SF Mono", Menlo, monospace;
   }}
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  body {{ font-family: var(--font); background: var(--bg); color: #111; padding: 20px; }}
+  body {{ font-family: var(--font); background: var(--bg); color: #111; padding: 20px;
+          font-size: 18px; }}
   .container {{ max-width: 960px; margin: 0 auto; }}
   header {{ display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px;
             border-bottom: 2px solid var(--border); padding-bottom: 12px; }}
-  header h1 {{ font-size: 1.4em; }}
-  .meta {{ color: var(--muted); font-size: 0.85em; }}
-  .meta code {{ font-family: var(--mono); background: #f3f4f6; padding: 1px 5px;
+  header h1 {{ font-size: 1.8em; }}
+  .meta {{ color: var(--muted); font-size: 1em; }}
+  .meta code {{ font-family: var(--mono); background: #f3f4f6; padding: 2px 6px;
                border-radius: 3px; }}
-  nav {{ display: flex; gap: 12px; margin-bottom: 20px; font-size: 0.9em; }}
+  nav {{ display: flex; gap: 12px; margin-bottom: 20px; font-size: 1em; }}
   nav a {{ color: var(--muted); text-decoration: none; padding: 4px 8px; border-radius: 4px; }}
   nav a:hover {{ background: var(--border); color: #111; }}
   .overview {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -538,8 +609,8 @@ fn wrap_in_page(pattern: &str, server_started: &str, body: &str) -> String {
   .badge-pass {{ background: #dcfce7; color: var(--pass); }}
   .badge-fail {{ background: #fef2f2; color: var(--fail); }}
   .badge-warn {{ background: #fffbeb; color: var(--warn); }}
-  .test-item {{ padding: 10px 16px; border-bottom: 1px solid var(--border);
-                display: flex; align-items: flex-start; gap: 10px; font-size: 0.9em; }}
+  .test-item {{ padding: 12px 16px; border-bottom: 1px solid var(--border);
+                display: flex; align-items: flex-start; gap: 10px; font-size: 1em; }}
   .test-item:last-child {{ border-bottom: none; }}
   .icon {{ flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
            display: flex; align-items: center; justify-content: center;
@@ -558,7 +629,7 @@ fn wrap_in_page(pattern: &str, server_started: &str, body: &str) -> String {
   .diff-label {{ color: #89b4fa; font-weight: 600; margin-bottom: 2px; }}
   .diffs mark {{ background: rgba(255,255,100,0.3); color: inherit; padding: 0 1px; border-radius: 2px; }}
   .empty {{ padding: 16px; color: var(--muted); font-style: italic; }}
-  footer {{ text-align: center; color: var(--muted); font-size: 0.8em; margin-top: 24px; }}
+  footer {{ text-align: center; color: var(--muted); font-size: 1em; margin-top: 24px; }}
   footer a {{ color: var(--muted); }}
 </style>
 </head><body>
@@ -571,11 +642,49 @@ document.querySelectorAll('.section').forEach(function(s) {{
   var badge = s.querySelector('.badge');
   if (badge && badge.textContent.trim() === '0') s.classList.add('collapsed');
 }});
-if (typeof EventSource !== 'undefined') {{
-  var es = new EventSource('/events');
-  es.onmessage = function() {{ location.reload(); }};
-  es.onerror = function() {{ setTimeout(function() {{ es.close(); }}, 5000); }};
-}}
+(function() {{
+  var eventCount = 0;
+  function addCounter() {{
+    var footer = document.querySelector('footer');
+    if (footer && !document.getElementById('sse-count')) {{
+      var span = document.createElement('span');
+      span.id = 'sse-count';
+      span.style.cssText = 'display:block;margin-top:8px;font-family:var(--mono);font-size:1em;opacity:0.8;';
+      span.textContent = 'live ● 0 updates';
+      footer.appendChild(span);
+    }}
+  }}
+  function updateCounter() {{
+    var el = document.getElementById('sse-count');
+    if (el) el.textContent = 'live ● ' + eventCount + ' update' + (eventCount === 1 ? '' : 's');
+  }}
+  addCounter();
+  if (typeof EventSource !== 'undefined') {{
+    var es = new EventSource('/events');
+    es.onmessage = function() {{
+      eventCount++;
+      fetch(location.href).then(function(r) {{ return r.text(); }}).then(function(html) {{
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var newBody = doc.querySelector('.container');
+        var oldBody = document.querySelector('.container');
+        if (newBody && oldBody) {{
+          oldBody.innerHTML = newBody.innerHTML;
+          document.querySelectorAll('.section').forEach(function(s) {{
+            var badge = s.querySelector('.badge');
+            if (badge && badge.textContent.trim() === '0') s.classList.add('collapsed');
+          }});
+          addCounter();
+          updateCounter();
+        }}
+      }});
+    }};
+    es.onerror = function() {{
+      var el = document.getElementById('sse-count');
+      if (el) el.textContent = 'disconnected ○ ' + eventCount + ' updates';
+      setTimeout(function() {{ es.close(); }}, 5000);
+    }};
+  }}
+}})();
 </script>
 </body></html>"##
     )

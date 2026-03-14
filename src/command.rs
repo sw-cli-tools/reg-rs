@@ -125,6 +125,50 @@ pub fn remove_all(config: &config::Config) -> crate::error::Result<()> {
     Ok(())
 }
 
+/// List tests matching a pattern with name, command, and status.
+pub fn list_tests(config: &config::Config) -> crate::error::Result<()> {
+    log::info!("command/list_tests");
+    let pattern = config.extract_pattern().to_string();
+    let tests = finder::discover(pattern.clone())?;
+    if tests.found.is_empty() {
+        eprintln!(
+            "no tests matched pattern '{}' in {}",
+            pattern,
+            tests.data_dir.display()
+        );
+        return Ok(());
+    }
+    for test_path in &tests.found {
+        let original = db::read_original_results(test_path)?;
+        let latest_count = db::count_latest_results(test_path)?;
+        let status = if latest_count == 0 {
+            "pending"
+        } else {
+            let diff_count = db::count_differences(test_path)?;
+            if diff_count > 0 { "FAIL" } else { "PASS" }
+        };
+        // Extract just the test name from the path (strip directory and .tdb extension)
+        let name = std::path::Path::new(test_path)
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy();
+        // Truncate long commands for display
+        let cmd_display = if original.command.len() > 60 {
+            format!("{}...", &original.command[..57])
+        } else {
+            original.command.clone()
+        };
+        println!("{:<7} {:<30} {}", status, name, cmd_display);
+    }
+    println!(
+        "---\n{} test(s) matched pattern '{}'",
+        tests.found.len(),
+        pattern
+    );
+    log::info!("command/list_tests done");
+    Ok(())
+}
+
 /// report latest test results
 pub fn report_latest(config: &config::Config) -> crate::error::Result<()> {
     log::info!("command/report_latest");

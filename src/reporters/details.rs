@@ -79,8 +79,9 @@ fn show_failures(
 ) -> crate::error::Result<()> {
     log::info!("details/show_failures");
     let failed_test_names = &details_report_context.failed_test_names;
+    println!("Failures: (-vv)");
     if failed_test_names.is_empty() {
-        println!("Failures: (-vv)");
+        println!("  (none)");
     }
     for test in failed_test_names {
         log::debug!("show_failures test: {:?}", &test);
@@ -170,8 +171,9 @@ fn show_passes(
 ) -> crate::error::Result<()> {
     log::info!("details/show_passes");
     let passed_test_names = &details_report_context.passed_test_names;
+    println!("Passes:");
     if passed_test_names.is_empty() {
-        println!("Passes:");
+        println!("  (none)");
     }
     for test in passed_test_names {
         log::debug!("show_passes test: {:?}", &test);

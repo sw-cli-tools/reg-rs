@@ -30,8 +30,9 @@ The codebase follows a modular architecture with clear separation of concerns:
 
 ## Key Patterns
 - All commands flow through: `main.rs` → `builder::build()` → `command::{action}()` → specific modules
-- Test results stored in SQLite databases (one `.tdb` per test) in `~/.local/reg-rs/` by default
-- Data directory overridable via `REG_RS_DATA_DIR` env var (used by tests and demos: `./work/reg-rs/`)
+- Test results stored in SQLite databases (one `.tdb` per test)
+- Data directory auto-discovered: `$REG_RS_DATA_DIR` → `./work/reg-rs/` → cwd (if has .tdb) → `~/.local/reg-rs/`
+- `-p` pattern is optional on all subcommands (defaults to `.tdb` = match all)
 - `resolve_test_path()` in `command.rs` auto-places tests in data dir and appends `.tdb`
 - Debug output via `log::debug!()`, enabled with `-d` flag (sets log level to debug via `env_logger`)
 - Status monitoring uses Axum web framework (async with Tokio)

@@ -56,6 +56,7 @@ fn integration_test_reg_rs_help() {
         .stdout(predicate::str::contains(
             "Creates a new test of a specified command",
         ))
+        .stdout(predicate::str::contains("Lists tests matching"))
         .stdout(predicate::str::contains("Removes previously created test"))
         .stdout(predicate::str::contains("Reports counts/summary"))
         .stdout(predicate::str::contains("Runs a test"))
@@ -497,6 +498,175 @@ fn integration_test_create_with_doc_metadata() {
         .success();
 }
 
+// --- Status server and SSE tests ---
+
+/// Start the status server on a given port and return the child process
+fn start_status_server(port: u16, pattern: &str, data_dir: &std::path::Path) -> process::Child {
+    let bin_path = debug_bin_path();
+    process::Command::new(&bin_path)
+        .args(["status", "-p", pattern, "-l", &port.to_string()])
+        .env("REG_RS_DATA_DIR", data_dir)
+        .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped())
+        .spawn()
+        .expect("failed to start status server")
+}
+
+/// Wait for the server to be ready by polling the given URL
+fn wait_for_server(url: &str, timeout_secs: u64) -> bool {
+    let start = std::time::Instant::now();
+    while start.elapsed() < std::time::Duration::from_secs(timeout_secs) {
+        if ureq::get(url).call().is_ok() {
+            return true;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    }
+    false
+}
+
+#[test]
+fn integration_test_status_server_landing_page() {
+    common::setup();
+
+    let data_dir = common::test_data_dir().join("status_landing");
+    let _ = fs::create_dir_all(&data_dir);
+    let port = 14741_u16;
+
+    // Create a test so the server has something to show
+    let bin_path = debug_bin_path();
+    let _ = process::Command::new(&bin_path)
+        .args(["create", "-t", "status_test", "-c", "echo hi"])
+        .env("REG_RS_DATA_DIR", &data_dir)
+        .output();
+
+    let mut server = start_status_server(port, "status_test", &data_dir);
+    let base_url = format!("http://127.0.0.1:{}", port);
+
+    assert!(
+        wait_for_server(&base_url, 10),
+        "Server did not start within 10s"
+    );
+
+    // Check landing page
+    let resp = ureq::get(&base_url)
+        .call()
+        .expect("landing page GET failed");
+    assert_eq!(resp.status(), 200);
+    let body = resp.into_string().unwrap();
+    assert!(body.contains("reg-rs"), "Landing page should contain title");
+    assert!(
+        body.contains("status_test"),
+        "Landing page should show pattern"
+    );
+    assert!(
+        body.contains("EventSource"),
+        "Landing page should have SSE client"
+    );
+    assert!(
+        body.contains("sse-count"),
+        "Landing page should have SSE counter"
+    );
+
+    // Check status dashboard
+    let resp = ureq::get(&format!("{}/status", base_url))
+        .call()
+        .expect("status page GET failed");
+    assert_eq!(resp.status(), 200);
+    let body = resp.into_string().unwrap();
+    assert!(body.contains("status_test"), "Status page should show test");
+
+    // Check API endpoint
+    let resp = ureq::get(&format!("{}/api/status", base_url))
+        .call()
+        .expect("api/status GET failed");
+    assert_eq!(resp.status(), 200);
+    let json: serde_json::Value = resp.into_json().unwrap();
+    assert_eq!(json["pattern"], "status_test");
+    assert!(json["total_count"].as_u64().unwrap() >= 1);
+
+    server.kill().expect("failed to kill server");
+    let _ = server.wait();
+
+    // Clean up
+    let _ = fs::remove_file(data_dir.join("status_test.tdb"));
+    let _ = fs::remove_file(data_dir.join("status_test.tdb.lock"));
+}
+
+#[test]
+fn integration_test_sse_broadcasts_on_file_change() {
+    common::setup();
+
+    let data_dir = common::test_data_dir().join("sse_broadcast");
+    let _ = fs::create_dir_all(&data_dir);
+    let port = 14742_u16;
+
+    // Create a test so the server watches the directory
+    let bin_path = debug_bin_path();
+    let _ = process::Command::new(&bin_path)
+        .args(["create", "-t", "sse_test", "-c", "echo hi"])
+        .env("REG_RS_DATA_DIR", &data_dir)
+        .output();
+
+    let mut server = start_status_server(port, "sse_test", &data_dir);
+    let base_url = format!("http://127.0.0.1:{}", port);
+
+    assert!(
+        wait_for_server(&base_url, 10),
+        "Server did not start within 10s"
+    );
+
+    // Connect to SSE endpoint — use a thread with a timeout
+    // Get initial state via API
+    let resp = ureq::get(&format!("{}/api/status", base_url))
+        .call()
+        .expect("api GET failed");
+    let initial: serde_json::Value = resp.into_json().unwrap();
+    let initial_updated = initial["updated"].as_str().unwrap_or("").to_string();
+
+    // Trigger a file change in the data directory (run the test)
+    let _ = process::Command::new(&bin_path)
+        .args(["run", "-p", "sse_test"])
+        .env("REG_RS_DATA_DIR", &data_dir)
+        .output();
+
+    // Wait for the file watcher debounce + processing
+    std::thread::sleep(std::time::Duration::from_secs(4));
+
+    // Check that the state was updated
+    let resp = ureq::get(&format!("{}/api/status", base_url))
+        .call()
+        .expect("api GET failed after change");
+    let updated: serde_json::Value = resp.into_json().unwrap();
+    let new_updated = updated["updated"].as_str().unwrap_or("").to_string();
+
+    // The updated timestamp should have changed
+    assert_ne!(
+        initial_updated, new_updated,
+        "State should update after file change (initial: {}, new: {})",
+        initial_updated, new_updated
+    );
+
+    // Verify the test now shows as having been run
+    let tests = updated["tests"]
+        .as_array()
+        .unwrap_or_else(|| panic!("expected tests array in response: {}", updated));
+    let sse_test = tests
+        .iter()
+        .find(|t| t["name"].as_str().unwrap_or("").contains("sse_test"))
+        .unwrap_or_else(|| panic!("expected sse_test in tests: {:?}", tests));
+    assert!(
+        sse_test["last_ran"].is_string(),
+        "Test should have a last_ran timestamp after running"
+    );
+
+    server.kill().expect("failed to kill server");
+    let _ = server.wait();
+
+    // Clean up
+    let _ = fs::remove_file(data_dir.join("sse_test.tdb"));
+    let _ = fs::remove_file(data_dir.join("sse_test.tdb.lock"));
+}
+
 // --- Demo script tests (dogfooding) ---
 // These run the demo shell scripts using the debug binary,
 // ensuring reg-rs can test itself and that demo scripts stay working.
@@ -559,4 +729,46 @@ fn integration_test_demo_test_workflow() {
         "test_workflow.sh should detect regression:\n{}",
         stdout
     );
+}
+
+#[test]
+fn integration_test_list_tests() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("list_test.tdb");
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+
+    // Create a test
+    reg_rs()
+        .args(["create", "-t", "list_test", "-c", "echo listing"])
+        .assert()
+        .success();
+
+    // List should show pending (not yet run)
+    reg_rs()
+        .args(["list", "-p", "list_test"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("pending"))
+        .stdout(predicate::str::contains("list_test"))
+        .stdout(predicate::str::contains("1 test(s)"));
+
+    // Run the test
+    reg_rs().args(["run", "-p", "list_test"]).assert().success();
+
+    // List should show PASS
+    reg_rs()
+        .args(["list", "-p", "list_test"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("PASS"))
+        .stdout(predicate::str::contains("list_test"));
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
 }

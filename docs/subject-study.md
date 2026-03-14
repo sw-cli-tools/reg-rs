@@ -530,3 +530,206 @@ Unlike pjmai-rs, favicon is stateless. It reads no config files, writes only to 
 | Error injection demos | Both SHA + base64 — demonstrate detection and triage |
 
 For most projects, start with SHA-256 checksums. Add base64 or hybrid tests for critical images where you want AI triage capability on failure.
+
+---
+
+# Part 3: cor24-rs (embedded emulator output)
+
+[cor24-rs](https://github.com/sw-embed/cor24-rs) is a COR24 24-bit RISC CPU emulator with an interactive debugger (`cor24-dbg`) and a Rust-to-COR24 cross-compilation pipeline. It produces structured emulator output — register dumps, UART buffers, memory maps, and disassembly — that is fully deterministic for fixed programs.
+
+## Why cor24-rs is a good subject
+
+cor24-rs complements the other subjects by exercising a third testing pattern: deterministic emulator output from piped debugger commands.
+
+- **Deterministic execution** — same program + same instruction count = identical output (register values, UART content, memory state)
+- **Structured output** — emulator output has distinct sections (registers, memory, UART, I/O) that each have different stability characteristics
+- **Multiple tools** — `cor24-dbg` (interactive debugger) and `cor24-run` (headless runner) produce different output formats
+- **Piped stdin commands** — the debugger reads commands from stdin, enabling complex multi-step interactions (breakpoints, stepping, inspection)
+- **No state or config** — emulator is stateless (no config files, no sandbox needed), similar to favicon
+- **Cross-project dependency** — binaries live in a separate repo, testing the multi-project regression workflow
+
+## Test suite overview
+
+The suite is defined in `tests/regression/cor24_setup.sh` and creates 10 regression tests across two categories:
+
+### Assembler demos via cor24-dbg (6 tests)
+
+| Test | What it verifies | Key output |
+|------|-----------------|------------|
+| `cor24_hello_world` | UART output from assembled program | "Hello, World!" after 93 instructions |
+| `cor24_count_down` | Loop counting with UART writes | "54321" after 36 instructions |
+| `cor24_led_blink` | Hardware I/O peripheral toggling | "LLLLL" UART, LED D2 state |
+| `cor24_debug_session` | Breakpoints, stepping, register inspection | Disassembly, breakpoint hit, r1 value |
+| `cor24_disassembly` | Instruction decoder and formatter | 20 decoded instructions with mnemonics |
+| `cor24_sieve` | Compute-intensive benchmark (1M instructions) | "1000 iterations" UART, stops at limit |
+
+### Rust pipeline demos via cor24-run (4 tests)
+
+| Test | What it verifies | Key output |
+|------|-----------------|------------|
+| `cor24_rust_add` | Arithmetic (42+66) in registers | r2=0x6C (108), 12 instructions |
+| `cor24_rust_uart_hello` | UART writes from Rust program | UART TX log: "Hello\n" |
+| `cor24_rust_fibonacci` | Recursive computation | LED=0x59, 4764 instructions |
+| `cor24_rust_countdown` | Loop with memory-mapped I/O | 80332 instructions, halted |
+
+## Setup and execution
+
+### Prerequisites
+
+Three binaries must be built:
+
+```bash
+# In reg-rs repo
+cargo build
+
+# In cor24-rs repo — debugger
+cd ~/github/sw-embed/cor24-rs && cargo build -p cor24-cli
+
+# In cor24-rs repo — headless runner (used by Rust pipeline demos)
+cd ~/github/sw-embed/cor24-rs/rust-to-cor24 && cargo build --release
+```
+
+### Creating the baseline
+
+```bash
+bash tests/regression/cor24_setup.sh
+```
+
+This populates `./work/reg-rs/cor24-tests/` with one `.tdb` file per test.
+
+### Running the tests
+
+```bash
+# Sequential
+REG_RS_DATA_DIR=./work/reg-rs/cor24-tests ./target/debug/reg-rs run -p cor24
+
+# Parallel (safe — no shared state)
+REG_RS_DATA_DIR=./work/reg-rs/cor24-tests ./target/debug/reg-rs run -p cor24 --parallel
+```
+
+### Viewing results
+
+```bash
+# Summary
+REG_RS_DATA_DIR=./work/reg-rs/cor24-tests ./target/debug/reg-rs report -p cor24
+
+# Full detail with diffs
+REG_RS_DATA_DIR=./work/reg-rs/cor24-tests ./target/debug/reg-rs report -p cor24 -vvv
+
+# AI-powered failure analysis
+REG_RS_DATA_DIR=./work/reg-rs/cor24-tests ./target/debug/reg-rs analyze -p cor24
+```
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `REG_RS_BIN` | `./target/debug/reg-rs` | Path to reg-rs binary |
+| `COR24_DIR` | `~/github/sw-embed/cor24-rs` | Path to cor24-rs repo root |
+| `REG_RS_DATA_DIR` | `./work/reg-rs/cor24-tests` | Where `.tdb` files are stored |
+
+## Key techniques
+
+### Piped stdin for debugger interaction
+
+The `cor24-dbg` debugger reads commands from stdin. Tests pipe multi-line command sequences via heredoc:
+
+```bash
+cor24-dbg program.lgo <<'CMDS'
+run 1000
+uart
+quit
+CMDS
+```
+
+This enables testing complex debugger workflows — breakpoints, stepping, register inspection — as a single deterministic command. The heredoc approach is critical: it makes interactive debugging sessions reproducible.
+
+### Path masking with --preprocess
+
+The "Loaded N bytes from /full/path/to/file.lgo" line contains an absolute path that varies by machine. The `--preprocess` flag normalizes this:
+
+```bash
+-P "sed 's|$COR24_DIR|<COR24>|g'"
+```
+
+Note: `$COR24_DIR` is expanded at test creation time (not at runtime) because the sed pattern is baked into the `.tdb` database. This means the baseline and runtime machine must use the same path, or the path masking must cover both forms. For CI, set `COR24_DIR` to a consistent path.
+
+### Instruction counts as regression signals
+
+The emulator is fully deterministic: the same program always executes the same number of instructions. This makes instruction counts a powerful regression signal:
+
+- `hello_world`: exactly 93 instructions
+- `count_down`: exactly 36 instructions
+- `led_blink`: exactly 1577 instructions
+- `rust_fibonacci`: exactly 4764 instructions
+
+A change in instruction count means the emulator's execution path changed — either the program was modified or the emulator has a bug. Unlike timing-based metrics, instruction counts are stable across different machines and CPU loads.
+
+### Two emulator front-ends, one test suite
+
+The suite tests both `cor24-dbg` and `cor24-run`:
+
+- **cor24-dbg** (5 tests): Interactive debugger. Tests pipe stdin commands. Output includes `(cor24)` prompts, structured command responses, UART buffer display.
+- **cor24-run** (4 tests): Headless runner. Tests pass `--dump` flag for full state dump. Output includes register dump, memory hex dump, UART TX log, LED/I/O state.
+
+Testing both front-ends catches regressions in the shared emulator core (instruction execution, peripherals) as well as each front-end's output formatting.
+
+### Pre-compiled assembly files
+
+The Rust pipeline demos use pre-compiled `.cor24.s` assembly files rather than running the full Rust→MSP430→COR24 compilation pipeline. This has three benefits:
+
+1. **Speed** — compiling Rust with `-Z build-std=core` for MSP430 takes 10+ seconds per demo; running the pre-compiled assembly takes milliseconds
+2. **Stability** — Rust nightly compiler changes would cause false positives in reg-rs tests
+3. **Isolation** — tests verify the assembler and emulator, not the Rust compiler or MSP430 translator
+
+When the Rust compiler or translator changes, regenerate the `.cor24.s` files using `run-demo.sh` in the cor24-rs repo, then re-baseline with `bash tests/regression/cor24_setup.sh`.
+
+### No sandbox needed
+
+Like favicon, cor24-rs is stateless. The emulator reads a binary file, executes it, and writes output to stdout. No config files, no persistent state, no interactive prompts. This makes the tests trivially safe for parallel execution.
+
+## What the tests catch
+
+| Change | Tests affected | What the diff shows |
+|--------|---------------|-------------------|
+| ALU instruction bug | `cor24_rust_add`, `cor24_rust_fibonacci` | Wrong register values, different instruction count |
+| UART peripheral change | `cor24_hello_world`, `cor24_count_down`, `cor24_rust_uart_hello` | Missing or wrong UART content |
+| LED I/O mapping change | `cor24_led_blink`, `cor24_rust_fibonacci` | Wrong LED state bits |
+| Disassembler formatting | `cor24_disassembly`, `cor24_debug_session` | Changed mnemonic format or alignment |
+| Breakpoint logic | `cor24_debug_session` | Breakpoint not hit, wrong register at break |
+| Memory layout change | `cor24_rust_*` | Different memory dump, stack pointer |
+| Program loading bug | All tests | Wrong byte count, different execution |
+
+## Extending the suite
+
+The cor24-rs repo has additional test programs and demos that could be added:
+
+```bash
+# Additional assembler programs
+ls ~/github/sw-embed/cor24-rs/tests/programs/*.lgo
+# hello_uart.lgo, led_on.lgo
+
+# Additional Rust pipeline demos (13 total, 4 tested)
+ls ~/github/sw-embed/cor24-rs/rust-to-cor24/demos/demo_*/
+# demo_blinky, demo_button_echo, demo_drop, demo_echo,
+# demo_echo_v2, demo_fibonacci_iter, demo_nested,
+# demo_panic, demo_stack_vars
+
+# Sieve benchmark (500M instructions — slower, good for timing regression)
+cor24-dbg --entry 0x93 sieve.lgo <<< "run 500_000_000\nuart\nquit"
+```
+
+To add a test, append to `cor24_setup.sh` following the pattern:
+
+```bash
+create_test "cor24_new_test" \
+  "$DBG $PROGRAMS/new_program.lgo <<'CMDS'
+run 1000
+uart
+quit
+CMDS" \
+  --timeout 10 \
+  -P "sed 's|$COR24_DIR|<COR24>|g'" \
+  --desc "What this test verifies" \
+  --expects "Expected output description"
+```

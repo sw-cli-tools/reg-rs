@@ -1,0 +1,13 @@
+#!/bin/bash
+# regress — shorthand for reg-rs run
+#
+# Usage:
+#   regress              run all tests under cwd
+#   regress abc          run tests matching "abc" (e.g. abc0010.tdb, abc0011.tdb)
+#   regress abc --parallel   run matching tests in parallel
+#
+# Tests are auto-discovered in ./work/reg-rs/, then cwd, then ~/.local/reg-rs/
+# Set REG_RS_BIN to override the reg-rs binary location.
+
+BIN="${REG_RS_BIN:-reg-rs}"
+exec "$BIN" run -p "${1:-.tdb}" ${2:+"$2"} ${3:+"$3"} ${4:+"$4"}
