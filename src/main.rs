@@ -20,6 +20,9 @@ async fn main() -> Result<(), RegError> {
         args::Subcommands::List { .. } => {
             command::list_tests(&config)?;
         }
+        args::Subcommands::Show { .. } => {
+            command::show_tests(&config)?;
+        }
         args::Subcommands::Remove { .. } => {
             command::remove_all(&config)?;
         }

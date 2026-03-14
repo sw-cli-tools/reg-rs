@@ -1,6 +1,6 @@
 # Known Gaps
 
-## No way to view or edit stored test commands
+## ~~No way to view or edit stored test commands~~
 
 Test commands are stored inside each `.tdb` SQLite database in the
 `original_results_table`. There is currently no `reg-rs` subcommand to
@@ -34,11 +34,13 @@ reg-rs list -p my_test          # list matching tests
 reg-rs l -p my_test             # using alias
 ```
 
-**Remaining:** Add a `show` subcommand for full detail:
+**Resolved.** The `show` subcommand displays full test detail:
 
 ```bash
-reg-rs show -p my_test          # display command, baseline, metadata
-reg-rs show -p my_test -vv      # include latest results and diffs
+reg-rs show -p my_test          # command, metadata, status
+reg-rs show -p my_test -v       # also baseline stdout/stderr
+reg-rs show -p my_test -vv      # also latest results and diffs
+reg-rs w -p my_test             # alias
 ```
 
 ## Pattern matching is substring-only

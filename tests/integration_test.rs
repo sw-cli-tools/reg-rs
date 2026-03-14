@@ -57,6 +57,7 @@ fn integration_test_reg_rs_help() {
             "Creates a new test of a specified command",
         ))
         .stdout(predicate::str::contains("Lists tests matching"))
+        .stdout(predicate::str::contains("Shows detailed information"))
         .stdout(predicate::str::contains("Removes previously created test"))
         .stdout(predicate::str::contains("Reports counts/summary"))
         .stdout(predicate::str::contains("Runs a test"))
@@ -767,6 +768,69 @@ fn integration_test_list_tests() {
         .success()
         .stdout(predicate::str::contains("PASS"))
         .stdout(predicate::str::contains("list_test"));
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+}
+
+#[test]
+fn integration_test_show_tests() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("show_test.tdb");
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+
+    // Create a test with metadata
+    reg_rs()
+        .args([
+            "create",
+            "-t",
+            "show_test",
+            "-c",
+            "echo showing",
+            "--desc",
+            "A test for show",
+            "--timeout",
+            "10",
+        ])
+        .assert()
+        .success();
+
+    // Show without verbosity — command and metadata
+    reg_rs()
+        .args(["show", "-p", "show_test"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("show_test"))
+        .stdout(predicate::str::contains("echo showing"))
+        .stdout(predicate::str::contains("pending"))
+        .stdout(predicate::str::contains("desc:"))
+        .stdout(predicate::str::contains("A test for show"));
+
+    // Show with -v — baseline output
+    reg_rs()
+        .args(["show", "-p", "show_test", "-v"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("baseline stdout"))
+        .stdout(predicate::str::contains("showing"));
+
+    // Run the test
+    reg_rs().args(["run", "-p", "show_test"]).assert().success();
+
+    // Show with -vv — latest results
+    reg_rs()
+        .args(["show", "-p", "show_test", "-vv"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("PASS"))
+        .stdout(predicate::str::contains("latest stdout"))
+        .stdout(predicate::str::contains("latest exit: 0"));
 
     // Clean up
     let _ = fs::remove_file(&test_db);

@@ -169,6 +169,122 @@ pub fn list_tests(config: &config::Config) -> crate::error::Result<()> {
     Ok(())
 }
 
+/// Show detailed information about tests matching a pattern.
+pub fn show_tests(config: &config::Config) -> crate::error::Result<()> {
+    log::info!("command/show_tests");
+    let pattern = config.extract_pattern().to_string();
+    let verbosity = config.verbosity_level();
+    let tests = finder::discover(pattern.clone())?;
+    if tests.found.is_empty() {
+        eprintln!(
+            "no tests matched pattern '{}' in {}",
+            pattern,
+            tests.data_dir.display()
+        );
+        return Ok(());
+    }
+    for (i, test_path) in tests.found.iter().enumerate() {
+        if i > 0 {
+            println!();
+        }
+        show_one_test(test_path, verbosity)?;
+    }
+    log::info!("command/show_tests done");
+    Ok(())
+}
+
+/// Display detailed information for a single test.
+fn show_one_test(test_path: &str, verbosity: u8) -> crate::error::Result<()> {
+    let name = std::path::Path::new(test_path)
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy();
+    let original = db::read_original_results(test_path)?;
+    let latest_count = db::count_latest_results(test_path)?;
+    let diff_count = db::count_differences(test_path)?;
+
+    let status = if latest_count == 0 {
+        "pending"
+    } else if diff_count > 0 {
+        "FAIL"
+    } else {
+        "PASS"
+    };
+
+    println!("=== {} ({}) ===", name, status);
+    println!("command:  {}", original.command);
+    println!("created:  {}", original.time_created);
+    println!("exit:     {}", original.exit_code);
+
+    // Show metadata
+    for (key, label) in [
+        (META_DESC, "desc"),
+        (META_EXPECTS, "expects"),
+        (META_FLAKY_NOTE, "flaky"),
+        (crate::preprocess::PREPROCESS_KEY, "preprocess"),
+        (crate::normalize::DIFF_MODE_KEY, "diff_mode"),
+        ("timeout", "timeout"),
+    ] {
+        if let Ok(Some(val)) = db::read_metadata(test_path, key) {
+            println!("{:<10}{}", format!("{}:", label), val);
+        }
+    }
+
+    // -v: show baseline output
+    if verbosity >= 1 {
+        println!("\n--- baseline stdout ---");
+        if original.stdout.is_empty() {
+            println!("(empty)");
+        } else {
+            print!("{}", original.stdout);
+            if !original.stdout.ends_with('\n') {
+                println!();
+            }
+        }
+        if !original.stderr.is_empty() {
+            println!("--- baseline stderr ---");
+            print!("{}", original.stderr);
+            if !original.stderr.ends_with('\n') {
+                println!();
+            }
+        }
+    }
+
+    // -vv: show latest results and diffs
+    if verbosity >= 2 && latest_count > 0 {
+        let latest = db::read_latest_results(test_path)?;
+        println!("\n--- latest stdout ---");
+        if latest.stdout.is_empty() {
+            println!("(empty)");
+        } else {
+            print!("{}", latest.stdout);
+            if !latest.stdout.ends_with('\n') {
+                println!();
+            }
+        }
+        if !latest.stderr.is_empty() {
+            println!("--- latest stderr ---");
+            print!("{}", latest.stderr);
+            if !latest.stderr.ends_with('\n') {
+                println!();
+            }
+        }
+        println!("--- latest exit: {} ---", latest.exit_code);
+
+        if diff_count > 0 {
+            let diffs = db::read_differences(test_path)?;
+            println!("\n--- differences ({}) ---", diffs.len());
+            for (type_code, chunk) in &diffs {
+                let label =
+                    crate::diff::RegressionType::display_label(type_code).unwrap_or("unknown");
+                println!("[{}] {}", label, chunk);
+            }
+        }
+    }
+
+    Ok(())
+}
+
 /// report latest test results
 pub fn report_latest(config: &config::Config) -> crate::error::Result<()> {
     log::info!("command/report_latest");

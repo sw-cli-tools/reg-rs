@@ -33,6 +33,7 @@ impl Config {
             args::Subcommands::Create { .. } => unreachable!(),
             args::Subcommands::Analyze { pattern, .. } => pattern,
             args::Subcommands::List { pattern, .. } => pattern,
+            args::Subcommands::Show { pattern, .. } => pattern,
             args::Subcommands::Remove { pattern, .. } => pattern,
             args::Subcommands::Report { pattern, .. } => pattern,
             args::Subcommands::Run { pattern, .. } => pattern,
@@ -133,11 +134,13 @@ impl Config {
 
     /// determines how verbose the output should be
     pub fn verbosity_level(&self) -> u8 {
-        if let args::Subcommands::Report { verbosity, .. } = &self.mode {
-            log::debug!("verbosity_level: {}", verbosity);
-            *verbosity
-        } else {
-            0
+        match &self.mode {
+            args::Subcommands::Report { verbosity, .. }
+            | args::Subcommands::Show { verbosity, .. } => {
+                log::debug!("verbosity_level: {}", verbosity);
+                *verbosity
+            }
+            _ => 0,
         }
     }
 

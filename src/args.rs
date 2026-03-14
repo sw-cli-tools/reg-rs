@@ -111,6 +111,29 @@ EXAMPLES:
         #[clap(long, short, default_value = ".tdb")]
         pattern: String,
     },
+    /// Shows detailed information about a test including command, baseline, and results (alias w)
+    #[clap(
+        name = "show",
+        alias = "w",
+        long_about = "Shows detailed information about a test or tests.
+
+Displays the test command, metadata, baseline output, and latest run results.
+Use -v for more detail (baseline content), -vv for latest results and diffs.
+
+EXAMPLES:
+  reg-rs show -p my_test             # show command and metadata
+  reg-rs show -p my_test -v          # also show baseline output
+  reg-rs show -p my_test -vv         # also show latest results and diffs
+  reg-rs w -p test                   # using alias"
+    )]
+    Show {
+        /// Substring pattern to match test names (default: all)
+        #[clap(long, short, default_value = ".tdb")]
+        pattern: String,
+        /// Verbosity: -v adds baseline, -vv adds latest results and diffs
+        #[clap(short, action = clap::ArgAction::Count)]
+        verbosity: u8,
+    },
     /// Lists tests matching a pattern with their command and status (alias l)
     #[clap(
         name = "list",
@@ -349,6 +372,39 @@ mod tests {
             },
             Args::try_parse_from(["test", "run", "-p", "pat001"]).unwrap()
         );
+    }
+
+    #[test]
+    fn test_show_defaults() {
+        let args = Args::try_parse_from(["test", "show"]).unwrap();
+        match args.command {
+            Subcommands::Show { pattern, verbosity } => {
+                assert_eq!(pattern, ".tdb");
+                assert_eq!(verbosity, 0);
+            }
+            _ => panic!("expected Show"),
+        }
+    }
+
+    #[test]
+    fn test_show_with_verbosity() {
+        let args = Args::try_parse_from(["test", "show", "-p", "hello", "-vv"]).unwrap();
+        match args.command {
+            Subcommands::Show { pattern, verbosity } => {
+                assert_eq!(pattern, "hello");
+                assert_eq!(verbosity, 2);
+            }
+            _ => panic!("expected Show"),
+        }
+    }
+
+    #[test]
+    fn test_show_alias() {
+        let args = Args::try_parse_from(["test", "w", "-p", "foo"]).unwrap();
+        match args.command {
+            Subcommands::Show { pattern, .. } => assert_eq!(pattern, "foo"),
+            _ => panic!("expected Show"),
+        }
     }
 
     #[test]

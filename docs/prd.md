@@ -27,6 +27,7 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 - SQLite storage per test (.tdb files)
 - External file locking for concurrent access
 - `list` subcommand for quick test enumeration with status
+- `show` subcommand with verbosity levels for test details, baselines, and diffs
 - `bin/regress` wrapper script for ergonomic usage
 - Conditional debug output (-d flag)
 - File-based logging (-l flag)
@@ -71,7 +72,7 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 - [ ] Fix non-atomic database operations (wrap clear+store in single transaction)
 - [ ] Add meaningful exit codes (0=all pass, 1=regressions found, 2=error)
 - [ ] Standardize on RegError throughout (remove Box<dyn Error> from public API)
-- [ ] Add `show` subcommand to view stored test commands and metadata
+- [x] Add `show` subcommand to view stored test commands and metadata
 - [x] Add `list` subcommand for quick test enumeration
 
 ### Phase 2: Dogfooding and Self-Testing *(complete)*
