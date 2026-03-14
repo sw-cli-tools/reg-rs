@@ -28,7 +28,8 @@ mkdir -p "$REG_RS_DATA_DIR"
 # Clean previous self-tests
 echo ""
 echo "=== Cleaning previous self-tests ==="
-rm -f "$REG_RS_DATA_DIR"/reg_rs_*.tdb "$REG_RS_DATA_DIR"/reg_rs_*.tdb.lock
+rm -f "$REG_RS_DATA_DIR"/reg_rs_*.tdb "$REG_RS_DATA_DIR"/reg_rs_*.tdb.lock \
+      "$REG_RS_DATA_DIR"/reg_rs_*.rgt "$REG_RS_DATA_DIR"/reg_rs_*.out "$REG_RS_DATA_DIR"/reg_rs_*.err
 
 # Create self-tests for each command's help output
 echo ""

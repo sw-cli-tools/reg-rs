@@ -1,5 +1,5 @@
 # reg-rs Basic Workflow Demo
-# This VHS tape demonstrates the basic workflow: create, run, report, remove
+# This VHS tape demonstrates the basic workflow: create, run, list, show, report, remove
 #
 # To generate the GIF:
 #   vhs demo/basic.tape
@@ -17,9 +17,14 @@ Enter
 Sleep 1s
 
 # Build the binary first (silently)
-Type "cargo build --release 2>/dev/null"
+Type "cargo build --release 2>/dev/null && cargo install --path . 2>/dev/null"
 Enter
 Sleep 2s
+
+# Load aliases
+Type "source bin/source-rg.sh"
+Enter
+Sleep 500ms
 
 # Set data dir to project-local work directory
 Type "export REG_RS_DATA_DIR=./work/reg-rs && mkdir -p $REG_RS_DATA_DIR"
@@ -31,11 +36,11 @@ Type "rm -f $REG_RS_DATA_DIR/hello.tdb $REG_RS_DATA_DIR/hello.tdb.lock"
 Enter
 Sleep 500ms
 
-# Show short help
-Type "# Show available commands"
+# Show alias help
+Type "# Show available aliases"
 Enter
 Sleep 500ms
-Type "./target/release/reg-rs -h"
+Type "hlrg"
 Enter
 Sleep 2s
 
@@ -43,31 +48,47 @@ Sleep 2s
 Type "# Step 1: Create a test"
 Enter
 Sleep 500ms
-Type "./target/release/reg-rs create -t hello -c 'echo hello world'"
+Type "adrg hello 'echo hello world' --desc 'Hello output test'"
+Enter
+Sleep 2s
+
+# List tests
+Type "# Step 2: List tests (shows pending — not yet run)"
+Enter
+Sleep 500ms
+Type "lsrg hello"
 Enter
 Sleep 2s
 
 # Run the test
-Type "# Step 2: Run the test (compare against baseline)"
+Type "# Step 3: Run the test (compare against baseline)"
 Enter
 Sleep 500ms
-Type "./target/release/reg-rs run -p hello"
+Type "rnrg hello"
+Enter
+Sleep 2s
+
+# Show test details
+Type "# Step 4: Show test details"
+Enter
+Sleep 500ms
+Type "shrg hello -v"
 Enter
 Sleep 2s
 
 # Report results
-Type "# Step 3: Report results"
+Type "# Step 5: Report results"
 Enter
 Sleep 500ms
-Type "./target/release/reg-rs report -p hello -v"
+Type "reg-rs report -p hello -v"
 Enter
 Sleep 2s
 
 # Clean up
-Type "# Step 4: Clean up"
+Type "# Step 6: Clean up"
 Enter
 Sleep 500ms
-Type "./target/release/reg-rs remove -p hello"
+Type "rmrg hello"
 Enter
 Sleep 1s
 
