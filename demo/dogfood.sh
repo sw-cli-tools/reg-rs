@@ -13,6 +13,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 export REG_RS_DATA_DIR="${REG_RS_DATA_DIR:-./work/reg-rs}"
+export RUST_LOG="${RUST_LOG:-warn}"
 
 if [ -z "$REG_RS_BIN" ]; then
     echo "Building reg-rs..."
@@ -27,13 +28,13 @@ mkdir -p "$REG_RS_DATA_DIR"
 
 # Clean previous self-tests
 echo ""
-echo "=== Cleaning previous self-tests ==="
+echo "--- Cleaning previous self-tests ---"
 rm -f "$REG_RS_DATA_DIR"/reg_rs_*.tdb "$REG_RS_DATA_DIR"/reg_rs_*.tdb.lock \
       "$REG_RS_DATA_DIR"/reg_rs_*.rgt "$REG_RS_DATA_DIR"/reg_rs_*.out "$REG_RS_DATA_DIR"/reg_rs_*.err
 
 # Create self-tests for each command's help output
 echo ""
-echo "=== Creating self-tests ==="
+echo "--- Creating self-tests ---"
 "$REG_RS_BIN" create -t reg_rs_help -c "$REG_RS_BIN -h"
 "$REG_RS_BIN" create -t reg_rs_create_help -c "$REG_RS_BIN create -h"
 "$REG_RS_BIN" create -t reg_rs_run_help -c "$REG_RS_BIN run -h"
@@ -43,13 +44,27 @@ echo "=== Creating self-tests ==="
 
 # Run them
 echo ""
-echo "=== Running self-tests ==="
+echo "--- Running self-tests ---"
 "$REG_RS_BIN" run -p reg_rs
 
-# Report results
+# Report results and check for failures
 echo ""
-echo "=== Self-test report ==="
-"$REG_RS_BIN" report -p reg_rs -vv
+echo "--- Self-test report ---"
+REPORT=$("$REG_RS_BIN" report -p reg_rs -v)
+echo "$REPORT"
+
+# Extract counts from summary line
+FAILED=$(echo "$REPORT" | grep -o '[0-9]* failed' | head -1 | grep -o '[0-9]*' | sed 's/^0*//' )
+PASSED=$(echo "$REPORT" | grep -o '[0-9]* passed' | head -1 | grep -o '[0-9]*' | sed 's/^0*//' )
 
 echo ""
-echo "=== Done! reg-rs successfully tested itself ==="
+if [ "${FAILED:-0}" -gt 0 ]; then
+    echo "=== FAILED: ${FAILED} test(s) failed ==="
+    exit 1
+elif [ "${PASSED:-0}" -eq 0 ]; then
+    echo "=== ERROR: No tests were run ==="
+    exit 2
+else
+    echo "=== PASSED: All ${PASSED} self-tests passed ==="
+    echo "=== Done! reg-rs successfully tested itself ==="
+fi

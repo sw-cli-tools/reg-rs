@@ -418,15 +418,16 @@ pub(crate) fn set_test_runs(app_state: AppState) -> crate::error::Result<()> {
     let mut test_runs = vec![];
     let test_names = finder::discover(state_data.pattern.to_string())?;
     for test_name in &test_names.found {
-        let original_result = db::read_original_results(test_name)?;
-        let latest_results_row_count = db::count_latest_results(test_name)?;
+        let db = crate::db_path(test_name);
+        let original_result = db::read_original_results(&db)?;
+        let latest_results_row_count = db::count_latest_results(&db)?;
         let (last_ran, diffs) = if latest_results_row_count == 0 {
             (None, None)
         } else {
-            let latest_result = db::read_latest_results(test_name)?;
-            let difference_count = db::count_differences(test_name)?;
+            let latest_result = db::read_latest_results(&db)?;
+            let difference_count = db::count_differences(&db)?;
             let diffs = if difference_count > 0 {
-                Some(get_diffs(test_name)?)
+                Some(get_diffs(&db)?)
             } else {
                 None
             };

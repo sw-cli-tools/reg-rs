@@ -85,28 +85,31 @@ fn show_failures(
     }
     for test in failed_test_names {
         log::debug!("show_failures test: {:?}", &test);
-        let original_result = db::read_original_results(test)?;
+        let db = crate::db_path(test);
+        let original_result = db::read_original_results(&db)?;
         log::debug!("show_failures original: {:?}", &original_result);
-        let latest_result = db::read_latest_results(test)?;
+        let latest_result = db::read_latest_results(&db)?;
         log::debug!("show_failures latest: {:?}", &latest_result);
-        let differences = db::read_differences(test)?;
+        let differences = db::read_differences(&db)?;
         log::debug!("show_failures differences: {:?}", &differences);
         let mut difference_types = vec![];
         let same_count =
-            db::difference_count_by_type(test, diff::RegressionType::StderrSame as u8)?
-                + db::difference_count_by_type(test, diff::RegressionType::StdoutSame as u8)?;
+            db::difference_count_by_type(&db, diff::RegressionType::StderrSame as u8)?
+                + db::difference_count_by_type(&db, diff::RegressionType::StdoutSame as u8)?;
         let differences_count = differences.len() as u32 - same_count;
         if verbosity_level > 2 {
-            if 0 < db::difference_count_by_type(test, diff::RegressionType::ActualCode as u8)? {
+            if 0 < db::difference_count_by_type(&db, diff::RegressionType::ActualCode as u8)? {
                 difference_types.push("exit_code".to_string());
             }
-            if 0 < db::difference_count_by_type(test, diff::RegressionType::StderrAdd as u8)?
-                || 0 < db::difference_count_by_type(test, diff::RegressionType::StderrRemove as u8)?
+            if 0 < db::difference_count_by_type(&db, diff::RegressionType::StderrAdd as u8)?
+                || 0
+                    < db::difference_count_by_type(&db, diff::RegressionType::StderrRemove as u8)?
             {
                 difference_types.push("stderr".to_string());
             }
-            if 0 < db::difference_count_by_type(test, diff::RegressionType::StdoutAdd as u8)?
-                || 0 < db::difference_count_by_type(test, diff::RegressionType::StdoutRemove as u8)?
+            if 0 < db::difference_count_by_type(&db, diff::RegressionType::StdoutAdd as u8)?
+                || 0
+                    < db::difference_count_by_type(&db, diff::RegressionType::StdoutRemove as u8)?
             {
                 difference_types.push("stdout".to_string());
             }
@@ -119,7 +122,7 @@ fn show_failures(
             original_result.time_created.to_string(),
             latest_result.time_created.to_string(),
         ))?;
-        show_doc_metadata(test)?;
+        show_doc_metadata(&db)?;
         if verbosity_level > 2 {
             let display_differences: Vec<_> = differences
                 .iter()
@@ -177,9 +180,10 @@ fn show_passes(
     }
     for test in passed_test_names {
         log::debug!("show_passes test: {:?}", &test);
-        let original_result = db::read_original_results(test)?;
+        let db = crate::db_path(test);
+        let original_result = db::read_original_results(&db)?;
         log::debug!("show_passes original: {:?}", &original_result);
-        let latest_result = db::read_latest_results(test)?;
+        let latest_result = db::read_latest_results(&db)?;
         log::debug!("show_passes latest: {:?}", &latest_result);
         passes::show_passes(&passes::PassesReportContext::new(
             pass_symbol(),

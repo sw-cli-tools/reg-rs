@@ -88,6 +88,18 @@ mod tests {
     }
 }
 
+/// Resolve the .tdb database path for a test file.
+///
+/// For `.rgt` files, returns the companion `.tdb` cache path.
+/// For `.tdb` files, returns the path as-is.
+pub fn db_path(test_path: &str) -> String {
+    if test_path.ends_with(&format!(".{}", rgt::RGT_EXTENSION)) {
+        rgt::tdb_path_for_rgt(test_path)
+    } else {
+        test_path.to_string()
+    }
+}
+
 /// AI-powered command generation
 pub mod ai;
 /// AI-powered failure analysis

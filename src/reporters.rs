@@ -32,11 +32,12 @@ pub(crate) fn generate_reports(config: &config::Config) -> crate::error::Result<
     let mut passed_test_names = vec![];
     let mut not_yet_run_test_names = vec![];
     for test_name in &test_names.found {
-        let latest_results_row_count = db::count_latest_results(test_name)?;
+        let db_path = crate::db_path(test_name);
+        let latest_results_row_count = db::count_latest_results(&db_path)?;
         if latest_results_row_count == 0 {
             not_yet_run_test_names.push(test_name.to_string());
         } else {
-            let difference_count = db::count_differences(test_name)?;
+            let difference_count = db::count_differences(&db_path)?;
             log::debug!("difference_count: {}", difference_count);
             if difference_count > 0 {
                 failed_test_names.push(test_name.to_string());
