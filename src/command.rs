@@ -139,24 +139,24 @@ pub fn list_tests(config: &config::Config) -> crate::error::Result<()> {
         return Ok(());
     }
     for test_path in &tests.found {
-        let original = db::read_original_results(test_path)?;
-        let latest_count = db::count_latest_results(test_path)?;
+        let (command, tdb_path) = read_test_command(test_path)?;
+        let latest_count = db::count_latest_results(&tdb_path)?;
         let status = if latest_count == 0 {
             "pending"
         } else {
-            let diff_count = db::count_differences(test_path)?;
+            let diff_count = db::count_differences(&tdb_path)?;
             if diff_count > 0 { "FAIL" } else { "PASS" }
         };
-        // Extract just the test name from the path (strip directory and .tdb extension)
+        // Extract just the test name from the path (strip directory and extension)
         let name = std::path::Path::new(test_path)
             .file_stem()
             .unwrap_or_default()
             .to_string_lossy();
         // Truncate long commands for display
-        let cmd_display = if original.command.len() > 60 {
-            format!("{}...", &original.command[..57])
+        let cmd_display = if command.len() > 60 {
+            format!("{}...", &command[..57])
         } else {
-            original.command.clone()
+            command
         };
         println!("{:<7} {:<30} {}", status, name, cmd_display);
     }
@@ -195,13 +195,19 @@ pub fn show_tests(config: &config::Config) -> crate::error::Result<()> {
 
 /// Display detailed information for a single test.
 fn show_one_test(test_path: &str, verbosity: u8) -> crate::error::Result<()> {
+    let is_rgt = test_path.ends_with(&format!(".{}", crate::rgt::RGT_EXTENSION));
     let name = std::path::Path::new(test_path)
         .file_stem()
         .unwrap_or_default()
         .to_string_lossy();
-    let original = db::read_original_results(test_path)?;
-    let latest_count = db::count_latest_results(test_path)?;
-    let diff_count = db::count_differences(test_path)?;
+    let tdb_path = if is_rgt {
+        crate::rgt::tdb_path_for_rgt(test_path)
+    } else {
+        test_path.to_string()
+    };
+
+    let latest_count = db::count_latest_results(&tdb_path)?;
+    let diff_count = db::count_differences(&tdb_path)?;
 
     let status = if latest_count == 0 {
         "pending"
@@ -211,12 +217,112 @@ fn show_one_test(test_path: &str, verbosity: u8) -> crate::error::Result<()> {
         "PASS"
     };
 
+    if is_rgt {
+        show_one_rgt(
+            test_path,
+            &name,
+            status,
+            verbosity,
+            &tdb_path,
+            latest_count,
+            diff_count,
+        )
+    } else {
+        show_one_tdb(
+            test_path,
+            &name,
+            status,
+            verbosity,
+            latest_count,
+            diff_count,
+        )
+    }
+}
+
+/// Show details for an .rgt test.
+fn show_one_rgt(
+    rgt_path: &str,
+    name: &str,
+    status: &str,
+    verbosity: u8,
+    tdb_path: &str,
+    latest_count: u32,
+    diff_count: u32,
+) -> crate::error::Result<()> {
+    let spec = crate::rgt::parse_rgt(rgt_path)?;
+
+    println!("=== {} ({}) ===", name, status);
+    println!("format:   .rgt");
+    println!("command:  {}", spec.command);
+    if let Some(exit_code) = spec.exit_code {
+        println!("exit:     {}", exit_code);
+    }
+    if let Some(ref d) = spec.desc {
+        println!("desc:     {}", d);
+    }
+    if let Some(ref e) = spec.expects {
+        println!("expects:  {}", e);
+    }
+    if let Some(ref f) = spec.flaky_note {
+        println!("flaky:    {}", f);
+    }
+    if let Some(ref p) = spec.preprocess {
+        println!("preprocess: {}", p);
+    }
+    if let Some(ref dm) = spec.diff_mode {
+        println!("diff_mode: {}", dm);
+    }
+    if let Some(t) = spec.timeout {
+        println!("timeout:  {}s", t);
+    }
+
+    // -v: show baseline output from .out/.err files
+    if verbosity >= 1 {
+        let baseline_stdout = crate::rgt::read_baseline_stdout(rgt_path)?;
+        let baseline_stderr = crate::rgt::read_baseline_stderr(rgt_path)?;
+        println!("\n--- baseline stdout ---");
+        if baseline_stdout.is_empty() {
+            println!("(empty)");
+        } else {
+            print!("{}", baseline_stdout);
+            if !baseline_stdout.ends_with('\n') {
+                println!();
+            }
+        }
+        if !baseline_stderr.is_empty() {
+            println!("--- baseline stderr ---");
+            print!("{}", baseline_stderr);
+            if !baseline_stderr.ends_with('\n') {
+                println!();
+            }
+        }
+    }
+
+    // -vv: show latest results and diffs from .tdb cache
+    if verbosity >= 2 && latest_count > 0 {
+        show_latest_and_diffs(tdb_path, diff_count)?;
+    }
+
+    Ok(())
+}
+
+/// Show details for a .tdb test (legacy).
+fn show_one_tdb(
+    test_path: &str,
+    name: &str,
+    status: &str,
+    verbosity: u8,
+    latest_count: u32,
+    diff_count: u32,
+) -> crate::error::Result<()> {
+    let original = db::read_original_results(test_path)?;
+
     println!("=== {} ({}) ===", name, status);
     println!("command:  {}", original.command);
     println!("created:  {}", original.time_created);
     println!("exit:     {}", original.exit_code);
 
-    // Show metadata
+    // Show metadata from .tdb
     for (key, label) in [
         (META_DESC, "desc"),
         (META_EXPECTS, "expects"),
@@ -252,37 +358,203 @@ fn show_one_test(test_path: &str, verbosity: u8) -> crate::error::Result<()> {
 
     // -vv: show latest results and diffs
     if verbosity >= 2 && latest_count > 0 {
-        let latest = db::read_latest_results(test_path)?;
-        println!("\n--- latest stdout ---");
-        if latest.stdout.is_empty() {
-            println!("(empty)");
-        } else {
-            print!("{}", latest.stdout);
-            if !latest.stdout.ends_with('\n') {
-                println!();
-            }
-        }
-        if !latest.stderr.is_empty() {
-            println!("--- latest stderr ---");
-            print!("{}", latest.stderr);
-            if !latest.stderr.ends_with('\n') {
-                println!();
-            }
-        }
-        println!("--- latest exit: {} ---", latest.exit_code);
-
-        if diff_count > 0 {
-            let diffs = db::read_differences(test_path)?;
-            println!("\n--- differences ({}) ---", diffs.len());
-            for (type_code, chunk) in &diffs {
-                let label =
-                    crate::diff::RegressionType::display_label(type_code).unwrap_or("unknown");
-                println!("[{}] {}", label, chunk);
-            }
-        }
+        show_latest_and_diffs(test_path, diff_count)?;
     }
 
     Ok(())
+}
+
+/// Display latest results and differences (shared by .rgt and .tdb show).
+fn show_latest_and_diffs(tdb_path: &str, diff_count: u32) -> crate::error::Result<()> {
+    let latest = db::read_latest_results(tdb_path)?;
+    println!("\n--- latest stdout ---");
+    if latest.stdout.is_empty() {
+        println!("(empty)");
+    } else {
+        print!("{}", latest.stdout);
+        if !latest.stdout.ends_with('\n') {
+            println!();
+        }
+    }
+    if !latest.stderr.is_empty() {
+        println!("--- latest stderr ---");
+        print!("{}", latest.stderr);
+        if !latest.stderr.ends_with('\n') {
+            println!();
+        }
+    }
+    println!("--- latest exit: {} ---", latest.exit_code);
+
+    if diff_count > 0 {
+        let diffs = db::read_differences(tdb_path)?;
+        println!("\n--- differences ({}) ---", diffs.len());
+        for (type_code, chunk) in &diffs {
+            let label = crate::diff::RegressionType::display_label(type_code).unwrap_or("unknown");
+            println!("[{}] {}", label, chunk);
+        }
+    }
+    Ok(())
+}
+
+/// Read the command for a test, returning (command, tdb_path).
+/// Handles both .rgt and .tdb test sources.
+fn read_test_command(test_path: &str) -> crate::error::Result<(String, String)> {
+    if test_path.ends_with(&format!(".{}", crate::rgt::RGT_EXTENSION)) {
+        let spec = crate::rgt::parse_rgt(test_path)?;
+        let tdb_path = crate::rgt::tdb_path_for_rgt(test_path);
+        Ok((spec.command, tdb_path))
+    } else {
+        let original = db::read_original_results(test_path)?;
+        Ok((original.command, test_path.to_string()))
+    }
+}
+
+/// Migrate .tdb tests to .rgt text format with .out/.err baselines.
+pub fn migrate_tests(config: &config::Config) -> crate::error::Result<()> {
+    log::info!("command/migrate_tests");
+    let pattern = config.extract_pattern().to_string();
+    let tests = finder::discover(pattern.clone())?;
+    if tests.found.is_empty() {
+        eprintln!(
+            "no tests matched pattern '{}' in {}",
+            pattern,
+            tests.data_dir.display()
+        );
+        return Ok(());
+    }
+    let mut migrated = 0;
+    for test_path in &tests.found {
+        if test_path.ends_with(&format!(".{}", crate::rgt::RGT_EXTENSION)) {
+            eprintln!("skip: {} (already .rgt)", test_path);
+            continue;
+        }
+        migrate_one(test_path)?;
+        migrated += 1;
+    }
+    eprintln!("{} test(s) migrated to .rgt format", migrated);
+    log::info!("command/migrate_tests done");
+    Ok(())
+}
+
+/// Migrate a single .tdb file to .rgt + .out + .err format.
+fn migrate_one(tdb_path: &str) -> crate::error::Result<()> {
+    let original = db::read_original_results(tdb_path)?;
+    let rgt_path = std::path::Path::new(tdb_path)
+        .with_extension(crate::rgt::RGT_EXTENSION)
+        .to_string_lossy()
+        .to_string();
+
+    if std::path::Path::new(&rgt_path).exists() {
+        eprintln!("skip: {} (.rgt already exists)", tdb_path);
+        return Ok(());
+    }
+
+    // Read optional metadata from .tdb
+    let timeout = db::read_metadata(tdb_path, "timeout")?.and_then(|s| s.parse::<u64>().ok());
+    let preprocess = db::read_metadata(tdb_path, crate::preprocess::PREPROCESS_KEY)?;
+    let diff_mode = db::read_metadata(tdb_path, crate::normalize::DIFF_MODE_KEY)?;
+    let desc = db::read_metadata(tdb_path, META_DESC)?;
+    let expects = db::read_metadata(tdb_path, META_EXPECTS)?;
+    let flaky_note = db::read_metadata(tdb_path, META_FLAKY_NOTE)?;
+
+    let spec = crate::rgt::RgtSpec {
+        command: original.command,
+        timeout,
+        preprocess,
+        diff_mode,
+        exit_code: Some(original.exit_code),
+        desc,
+        expects,
+        flaky_note,
+    };
+
+    crate::rgt::write_rgt(&rgt_path, &spec)?;
+    crate::rgt::write_baseline(&rgt_path, &original.stdout, &original.stderr)?;
+    eprintln!("migrated: {} -> {}", tdb_path, rgt_path);
+    Ok(())
+}
+
+/// Accept latest test output as new baseline, updating .out/.err files.
+pub fn rebase_tests(config: &config::Config) -> crate::error::Result<()> {
+    log::info!("command/rebase_tests");
+    let pattern = config.extract_pattern().to_string();
+    let tests = finder::discover(pattern.clone())?;
+    if tests.found.is_empty() {
+        eprintln!(
+            "no tests matched pattern '{}' in {}",
+            pattern,
+            tests.data_dir.display()
+        );
+        return Ok(());
+    }
+    let mut rebased = 0;
+    for test_path in &tests.found {
+        if rebase_one(test_path)? {
+            rebased += 1;
+        }
+    }
+    eprintln!("{} test(s) rebased", rebased);
+    log::info!("command/rebase_tests done");
+    Ok(())
+}
+
+/// Rebase a single test: accept latest output as new baseline.
+///
+/// For .rgt tests: updates .out/.err companion files.
+/// For .tdb tests: replaces original results with latest results.
+/// Returns true if a rebase was performed.
+fn rebase_one(test_path: &str) -> crate::error::Result<bool> {
+    let is_rgt = test_path.ends_with(&format!(".{}", crate::rgt::RGT_EXTENSION));
+    let tdb_path = if is_rgt {
+        crate::rgt::tdb_path_for_rgt(test_path)
+    } else {
+        test_path.to_string()
+    };
+
+    let latest_count = db::count_latest_results(&tdb_path)?;
+    if latest_count == 0 {
+        eprintln!(
+            "skip: {} (no latest results — run the test first)",
+            test_path
+        );
+        return Ok(false);
+    }
+
+    let latest = db::read_latest_results(&tdb_path)?;
+
+    if is_rgt {
+        // Update .out/.err companion files
+        crate::rgt::write_baseline(test_path, &latest.stdout, &latest.stderr)?;
+        // Update exit_code in .rgt spec if it has one
+        let spec = crate::rgt::parse_rgt(test_path)?;
+        if spec.exit_code.is_some() {
+            let updated = crate::rgt::RgtSpec {
+                exit_code: Some(latest.exit_code),
+                ..spec
+            };
+            crate::rgt::write_rgt(test_path, &updated)?;
+        }
+    } else {
+        // .tdb-only: replace original results with latest
+        db::reset_differences(&tdb_path)?;
+        db::store_results(
+            &tdb_path,
+            &runner::TestResults {
+                name: latest.name,
+                command: latest.command,
+                time_created: latest.time_created,
+                exit_code: latest.exit_code,
+                stdout: latest.stdout,
+                stderr: latest.stderr,
+            },
+            crate::queries::StatementContext::original(),
+        )?;
+    }
+
+    // Clear diffs since baseline now matches latest
+    db::clear_differences(&tdb_path)?;
+    eprintln!("rebased: {}", test_path);
+    Ok(true)
 }
 
 /// report latest test results

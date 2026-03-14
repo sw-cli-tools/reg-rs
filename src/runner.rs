@@ -97,8 +97,21 @@ fn run_many_parallel(tests: &[String], dry_run: bool) -> crate::error::Result<()
     }
 }
 
-/// Run a single test and process differences
+/// Run a single test and process differences.
+///
+/// Supports both `.rgt` and `.tdb` test sources:
+/// - `.rgt`: reads spec from TOML, baselines from `.out`/`.err`, stores results in `.tdb` cache
+/// - `.tdb`: reads everything from SQLite (legacy behavior)
 fn run_and_diff(test: &str, dry_run: bool) -> crate::error::Result<()> {
+    if test.ends_with(&format!(".{}", crate::rgt::RGT_EXTENSION)) {
+        run_and_diff_rgt(test, dry_run)
+    } else {
+        run_and_diff_tdb(test, dry_run)
+    }
+}
+
+/// Run a .tdb test (legacy path)
+fn run_and_diff_tdb(test: &str, dry_run: bool) -> crate::error::Result<()> {
     let prior_test_result = db::read_original_results(test)?;
     let timeout_secs = db::read_metadata(test, "timeout")?
         .and_then(|s| s.parse::<u64>().ok())
@@ -108,6 +121,41 @@ fn run_and_diff(test: &str, dry_run: bool) -> crate::error::Result<()> {
     if let Some(latest_test_result) = maybe_regression {
         diff::process_differences(test, &prior_test_result, &latest_test_result)?;
         db::replace_latest_results(test, &latest_test_result)?;
+    }
+    Ok(())
+}
+
+/// Run an .rgt test: read spec from TOML, baselines from .out/.err, store in .tdb cache
+fn run_and_diff_rgt(rgt_path: &str, dry_run: bool) -> crate::error::Result<()> {
+    use crate::rgt;
+
+    let spec = rgt::parse_rgt(rgt_path)?;
+    let timeout_secs = spec.timeout.unwrap_or(300);
+    let tdb_path = rgt::tdb_path_for_rgt(rgt_path);
+
+    let maybe_result = run_one_timeout(rgt_path, &spec.command, dry_run, timeout_secs)?;
+    if let Some(latest_test_result) = maybe_result {
+        // Build a synthetic "prior" TestResults from .out/.err baselines
+        let baseline_stdout = rgt::read_baseline_stdout(rgt_path)?;
+        let baseline_stderr = rgt::read_baseline_stderr(rgt_path)?;
+        let prior_test_result = TestResults {
+            name: rgt_path.to_string(),
+            command: spec.command.clone(),
+            time_created: String::new(),
+            exit_code: spec.exit_code.unwrap_or(latest_test_result.exit_code),
+            stderr: baseline_stderr,
+            stdout: baseline_stdout,
+        };
+
+        // Process diffs and store in .tdb cache
+        diff::process_differences_with_settings(
+            &tdb_path,
+            &prior_test_result,
+            &latest_test_result,
+            spec.preprocess.as_deref(),
+            spec.diff_mode.as_deref(),
+        )?;
+        db::replace_latest_results(&tdb_path, &latest_test_result)?;
     }
     Ok(())
 }

@@ -43,6 +43,16 @@ reg-rs show -p my_test -vv      # also latest results and diffs
 reg-rs w -p my_test             # alias
 ```
 
+## ~~Binary .tdb files not git-friendly~~
+
+**Resolved.** The `.rgt` text format (TOML) replaces binary `.tdb` as the test definition source:
+
+- `.rgt` — test spec (command, timeout, metadata) — git tracked
+- `.out` / `.err` — expected baseline output — git tracked
+- `.tdb` — runtime cache (latest results, diffs) — gitignored
+
+Commands: `reg-rs migrate` converts `.tdb` → `.rgt`+`.out`+`.err`. `reg-rs rebase` accepts latest output as new baseline.
+
 ## Pattern matching is substring-only
 
 The `-p` pattern flag uses literal substring matching on the full file path,

@@ -58,6 +58,8 @@ fn integration_test_reg_rs_help() {
         ))
         .stdout(predicate::str::contains("Lists tests matching"))
         .stdout(predicate::str::contains("Shows detailed information"))
+        .stdout(predicate::str::contains("Converts .tdb tests to .rgt"))
+        .stdout(predicate::str::contains("Accepts latest test output"))
         .stdout(predicate::str::contains("Removes previously created test"))
         .stdout(predicate::str::contains("Reports counts/summary"))
         .stdout(predicate::str::contains("Runs a test"))
@@ -835,4 +837,136 @@ fn integration_test_show_tests() {
     // Clean up
     let _ = fs::remove_file(&test_db);
     let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+}
+
+#[test]
+fn integration_test_migrate_tdb_to_rgt() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("migrate_test.tdb");
+    let test_rgt = data_dir.join("migrate_test.rgt");
+    let test_out = data_dir.join("migrate_test.out");
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    let _ = fs::remove_file(&test_rgt);
+    let _ = fs::remove_file(&test_out);
+
+    // Create a .tdb test with metadata
+    reg_rs()
+        .args([
+            "create",
+            "-t",
+            "migrate_test",
+            "-c",
+            "echo migrated",
+            "--desc",
+            "A migration test",
+        ])
+        .assert()
+        .success();
+
+    assert!(test_db.exists());
+    assert!(!test_rgt.exists());
+
+    // Migrate
+    reg_rs()
+        .args(["migrate", "-p", "migrate_test"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("migrated:"))
+        .stderr(predicate::str::contains("1 test(s) migrated"));
+
+    // .rgt and .out should now exist
+    assert!(test_rgt.exists(), ".rgt file should exist after migrate");
+    assert!(test_out.exists(), ".out file should exist after migrate");
+
+    // .rgt should contain the command
+    let rgt_content = fs::read_to_string(&test_rgt).unwrap();
+    assert!(
+        rgt_content.contains("echo migrated"),
+        ".rgt should contain command"
+    );
+    assert!(
+        rgt_content.contains("A migration test"),
+        ".rgt should contain desc"
+    );
+
+    // .out should contain the baseline stdout
+    let out_content = fs::read_to_string(&test_out).unwrap();
+    assert_eq!(out_content, "migrated\n");
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    let _ = fs::remove_file(&test_rgt);
+    let _ = fs::remove_file(&test_out);
+}
+
+#[test]
+fn integration_test_rebase_rgt_test() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("rebase_test.tdb");
+    let test_rgt = data_dir.join("rebase_test.rgt");
+    let test_out = data_dir.join("rebase_test.out");
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    let _ = fs::remove_file(&test_rgt);
+    let _ = fs::remove_file(&test_out);
+
+    // Create .rgt test manually
+    fs::write(&test_rgt, "command = \"echo rebased\"\n").unwrap();
+    fs::write(&test_out, "original output\n").unwrap();
+
+    // Run the .rgt test — will produce "rebased\n" which differs from "original output\n"
+    reg_rs()
+        .args(["run", "-p", "rebase_test"])
+        .assert()
+        .success();
+
+    // .tdb cache should exist now
+    assert!(test_db.exists(), ".tdb cache should exist after run");
+
+    // Show should indicate FAIL
+    reg_rs()
+        .args(["list", "-p", "rebase_test"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("FAIL"));
+
+    // Rebase — accept latest output
+    reg_rs()
+        .args(["rebase", "-p", "rebase_test"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("rebased:"))
+        .stderr(predicate::str::contains("1 test(s) rebased"));
+
+    // .out should now contain the new output
+    let out_content = fs::read_to_string(&test_out).unwrap();
+    assert_eq!(out_content, "rebased\n");
+
+    // Run again — should pass now
+    reg_rs()
+        .args(["run", "-p", "rebase_test"])
+        .assert()
+        .success();
+
+    reg_rs()
+        .args(["list", "-p", "rebase_test"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("PASS"));
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    let _ = fs::remove_file(&test_rgt);
+    let _ = fs::remove_file(&test_out);
 }

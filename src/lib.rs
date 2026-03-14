@@ -22,7 +22,7 @@ pub const REQUIRED_BLANK: &str = " ";
 /// Resolution order:
 /// 1. `REG_RS_DATA_DIR` environment variable (if set)
 /// 2. `./work/reg-rs/` (if it exists under cwd)
-/// 3. Current directory (if it contains `.tdb` files)
+/// 3. Current directory (if it contains `.tdb` or `.rgt` files)
 /// 4. `~/.local/reg-rs/` (default)
 /// 5. `./data/` (fallback when HOME is unavailable)
 pub fn data_dir() -> PathBuf {
@@ -30,7 +30,7 @@ pub fn data_dir() -> PathBuf {
         PathBuf::from(custom)
     } else if PathBuf::from("work/reg-rs").exists() {
         PathBuf::from("work/reg-rs")
-    } else if has_tdb_files(".") {
+    } else if has_test_files(".") {
         PathBuf::from(".")
     } else {
         env::var("HOME")
@@ -43,13 +43,15 @@ pub fn data_dir() -> PathBuf {
     dir
 }
 
-/// Check if a directory contains any `.tdb` files (non-recursive).
-fn has_tdb_files(path: &str) -> bool {
+/// Check if a directory contains any `.tdb` or `.rgt` files (non-recursive).
+fn has_test_files(path: &str) -> bool {
     std::fs::read_dir(path)
         .map(|entries| {
-            entries
-                .filter_map(|e| e.ok())
-                .any(|e| e.path().extension().is_some_and(|ext| ext == TDB_EXTENSION))
+            entries.filter_map(|e| e.ok()).any(|e| {
+                e.path()
+                    .extension()
+                    .is_some_and(|ext| ext == TDB_EXTENSION || ext == rgt::RGT_EXTENSION)
+            })
         })
         .unwrap_or(false)
 }
@@ -120,6 +122,8 @@ pub mod process;
 pub mod queries;
 /// Test Result Reports
 pub mod reporters;
+/// .rgt text format for test specifications
+pub mod rgt;
 /// Test Runner
 pub mod runner;
 /// Test DB Interface

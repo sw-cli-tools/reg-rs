@@ -33,6 +33,8 @@ impl Config {
             args::Subcommands::Create { .. } => unreachable!(),
             args::Subcommands::Analyze { pattern, .. } => pattern,
             args::Subcommands::List { pattern, .. } => pattern,
+            args::Subcommands::Migrate { pattern, .. } => pattern,
+            args::Subcommands::Rebase { pattern, .. } => pattern,
             args::Subcommands::Show { pattern, .. } => pattern,
             args::Subcommands::Remove { pattern, .. } => pattern,
             args::Subcommands::Report { pattern, .. } => pattern,

@@ -155,6 +155,51 @@ EXAMPLES:
         #[clap(long, short, default_value = ".tdb")]
         pattern: String,
     },
+    /// Converts .tdb tests to .rgt text format with .out/.err baselines (alias m)
+    #[clap(
+        name = "migrate",
+        alias = "m",
+        long_about = "Converts existing .tdb test databases to .rgt text format.
+
+For each .tdb file, extracts the test spec (command, timeout, preprocess,
+diff_mode, exit_code, metadata) into a TOML .rgt file and writes the
+baseline stdout/stderr to .out/.err companion files.
+
+The .tdb file is kept as a runtime cache (.gitignore it).
+The .rgt, .out, and .err files are git-friendly text files.
+
+EXAMPLES:
+  reg-rs migrate                       # migrate all tests
+  reg-rs migrate -p my_test            # migrate matching tests
+  reg-rs m -p old_test                 # using alias"
+    )]
+    Migrate {
+        /// Substring pattern to match test names to migrate (default: all)
+        #[clap(long, short, default_value = ".tdb")]
+        pattern: String,
+    },
+    /// Accepts latest test output as the new baseline, updating .out/.err files (alias u)
+    #[clap(
+        name = "rebase",
+        alias = "u",
+        long_about = "Accepts the latest test output as the new expected baseline.
+
+For .rgt tests, updates the .out and .err companion files with the latest
+run's stdout and stderr. The .rgt spec file is not modified.
+
+For .tdb-only tests, replaces the original results with the latest results.
+
+This is useful when a test output change is intentional (e.g., version bump).
+
+EXAMPLES:
+  reg-rs rebase -p my_test             # accept latest output for matching tests
+  reg-rs u -p version                  # using alias"
+    )]
+    Rebase {
+        /// Substring pattern to match test names to rebase (default: all)
+        #[clap(long, short, default_value = ".tdb")]
+        pattern: String,
+    },
     /// Removes previously created test and run results if any.  Discards test and results!
     #[clap(
         long_about = "Removes test database files matching the specified pattern.
@@ -431,6 +476,60 @@ mod tests {
         match args.command {
             Subcommands::List { pattern } => assert_eq!(pattern, "foo"),
             _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn test_migrate_defaults() {
+        let args = Args::try_parse_from(["test", "migrate"]).unwrap();
+        match args.command {
+            Subcommands::Migrate { pattern } => assert_eq!(pattern, ".tdb"),
+            _ => panic!("expected Migrate"),
+        }
+    }
+
+    #[test]
+    fn test_migrate_with_pattern() {
+        let args = Args::try_parse_from(["test", "migrate", "-p", "hello"]).unwrap();
+        match args.command {
+            Subcommands::Migrate { pattern } => assert_eq!(pattern, "hello"),
+            _ => panic!("expected Migrate"),
+        }
+    }
+
+    #[test]
+    fn test_migrate_alias() {
+        let args = Args::try_parse_from(["test", "m", "-p", "foo"]).unwrap();
+        match args.command {
+            Subcommands::Migrate { pattern } => assert_eq!(pattern, "foo"),
+            _ => panic!("expected Migrate"),
+        }
+    }
+
+    #[test]
+    fn test_rebase_defaults() {
+        let args = Args::try_parse_from(["test", "rebase"]).unwrap();
+        match args.command {
+            Subcommands::Rebase { pattern } => assert_eq!(pattern, ".tdb"),
+            _ => panic!("expected Rebase"),
+        }
+    }
+
+    #[test]
+    fn test_rebase_with_pattern() {
+        let args = Args::try_parse_from(["test", "rebase", "-p", "hello"]).unwrap();
+        match args.command {
+            Subcommands::Rebase { pattern } => assert_eq!(pattern, "hello"),
+            _ => panic!("expected Rebase"),
+        }
+    }
+
+    #[test]
+    fn test_rebase_alias() {
+        let args = Args::try_parse_from(["test", "u", "-p", "foo"]).unwrap();
+        match args.command {
+            Subcommands::Rebase { pattern } => assert_eq!(pattern, "foo"),
+            _ => panic!("expected Rebase"),
         }
     }
 

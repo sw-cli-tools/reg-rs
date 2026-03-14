@@ -134,8 +134,52 @@ pub fn process_differences(
         .transpose()?
         .unwrap_or_default();
 
-    let prior = prepare_for_diff(prior_test_result, pp_ref, &diff_mode)?;
-    let latest = prepare_for_diff(latest_test_result, pp_ref, &diff_mode)?;
+    store_differences(
+        db_name,
+        prior_test_result,
+        latest_test_result,
+        pp_ref,
+        &diff_mode,
+    )
+}
+
+/// Store test result differences with explicit preprocess and diff_mode settings.
+///
+/// Used by `.rgt` tests where settings come from the TOML spec file rather than
+/// the database metadata.
+pub fn process_differences_with_settings(
+    db_name: &str,
+    prior_test_result: &runner::TestResults,
+    latest_test_result: &runner::TestResults,
+    preprocess_cmd: Option<&str>,
+    diff_mode_str: Option<&str>,
+) -> Result<()> {
+    log::info!("diff/process_differences_with_settings {}", &db_name);
+
+    let diff_mode = diff_mode_str
+        .map(|s| s.parse::<normalize::DiffMode>())
+        .transpose()?
+        .unwrap_or_default();
+
+    store_differences(
+        db_name,
+        prior_test_result,
+        latest_test_result,
+        preprocess_cmd,
+        &diff_mode,
+    )
+}
+
+/// Common implementation for storing differences.
+fn store_differences(
+    db_name: &str,
+    prior_test_result: &runner::TestResults,
+    latest_test_result: &runner::TestResults,
+    pp_ref: Option<&str>,
+    diff_mode: &normalize::DiffMode,
+) -> Result<()> {
+    let prior = prepare_for_diff(prior_test_result, pp_ref, diff_mode)?;
+    let latest = prepare_for_diff(latest_test_result, pp_ref, diff_mode)?;
 
     db::clear_differences(db_name)?;
     maybe_store_exit_code_differences(db_name, &prior, &latest)?;

@@ -223,6 +223,14 @@ pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u3
 pub fn clear_differences(db_name: &str) -> Result<()> {
     log::info!("db/clear_differences {}", &db_name);
     with_lock(db_name, || {
+        // Ensure the differences table exists (may be a fresh .tdb cache)
+        sqlite::create_table(
+            db_name,
+            &queries::get_statement(
+                &queries::StatementContext::differences(),
+                statements::CREATE_DIFFERENCES_TABLE_TEMPLATE,
+            ),
+        )?;
         sqlite::delete_all_rows(
             db_name,
             &queries::get_statement(
@@ -266,18 +274,19 @@ pub fn clear_latest_results(db_name: &str) -> Result<()> {
 pub fn replace_latest_results(db_name: &str, test_results: &runner::TestResults) -> Result<()> {
     log::info!("db/replace_latest_results {}", &db_name);
     with_lock(db_name, || {
-        sqlite::delete_all_rows(
-            db_name,
-            &queries::get_statement(
-                &queries::StatementContext::latest(),
-                statements::DELETE_ALL_ROWS_TEMPLATE,
-            ),
-        )?;
+        // Ensure the table exists before deleting (may be a fresh .tdb cache)
         sqlite::create_table(
             db_name,
             &queries::get_statement(
                 &queries::StatementContext::latest(),
                 statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
+            ),
+        )?;
+        sqlite::delete_all_rows(
+            db_name,
+            &queries::get_statement(
+                &queries::StatementContext::latest(),
+                statements::DELETE_ALL_ROWS_TEMPLATE,
             ),
         )?;
         sqlite::write_results(

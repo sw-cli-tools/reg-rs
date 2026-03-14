@@ -1,6 +1,6 @@
 # Plan: .rgt Text Format and Shell Aliases
 
-## Status: Design (not yet implemented)
+## Status: Steps 1–5 implemented
 
 ## Problem
 
@@ -216,11 +216,11 @@ During transition, support both:
 
 ## Implementation Order
 
-1. **`list` and `show` subcommands** — useful immediately, no format change needed
-2. **`.rgt` read support** — runner can read test specs from `.rgt` files
-3. **`.out`/`.err` baseline files** — runner writes and compares against text files
-4. **`rebase` subcommand** — accept new baseline (update `.out`/`.err`)
-5. **`migrate` subcommand** — convert existing `.tdb` to new format
+1. **`list` and `show` subcommands** — ✅ implemented
+2. **`.rgt` read support** — ✅ runner reads test specs from `.rgt` files
+3. **`.out`/`.err` baseline files** — ✅ runner writes and compares against text files
+4. **`rebase` subcommand** — ✅ accept new baseline (update `.out`/`.err`)
+5. **`migrate` subcommand** — ✅ convert existing `.tdb` to new format
 6. **Shell aliases** — `source-rg.sh` with functions and completions
 7. **`reset` subcommand** — clear `.tdb` cache
 8. **Shell completion** — `complete` subcommand + zsh/bash integration

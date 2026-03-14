@@ -20,6 +20,12 @@ async fn main() -> Result<(), RegError> {
         args::Subcommands::List { .. } => {
             command::list_tests(&config)?;
         }
+        args::Subcommands::Migrate { .. } => {
+            command::migrate_tests(&config)?;
+        }
+        args::Subcommands::Rebase { .. } => {
+            command::rebase_tests(&config)?;
+        }
         args::Subcommands::Show { .. } => {
             command::show_tests(&config)?;
         }
