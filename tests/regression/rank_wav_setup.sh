@@ -61,13 +61,18 @@ echo ""
 
 echo "--- Generating WAV test fixtures ---"
 
-sox -n -r 44100 -b 16 "$WAVS_DIR/sine_220hz.wav" synth 0.5 sine 220 2>/dev/null
-sox -n -r 44100 -b 16 "$WAVS_DIR/sine_440hz.wav" synth 0.5 sine 440 2>/dev/null
-sox -n -r 44100 -b 16 "$WAVS_DIR/sine_880hz.wav" synth 0.5 sine 880 2>/dev/null
-sox -n -r 44100 -b 16 "$WAVS_DIR/noise.wav" synth 0.5 whitenoise 2>/dev/null
-sox -n -r 44100 -b 16 "$WAVS_SUB/deep_tone.wav" synth 0.5 sine 110 2>/dev/null
+# Only generate fixtures that don't already exist — noise.wav is
+# non-deterministic (different random samples each run), so
+# regenerating it would invalidate baselines.
+gen() { [ -f "$1" ] && echo "  exists: $1" || { sox "${@:2}" "$1" 2>/dev/null && echo "  created: $1"; }; }
 
-echo "  Created $(find "$WAVS_DIR" -name '*.wav' | wc -l | tr -d ' ') WAV files"
+gen "$WAVS_DIR/sine_220hz.wav" -n -r 44100 -b 16 synth 0.5 sine 220
+gen "$WAVS_DIR/sine_440hz.wav" -n -r 44100 -b 16 synth 0.5 sine 440
+gen "$WAVS_DIR/sine_880hz.wav" -n -r 44100 -b 16 synth 0.5 sine 880
+gen "$WAVS_DIR/noise.wav"      -n -r 44100 -b 16 synth 0.5 whitenoise
+gen "$WAVS_SUB/deep_tone.wav"  -n -r 44100 -b 16 synth 0.5 sine 110
+
+echo "  $(find "$WAVS_DIR" -name '*.wav' | wc -l | tr -d ' ') WAV files ready"
 echo ""
 
 # ============================================================
