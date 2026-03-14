@@ -11,9 +11,16 @@ A command-line utility that creates, discovers, runs, and reports on regression 
 - [Commands](#commands)
   - [create](#create)
   - [run](#run)
+  - [list](#list)
+  - [show](#show)
   - [report](#report)
+  - [rebase](#rebase)
+  - [migrate](#migrate)
+  - [reset](#reset)
   - [remove](#remove)
   - [status](#status)
+- [Test Formats](#test-formats)
+- [Shell Aliases](#shell-aliases)
 - [Architecture](#architecture)
 - [Development](#development)
 - [License](#license)
@@ -29,10 +36,14 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 ### Features
 
 - Create tests that capture command output and exit codes
-- Run tests against matching patterns
-- Report test results with varying verbosity
-- Track and analyze differences between original and latest test runs
-- Web-based status monitoring for long-running tests
+- Git-friendly `.rgt` text format (TOML spec + `.out`/`.err` baselines)
+- Run tests against matching patterns (sequential or parallel)
+- List, show, and report test results with varying verbosity
+- Rebase baselines when output changes intentionally
+- Migrate existing `.tdb` tests to `.rgt` format
+- Shell aliases for quick access (`rnrg`, `lsrg`, `shrg`, etc.)
+- AI-powered test creation from natural language descriptions
+- Web-based status monitoring with live SSE updates
 
 ## Demos
 
@@ -82,11 +93,12 @@ cargo build --release
 
 ## Quick Start
 
-Tests are stored as `.tdb` files. reg-rs auto-discovers them by checking (in order):
+Tests are stored as `.rgt` files (TOML specs) with `.out`/`.err` baselines — all git-friendly text.
+reg-rs auto-discovers tests by checking (in order):
 
 1. `$REG_RS_DATA_DIR` (if set)
 2. `./work/reg-rs/` (if it exists)
-3. Current directory (if it contains `.tdb` files)
+3. Current directory (if it contains `.tdb` or `.rgt` files)
 4. `~/.local/reg-rs/` (default)
 
 The `-p` pattern flag is optional — omit it to run all tests.
@@ -102,11 +114,15 @@ reg-rs run
 reg-rs run -p my_test
 
 # 4. View test results
-reg-rs report -v
+reg-rs list                    # quick status overview
+reg-rs show -p my_test -v      # detailed view with baseline
+reg-rs report -v               # formal report
 
-# 5. If you modify the expected behavior, remove and recreate
-reg-rs remove -p my_test
-reg-rs create -t my_test -c "echo hello world"
+# 5. If output changes intentionally, accept the new baseline
+reg-rs rebase -p my_test
+
+# 6. Migrate existing .tdb tests to git-friendly .rgt format
+reg-rs migrate
 ```
 
 ## Commands
@@ -145,6 +161,27 @@ reg-rs run -p test                        # Run all matching tests
 reg-rs r -p pwd_test -n                   # 'r' is alias; dry-run mode
 ```
 
+### list
+
+Lists tests with their name, command, and status (PASS/FAIL/pending).
+
+```bash
+reg-rs list                           # list all tests
+reg-rs list -p my_test                # list matching tests
+reg-rs l -p test                      # 'l' is alias
+```
+
+### show
+
+Shows detailed test information including command, metadata, baselines, and diffs.
+
+```bash
+reg-rs show -p my_test                # command and metadata
+reg-rs show -p my_test -v             # also baseline output
+reg-rs show -p my_test -vv            # also latest results and diffs
+reg-rs w -p test                      # 'w' is alias
+```
+
 ### report
 
 Reports on test results with configurable verbosity.
@@ -179,6 +216,37 @@ reg-rs remove -p old_test
 reg-rs remove -p temp_
 ```
 
+### rebase
+
+Accepts the latest test output as the new expected baseline.
+
+```bash
+reg-rs rebase -p my_test              # accept latest output
+reg-rs u -p version                   # 'u' is alias (update)
+
+# For .rgt tests: updates .out/.err files
+# For .tdb tests: replaces original results with latest
+```
+
+### migrate
+
+Converts existing `.tdb` tests to `.rgt` text format.
+
+```bash
+reg-rs migrate                        # migrate all tests
+reg-rs migrate -p my_test             # migrate matching tests
+reg-rs m -p old_test                  # 'm' is alias
+```
+
+### reset
+
+Clears latest run results from the `.tdb` cache, keeping baselines intact.
+
+```bash
+reg-rs reset -p my_test               # reset matching tests
+reg-rs reset                          # reset all tests
+```
+
 ### status
 
 Starts a web server to monitor test results.
@@ -198,6 +266,62 @@ reg-rs s -p test                      # 's' is alias for 'status'
 
 Open http://localhost:4740 (or your chosen port) to view the status page.
 
+## Test Formats
+
+### .rgt Format (recommended)
+
+Tests are defined as TOML `.rgt` files with companion `.out`/`.err` baselines — all git-friendly text:
+
+| File | Purpose | Git tracked |
+|------|---------|-------------|
+| `.rgt` | Test spec (command, timeout, metadata) | Yes |
+| `.out` | Expected stdout baseline | Yes |
+| `.err` | Expected stderr (absent if empty) | Yes |
+| `.tdb` | Runtime cache (latest results, diffs) | No |
+
+Example `.rgt` file:
+
+```toml
+command = "echo hello"
+timeout = 10
+exit_code = 0
+desc = "Hello world output"
+```
+
+Add to `.gitignore`:
+
+```
+*.tdb
+*.lock
+```
+
+### .tdb Format (legacy)
+
+Tests stored as SQLite databases. Use `reg-rs migrate` to convert to `.rgt` format.
+
+## Shell Aliases
+
+Source `bin/source-rg.sh` in your shell for quick access:
+
+```bash
+source /path/to/reg-rs/bin/source-rg.sh
+```
+
+| Alias | Action |
+|-------|--------|
+| `rnrg [pattern]` | Run tests |
+| `adrg <name> '<cmd>'` | Add/create a test |
+| `lsrg [pattern]` | List tests with status |
+| `shrg <name> [-v]` | Show test details |
+| `uprg <pattern>` | Rebase — accept latest as baseline |
+| `rsrg <pattern>` | Reset test results |
+| `rmrg <pattern>` | Remove test files |
+| `mgrg [pattern]` | Migrate .tdb to .rgt |
+| `strg [pattern]` | Start status server |
+| `hlrg` | Show alias help |
+
+Tab completion for test names is included (zsh and bash).
+
 ## Architecture
 
 The codebase follows a modular architecture:
@@ -214,9 +338,10 @@ src/
 |-- diff.rs          # Test result comparison
 |-- error.rs         # Error types (thiserror)
 |-- executor.rs      # Command execution (with DI support)
-|-- finder.rs        # Test discovery
+|-- finder.rs        # Test discovery (.rgt and .tdb)
 |-- process.rs       # Process execution
 |-- queries.rs       # SQL query building
+|-- rgt.rs           # .rgt TOML format parsing and baseline I/O
 |-- runner.rs        # Test execution logic
 |-- sqlite.rs        # SQLite interface
 |-- status/          # Web status server (axum)
@@ -297,9 +422,7 @@ After making CLI changes, run `cargo test` to check if any help text changed une
 
 See [docs/gaps.md](docs/gaps.md) for known limitations and proposed fixes, including:
 
-- No way to view or edit stored test commands (need a `show` subcommand)
 - Pattern matching is substring-only (not regex/glob)
-- No auto-discovery of project-local data directory
 
 ## License
 

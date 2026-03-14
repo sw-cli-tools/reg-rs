@@ -19,7 +19,7 @@ reg-rs (pronounced "regress") is a CLI utility for creating, running, and managi
 The codebase follows a modular architecture with clear separation of concerns:
 
 - **Main Entry**: `src/main.rs` + `src/lib.rs` - Entry point and module declarations
-- **Command Processing**: `src/command.rs` + `src/builder.rs` - Handles subcommands (create, run, report, remove, status, analyze)
+- **Command Processing**: `src/command.rs` + `src/builder.rs` - Handles subcommands (create, run, report, remove, list, show, migrate, rebase, reset, complete, status, analyze)
 - **Test Execution**: `src/runner.rs` + `src/process.rs` - Runs tests and captures output
 - **Preprocessing**: `src/preprocess.rs` - Output normalization before diffing (pipes through shell commands)
 - **AI Integration**: `src/ai.rs` - Natural language test creation via Claude API (`--describe` flag)
@@ -27,12 +27,15 @@ The codebase follows a modular architecture with clear separation of concerns:
 - **Reporting**: `src/reporters/*.rs` - Different report formats (summary, details, passes, failures, differences)
 - **Status Server**: `src/status/*.rs` - Web-based monitoring server (port 4740)
 - **Templates**: `src/templates/*.rs` - SQL and HTML template generation
+- **RGT Format**: `src/rgt.rs` - TOML-based `.rgt` test specifications with `.out`/`.err` baselines
 
 ## Key Patterns
 - All commands flow through: `main.rs` → `builder::build()` → `command::{action}()` → specific modules
-- Test results stored in SQLite databases (one `.tdb` per test)
-- Data directory auto-discovered: `$REG_RS_DATA_DIR` → `./work/reg-rs/` → cwd (if has .tdb) → `~/.local/reg-rs/`
-- `-p` pattern is optional on all subcommands (defaults to `.tdb` = match all)
+- Two test formats: `.rgt` (TOML spec + `.out`/`.err` baselines, git-friendly) and `.tdb` (SQLite, legacy)
+- `.rgt` takes precedence over `.tdb` when both exist for the same test stem
+- `.tdb` files serve as runtime cache for `.rgt` tests (latest results, diffs) — gitignored
+- Data directory auto-discovered: `$REG_RS_DATA_DIR` → `./work/reg-rs/` → cwd (if has .tdb/.rgt) → `~/.local/reg-rs/`
+- `-p` pattern is optional on all subcommands (defaults to match all)
 - `resolve_test_path()` in `command.rs` auto-places tests in data dir and appends `.tdb`
 - Debug output via `log::debug!()`, enabled with `-d` flag (sets log level to debug via `env_logger`)
 - Status monitoring uses Axum web framework (async with Tokio)
@@ -52,6 +55,9 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Preprocess and diff-mode compose: preprocess runs first (external), then diff-mode normalizes (built-in)
 - `--context` flag on `create` runs a command and includes output in AI prompt (requires `--describe`)
 - `--desc`, `--expects`, `--flaky-note` flags on `create` store self-documenting test metadata, shown in failure reports
+- `runner.rs` dispatches `.rgt` vs `.tdb` tests: `.rgt` reads spec from TOML + baselines from `.out`/`.err`; `.tdb` reads from SQLite
+- `diff::process_differences_with_settings()` accepts preprocess/diff_mode as params (for `.rgt` tests)
+- Shell aliases in `bin/source-rg.sh`: `rnrg` (run), `adrg` (add), `lsrg` (list), `shrg` (show), `uprg` (rebase), etc.
 
 ## Code Style Guidelines
 - Formatting: Run `cargo fmt` before committing

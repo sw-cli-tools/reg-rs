@@ -49,7 +49,7 @@ HELP
 
 # --- Shell completion ---
 
-if [ -n "$ZSH_VERSION" ]; then
+if [ -n "$ZSH_VERSION" ] && type compdef >/dev/null 2>&1; then
     _rg_complete() {
         local completions
         completions=($(reg-rs complete -p "${words[CURRENT]}" 2>/dev/null))
