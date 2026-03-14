@@ -53,10 +53,10 @@ echo ""
 echo "--- Step 5: Simulate a regression (version change) ---"
 echo 'version 2.0.0' > "$REG_RS_DATA_DIR"/testdata/version.txt
 
-# Run test again - should detect regression
+# Run test again - should detect regression (exit code 1 = regressions found)
 echo ""
 echo "--- Step 6: Run the test again - detects the change ---"
-"$REG_RS_BIN" run -p version_test
+"$REG_RS_BIN" run -p version_test || true
 
 # Show with diffs
 echo ""

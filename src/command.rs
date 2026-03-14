@@ -90,10 +90,22 @@ fn resolve_test_path(test: &str) -> String {
 }
 
 /// Update a test result
-pub fn update_latest(config: &config::Config) -> crate::error::Result<()> {
+/// Run tests and return the number of failures (tests with differences).
+pub fn update_latest(config: &config::Config) -> crate::error::Result<u32> {
     log::info!("command/update_latest");
     runner::run_many(config)?;
-    Ok(())
+    // Count failures across all matched tests
+    let pattern = config.extract_pattern().to_string();
+    let tests = finder::discover(pattern)?;
+    let mut fail_count = 0u32;
+    for test_path in &tests.found {
+        let db = crate::db_path(test_path);
+        let latest_count = db::count_latest_results(&db)?;
+        if latest_count > 0 && db::count_differences(&db)? > 0 {
+            fail_count += 1;
+        }
+    }
+    Ok(fail_count)
 }
 
 /// remove test results
@@ -607,11 +619,12 @@ pub fn reset_tests(config: &config::Config) -> crate::error::Result<()> {
 }
 
 /// report latest test results
-pub fn report_latest(config: &config::Config) -> crate::error::Result<()> {
+/// Generate reports and return the number of failed tests.
+pub fn report_latest(config: &config::Config) -> crate::error::Result<u32> {
     log::info!("command/report_latest");
-    generate_reports(config)?;
+    let fail_count = generate_reports(config)?;
     log::info!("command/report_latest done");
-    Ok(())
+    Ok(fail_count)
 }
 
 /// start status client and server

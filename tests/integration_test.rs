@@ -927,10 +927,11 @@ fn integration_test_rebase_rgt_test() {
     fs::write(&test_out, "original output\n").unwrap();
 
     // Run the .rgt test — will produce "rebased\n" which differs from "original output\n"
+    // Exit code 1 = regressions detected (expected here)
     reg_rs()
         .args(["run", "-p", "rebase_test"])
         .assert()
-        .success();
+        .code(1);
 
     // .tdb cache should exist now
     assert!(test_db.exists(), ".tdb cache should exist after run");
@@ -969,6 +970,66 @@ fn integration_test_rebase_rgt_test() {
     // Clean up
     let _ = fs::remove_file(&test_db);
     let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    let _ = fs::remove_file(&test_rgt);
+    let _ = fs::remove_file(&test_out);
+}
+
+/// Exit code 0 when all tests pass, 1 when regressions found, 2 on error.
+#[test]
+fn integration_test_exit_codes() {
+    common::setup();
+
+    let data_dir = common::test_data_dir();
+    let test_db = data_dir.join("exitcode_test.tdb");
+    let test_rgt = data_dir.join("exitcode_test.rgt");
+    let test_out = data_dir.join("exitcode_test.out");
+    let lock_file = format!("{}.lock", test_db.display());
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(&lock_file);
+    let _ = fs::remove_file(&test_rgt);
+    let _ = fs::remove_file(&test_out);
+
+    // Create and run — output matches baseline → exit 0
+    reg_rs()
+        .args(["create", "-t", "exitcode_test", "-c", "echo hello"])
+        .assert()
+        .code(0);
+    reg_rs()
+        .args(["run", "-p", "exitcode_test"])
+        .assert()
+        .code(0);
+    reg_rs()
+        .args(["report", "-p", "exitcode_test"])
+        .assert()
+        .code(0);
+
+    // Set up .rgt test with mismatched baseline → exit 1
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(&lock_file);
+    fs::write(&test_rgt, "command = \"echo changed\"\n").unwrap();
+    fs::write(&test_out, "original\n").unwrap();
+
+    reg_rs()
+        .args(["run", "-p", "exitcode_test"])
+        .assert()
+        .code(1);
+    reg_rs()
+        .args(["report", "-p", "exitcode_test"])
+        .assert()
+        .code(1);
+
+    // Error case — nonexistent data dir → exit 2
+    reg_rs()
+        .args(["run", "-p", "foo"])
+        .env("REG_RS_DATA_DIR", "/nonexistent_dir_xyz")
+        .assert()
+        .code(2);
+
+    // Clean up
+    let _ = fs::remove_file(&test_db);
+    let _ = fs::remove_file(&lock_file);
     let _ = fs::remove_file(&test_rgt);
     let _ = fs::remove_file(&test_out);
 }

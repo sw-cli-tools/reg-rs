@@ -47,7 +47,7 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 #### Medium Priority
 - **Substring-only pattern matching**: `-p` uses literal substring match, not regex/glob
 - **Inconsistent error types**: command.rs uses Box<dyn Error>, lower layers use RegError
-- **No exit codes**: reg-rs always returns 0 even when regressions are detected
+- ~~**No exit codes**: reg-rs always returns 0 even when regressions are detected~~ (resolved: 0=pass, 1=regressions, 2=error)
 - **No command execution timing**: Test duration is not measured or stored
 
 #### Low Priority
@@ -75,7 +75,7 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 - [x] Make data directory auto-discoverable
 - [x] Default pattern to match all tests
 - [ ] Fix non-atomic database operations (wrap clear+store in single transaction)
-- [ ] Add meaningful exit codes (0=all pass, 1=regressions found, 2=error)
+- [x] Add meaningful exit codes (0=all pass, 1=regressions found, 2=error)
 - [ ] Standardize on RegError throughout (remove Box<dyn Error> from public API)
 - [x] Add `show` subcommand to view stored test commands and metadata
 - [x] Add `list` subcommand for quick test enumeration

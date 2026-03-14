@@ -13,8 +13,8 @@ pub mod passes;
 /// test summary
 pub mod summary;
 
-/// generate reports
-pub(crate) fn generate_reports(config: &config::Config) -> crate::error::Result<()> {
+/// Generate reports and return the number of failed tests.
+pub(crate) fn generate_reports(config: &config::Config) -> crate::error::Result<u32> {
     log::info!("reporters/generate_reports");
     log::debug!("generate_reports");
     let pattern = config.extract_pattern().to_string();
@@ -25,7 +25,7 @@ pub(crate) fn generate_reports(config: &config::Config) -> crate::error::Result<
             pattern,
             test_names.data_dir.display()
         );
-        return Ok(());
+        return Ok(0);
     }
     let total_count = test_names.found.len() as u32;
     let mut failed_test_names = vec![];
@@ -72,5 +72,5 @@ pub(crate) fn generate_reports(config: &config::Config) -> crate::error::Result<
             config.verbosity_level(),
         )?;
     }
-    Ok(())
+    Ok(fail_count)
 }
