@@ -14,6 +14,9 @@ async fn main() -> Result<(), RegError> {
         args::Subcommands::Analyze { pattern } => {
             analyze::analyze_failures(pattern)?;
         }
+        args::Subcommands::Complete { .. } => {
+            command::complete_tests(&config)?;
+        }
         args::Subcommands::Create { .. } => {
             command::create_original(&config)?;
         }
@@ -25,6 +28,9 @@ async fn main() -> Result<(), RegError> {
         }
         args::Subcommands::Rebase { .. } => {
             command::rebase_tests(&config)?;
+        }
+        args::Subcommands::Reset { .. } => {
+            command::reset_tests(&config)?;
         }
         args::Subcommands::Show { .. } => {
             command::show_tests(&config)?;

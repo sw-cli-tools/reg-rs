@@ -155,6 +155,41 @@ EXAMPLES:
         #[clap(long, short, default_value = ".tdb")]
         pattern: String,
     },
+    /// Outputs test names for shell completion
+    #[clap(
+        name = "complete",
+        long_about = "Outputs test names for shell tab-completion.
+
+Prints one test name per line, optionally filtered by a prefix.
+Designed to be called by shell completion functions.
+
+EXAMPLES:
+  reg-rs complete                      # all test names
+  reg-rs complete -p hello             # names matching prefix"
+    )]
+    Complete {
+        /// Prefix to filter test names (default: all)
+        #[clap(long, short, default_value = ".rgt")]
+        pattern: String,
+    },
+    /// Clears latest results from .tdb cache, keeping baselines intact
+    #[clap(
+        name = "reset",
+        long_about = "Clears the latest run results from the .tdb cache for matching tests.
+
+The test baseline (original results or .out/.err files) is preserved.
+This effectively marks tests as 'pending' again — useful when you want
+to re-run tests from a clean state without recreating them.
+
+EXAMPLES:
+  reg-rs reset -p my_test              # reset matching tests
+  reg-rs reset                         # reset all tests"
+    )]
+    Reset {
+        /// Substring pattern to match test names to reset (default: all)
+        #[clap(long, short, default_value = ".tdb")]
+        pattern: String,
+    },
     /// Converts .tdb tests to .rgt text format with .out/.err baselines (alias m)
     #[clap(
         name = "migrate",
@@ -530,6 +565,42 @@ mod tests {
         match args.command {
             Subcommands::Rebase { pattern } => assert_eq!(pattern, "foo"),
             _ => panic!("expected Rebase"),
+        }
+    }
+
+    #[test]
+    fn test_reset_defaults() {
+        let args = Args::try_parse_from(["test", "reset"]).unwrap();
+        match args.command {
+            Subcommands::Reset { pattern } => assert_eq!(pattern, ".tdb"),
+            _ => panic!("expected Reset"),
+        }
+    }
+
+    #[test]
+    fn test_reset_with_pattern() {
+        let args = Args::try_parse_from(["test", "reset", "-p", "hello"]).unwrap();
+        match args.command {
+            Subcommands::Reset { pattern } => assert_eq!(pattern, "hello"),
+            _ => panic!("expected Reset"),
+        }
+    }
+
+    #[test]
+    fn test_complete_defaults() {
+        let args = Args::try_parse_from(["test", "complete"]).unwrap();
+        match args.command {
+            Subcommands::Complete { pattern } => assert_eq!(pattern, ".rgt"),
+            _ => panic!("expected Complete"),
+        }
+    }
+
+    #[test]
+    fn test_complete_with_pattern() {
+        let args = Args::try_parse_from(["test", "complete", "-p", "hello"]).unwrap();
+        match args.command {
+            Subcommands::Complete { pattern } => assert_eq!(pattern, "hello"),
+            _ => panic!("expected Complete"),
         }
     }
 

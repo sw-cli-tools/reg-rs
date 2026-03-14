@@ -32,9 +32,11 @@ impl Config {
         let p = match &self.mode {
             args::Subcommands::Create { .. } => unreachable!(),
             args::Subcommands::Analyze { pattern, .. } => pattern,
+            args::Subcommands::Complete { pattern, .. } => pattern,
             args::Subcommands::List { pattern, .. } => pattern,
             args::Subcommands::Migrate { pattern, .. } => pattern,
             args::Subcommands::Rebase { pattern, .. } => pattern,
+            args::Subcommands::Reset { pattern, .. } => pattern,
             args::Subcommands::Show { pattern, .. } => pattern,
             args::Subcommands::Remove { pattern, .. } => pattern,
             args::Subcommands::Report { pattern, .. } => pattern,

@@ -1,6 +1,6 @@
 # Plan: .rgt Text Format and Shell Aliases
 
-## Status: Steps 1–5 implemented
+## Status: Complete (all steps implemented)
 
 ## Problem
 
@@ -221,6 +221,6 @@ During transition, support both:
 3. **`.out`/`.err` baseline files** — ✅ runner writes and compares against text files
 4. **`rebase` subcommand** — ✅ accept new baseline (update `.out`/`.err`)
 5. **`migrate` subcommand** — ✅ convert existing `.tdb` to new format
-6. **Shell aliases** — `source-rg.sh` with functions and completions
-7. **`reset` subcommand** — clear `.tdb` cache
-8. **Shell completion** — `complete` subcommand + zsh/bash integration
+6. **Shell aliases** — ✅ `bin/source-rg.sh` with functions and completions
+7. **`reset` subcommand** — ✅ clear `.tdb` cache
+8. **Shell completion** — ✅ `complete` subcommand + zsh/bash integration

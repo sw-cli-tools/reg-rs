@@ -60,6 +60,8 @@ fn integration_test_reg_rs_help() {
         .stdout(predicate::str::contains("Shows detailed information"))
         .stdout(predicate::str::contains("Converts .tdb tests to .rgt"))
         .stdout(predicate::str::contains("Accepts latest test output"))
+        .stdout(predicate::str::contains("Clears latest results"))
+        .stdout(predicate::str::contains("Outputs test names for shell"))
         .stdout(predicate::str::contains("Removes previously created test"))
         .stdout(predicate::str::contains("Reports counts/summary"))
         .stdout(predicate::str::contains("Runs a test"))
