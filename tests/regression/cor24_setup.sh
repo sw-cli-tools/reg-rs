@@ -22,6 +22,7 @@ export RUST_LOG="${RUST_LOG:-warn}"
 
 DBG="$COR24_DIR/target/debug/cor24-dbg"
 RUN="$COR24_DIR/rust-to-cor24/target/release/cor24-run"
+TRANS="$COR24_DIR/rust-to-cor24/target/release/msp430-to-cor24"
 PROGRAMS="$COR24_DIR/tests/programs"
 DEMOS="$COR24_DIR/rust-to-cor24/demos"
 
@@ -32,20 +33,28 @@ if [ ! -x "$REG_RS_BIN" ]; then
   echo "ERROR: reg-rs binary not found at $REG_RS_BIN (run: cargo build)" >&2
   exit 1
 fi
+HAS_DBG=true
 if [ ! -x "$DBG" ]; then
-  echo "ERROR: cor24-dbg not found at $DBG (run: cd $COR24_DIR && cargo build -p cor24-cli)" >&2
-  exit 1
+  echo "WARNING: cor24-dbg not found at $DBG — debugger tests will be skipped" >&2
+  echo "  (to build: cd $COR24_DIR && cargo build -p cor24-cli)" >&2
+  HAS_DBG=false
 fi
 if [ ! -x "$RUN" ]; then
   echo "ERROR: cor24-run not found at $RUN (run: cd $COR24_DIR/rust-to-cor24 && cargo build --release)" >&2
   exit 1
 fi
+HAS_TRANS=true
+if [ ! -x "$TRANS" ]; then
+  echo "WARNING: msp430-to-cor24 not found at $TRANS — translator tests will be skipped" >&2
+  HAS_TRANS=false
+fi
 
 echo "=== cor24-rs Regression Tests ==="
-echo "  reg-rs:    $REG_RS_BIN"
-echo "  cor24-dbg: $DBG"
-echo "  cor24-run: $RUN"
-echo "  data dir:  $REG_RS_DATA_DIR"
+echo "  reg-rs:         $REG_RS_BIN"
+echo "  cor24-dbg:      $DBG $([ "$HAS_DBG" = true ] && echo '(found)' || echo '(MISSING)')"
+echo "  cor24-run:      $RUN"
+echo "  msp430-to-cor24: $TRANS $([ "$HAS_TRANS" = true ] && echo '(found)' || echo '(MISSING)')"
+echo "  data dir:       $REG_RS_DATA_DIR"
 echo ""
 
 # Helper: create a test with optional flags
@@ -62,6 +71,10 @@ create_test() {
 # ============================================================
 
 echo "--- Creating tests ---"
+
+if [ "$HAS_DBG" = false ]; then
+  echo "  SKIP: debugger tests (cor24-dbg not found)"
+else
 
 # TEST: Hello World — basic UART output
 create_test "cor24_hello_world" \
@@ -147,6 +160,53 @@ else
   echo "  SKIP: cor24_sieve (sieve.lgo not found at $SIEVE_LGO)"
 fi
 
+fi  # end HAS_DBG
+
+# ============================================================
+# Assembler listing tests via cor24-run --assemble
+# ============================================================
+
+echo ""
+echo "--- Creating assembler listing tests ---"
+
+for demo in demo_add demo_countdown demo_fibonacci demo_uart_hello; do
+  test_name="cor24_asm_listing_${demo#demo_}"
+  s_file="$DEMOS/$demo/$demo.cor24.s"
+  if [ -f "$s_file" ]; then
+    create_test "$test_name" \
+      "$RUN --assemble $s_file /tmp/cor24_test_$$.bin /dev/stdout 2>&1" \
+      --desc "Assembler listing for $demo" \
+      --expects "Stable address/opcode/mnemonic listing"
+  else
+    echo "  SKIP: $test_name ($s_file not found)"
+  fi
+done
+
+# ============================================================
+# MSP430-to-COR24 translator tests
+# ============================================================
+
+if [ "$HAS_TRANS" = true ]; then
+  echo ""
+  echo "--- Creating translator tests ---"
+
+  for demo in demo_add demo_countdown demo_fibonacci demo_uart_hello; do
+    test_name="cor24_translate_${demo#demo_}"
+    msp_file="$DEMOS/$demo/$demo.msp430.s"
+    if [ -f "$msp_file" ]; then
+      create_test "$test_name" \
+        "$TRANS $msp_file 2>&1" \
+        --desc "MSP430-to-COR24 translator output for $demo" \
+        --expects "Stable COR24 assembly translation from MSP430 source"
+    else
+      echo "  SKIP: $test_name ($msp_file not found)"
+    fi
+  done
+else
+  echo ""
+  echo "  SKIP: translator tests (msp430-to-cor24 not found)"
+fi
+
 # ============================================================
 # Rust pipeline demos via cor24-run (headless emulator)
 # ============================================================
@@ -180,8 +240,12 @@ create_test "cor24_rust_countdown" \
   --expects "80332 instructions, halted"
 
 # ============================================================
-# Run tests and report
+# Migrate to .rgt format and run tests
 # ============================================================
+
+echo ""
+echo "--- Migrating to .rgt format ---"
+"$REG_RS_BIN" migrate -p cor24
 
 echo ""
 echo "--- Running tests ---"

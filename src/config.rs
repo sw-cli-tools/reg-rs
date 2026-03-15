@@ -140,11 +140,22 @@ impl Config {
     pub fn verbosity_level(&self) -> u8 {
         match &self.mode {
             args::Subcommands::Report { verbosity, .. }
+            | args::Subcommands::Run { verbosity, .. }
             | args::Subcommands::Show { verbosity, .. } => {
                 log::debug!("verbosity_level: {}", verbosity);
                 *verbosity
             }
             _ => 0,
+        }
+    }
+
+    /// determines if quiet mode was specified
+    pub fn is_quiet(&self) -> bool {
+        match &self.mode {
+            args::Subcommands::Report { quiet, .. } | args::Subcommands::Run { quiet, .. } => {
+                *quiet
+            }
+            _ => false,
         }
     }
 
@@ -169,6 +180,8 @@ mod tests {
                 dry_run: true,
                 pattern: "foo".to_string(),
                 parallel: false,
+                verbosity: 0,
+                quiet: false,
             },
             debug: false,
         };
@@ -182,6 +195,8 @@ mod tests {
                 dry_run: false,
                 pattern: "foo".to_string(),
                 parallel: false,
+                verbosity: 0,
+                quiet: false,
             },
             debug: false,
         };
@@ -194,6 +209,7 @@ mod tests {
             mode: args::Subcommands::Report {
                 pattern: "foo".to_string(),
                 verbosity: 0,
+                quiet: false,
             },
             debug: false,
         };
@@ -231,6 +247,8 @@ mod tests {
                 dry_run: false,
                 pattern: "foo".to_string(),
                 parallel: false,
+                verbosity: 0,
+                quiet: false,
             },
             debug: false,
         };
@@ -243,6 +261,7 @@ mod tests {
             mode: args::Subcommands::Report {
                 pattern: "foo".to_string(),
                 verbosity: 0,
+                quiet: false,
             },
             debug: false,
         };
@@ -267,6 +286,7 @@ mod tests {
             command: args::Subcommands::Report {
                 pattern: "foo".to_string(),
                 verbosity: 0,
+                quiet: false,
             },
             debug: false,
             logging: false,
@@ -288,6 +308,8 @@ mod tests {
                 dry_run: false,
                 pattern: "bar".to_string(),
                 parallel: false,
+                verbosity: 0,
+                quiet: false,
             },
             debug: false,
             logging: false,
@@ -308,6 +330,7 @@ mod tests {
             command: args::Subcommands::Report {
                 pattern: "foo".to_string(),
                 verbosity: 0,
+                quiet: false,
             },
             debug: false,
             logging: false,
@@ -328,6 +351,7 @@ mod tests {
             command: args::Subcommands::Report {
                 pattern: "foo".to_string(),
                 verbosity: 3,
+                quiet: false,
             },
             debug: false,
             logging: false,

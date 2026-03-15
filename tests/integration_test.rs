@@ -205,20 +205,27 @@ fn integration_test_create_run_and_remove() {
     common::setup();
 
     let data_dir = common::test_data_dir();
-    let test_db = data_dir.join("remove_test.tdb");
+    let test_rgt = data_dir.join("remove_test.rgt");
+    let test_out = data_dir.join("remove_test.out");
+    let test_tdb = data_dir.join("remove_test.tdb");
     let test_pattern = "remove_test";
 
     // Clean up any leftover files
-    let _ = fs::remove_file(&test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    let _ = fs::remove_file(&test_rgt);
+    let _ = fs::remove_file(&test_out);
+    let _ = fs::remove_file(&test_tdb);
+    let _ = fs::remove_file(format!("{}.lock", test_tdb.display()));
+    let _ = fs::remove_file(format!("{}.lock", test_rgt.display()));
 
-    // Create a test
+    // Create a test — now produces .rgt + .out + .tdb cache
     reg_rs()
         .args(["create", "-t", "remove_test", "-c", "echo remove me"])
         .assert()
         .success();
 
-    assert!(test_db.exists(), "Test database should exist");
+    assert!(test_rgt.exists(), "Test .rgt should exist");
+    assert!(test_out.exists(), "Test .out baseline should exist");
+    assert!(test_tdb.exists(), "Test .tdb cache should exist");
 
     // Remove the test
     reg_rs()
@@ -227,16 +234,12 @@ fn integration_test_create_run_and_remove() {
         .success();
 
     assert!(
-        !test_db.exists(),
-        "Test database should be removed at {}",
-        test_db.display()
+        !test_rgt.exists(),
+        "Test .rgt should be removed at {}",
+        test_rgt.display()
     );
-
-    let lock_file = format!("{}.lock", test_db.display());
-    assert!(
-        !std::path::Path::new(&lock_file).exists(),
-        "Lock file should be removed"
-    );
+    assert!(!test_out.exists(), "Test .out should be removed");
+    assert!(!test_tdb.exists(), "Test .tdb cache should be removed");
 }
 
 #[test]
@@ -282,9 +285,10 @@ fn integration_test_create_with_preprocess() {
     common::setup();
 
     let data_dir = common::test_data_dir();
-    let test_db = data_dir.join("pp_test.tdb");
-    let _ = fs::remove_file(&test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    let test_rgt = data_dir.join("pp_test.rgt");
+    let test_out = data_dir.join("pp_test.out");
+    let test_tdb = data_dir.join("pp_test.tdb");
+    common::cleanup_test_files(&data_dir, "pp_test");
 
     // Create a test with a preprocess that sorts lines
     reg_rs()
@@ -300,14 +304,8 @@ fn integration_test_create_with_preprocess() {
         .assert()
         .success();
 
-    // Run a command that outputs same lines in different order — should pass after sort
-    // The original captured "banana\napple\ncherry\n" preprocessed to "apple\nbanana\ncherry\n"
-    // This run outputs "cherry\napple\nbanana\n" preprocessed to "apple\nbanana\ncherry\n"
-    // So after preprocessing both match.
-
-    // First, remove and recreate with a command that outputs differently
-    let _ = fs::remove_file(&test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    // Recreate to ensure clean state
+    common::cleanup_test_files(&data_dir, "pp_test");
 
     // Create baseline: unsorted fruit list
     reg_rs()
@@ -323,7 +321,9 @@ fn integration_test_create_with_preprocess() {
         .assert()
         .success();
 
-    assert!(test_db.exists());
+    assert!(test_rgt.exists(), ".rgt should exist");
+    assert!(test_out.exists(), ".out should exist");
+    assert!(test_tdb.exists(), ".tdb cache should exist");
 
     // Run and report — same command should pass
     reg_rs().args(["run", "-p", "pp_test"]).assert().success();
@@ -366,9 +366,7 @@ fn integration_test_create_with_diff_mode_json() {
     common::setup();
 
     let data_dir = common::test_data_dir();
-    let test_db = data_dir.join("json_test.tdb");
-    let _ = fs::remove_file(&test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    common::cleanup_test_files(&data_dir, "json_test");
 
     // Create with JSON diff mode — keys in one order
     reg_rs()
@@ -384,7 +382,7 @@ fn integration_test_create_with_diff_mode_json() {
         .assert()
         .success();
 
-    assert!(test_db.exists());
+    assert!(data_dir.join("json_test.rgt").exists());
 
     // Run — same command produces same JSON, should pass after normalization
     reg_rs().args(["run", "-p", "json_test"]).assert().success();
@@ -417,9 +415,7 @@ fn integration_test_create_with_diff_mode_lines_unordered() {
     common::setup();
 
     let data_dir = common::test_data_dir();
-    let test_db = data_dir.join("lines_test.tdb");
-    let _ = fs::remove_file(&test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    common::cleanup_test_files(&data_dir, "lines_test");
 
     // Create with lines-unordered — output lines in one order
     reg_rs()
@@ -435,7 +431,7 @@ fn integration_test_create_with_diff_mode_lines_unordered() {
         .assert()
         .success();
 
-    assert!(test_db.exists());
+    assert!(data_dir.join("lines_test.rgt").exists());
 
     // Run — same lines, should pass after sorting
     reg_rs()
@@ -473,9 +469,7 @@ fn integration_test_create_with_doc_metadata() {
     common::setup();
 
     let data_dir = common::test_data_dir();
-    let test_db = data_dir.join("doc_meta_test.tdb");
-    let _ = fs::remove_file(&test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
+    common::cleanup_test_files(&data_dir, "doc_meta_test");
 
     reg_rs()
         .args([
@@ -494,7 +488,7 @@ fn integration_test_create_with_doc_metadata() {
         .assert()
         .success();
 
-    assert!(test_db.exists());
+    assert!(data_dir.join("doc_meta_test.rgt").exists());
 
     // Clean up
     reg_rs()
@@ -842,69 +836,61 @@ fn integration_test_show_tests() {
 }
 
 #[test]
-fn integration_test_migrate_tdb_to_rgt() {
+fn integration_test_create_produces_rgt() {
     common::setup();
 
     let data_dir = common::test_data_dir();
-    let test_db = data_dir.join("migrate_test.tdb");
-    let test_rgt = data_dir.join("migrate_test.rgt");
-    let test_out = data_dir.join("migrate_test.out");
+    common::cleanup_test_files(&data_dir, "create_rgt_test");
 
-    // Clean up
-    let _ = fs::remove_file(&test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
-    let _ = fs::remove_file(&test_rgt);
-    let _ = fs::remove_file(&test_out);
-
-    // Create a .tdb test with metadata
+    // Create a test with metadata — should produce .rgt directly
     reg_rs()
         .args([
             "create",
             "-t",
-            "migrate_test",
+            "create_rgt_test",
             "-c",
-            "echo migrated",
+            "echo hello_rgt",
             "--desc",
-            "A migration test",
+            "A direct rgt test",
         ])
         .assert()
         .success();
 
-    assert!(test_db.exists());
-    assert!(!test_rgt.exists());
+    let test_rgt = data_dir.join("create_rgt_test.rgt");
+    let test_out = data_dir.join("create_rgt_test.out");
+    let test_tdb = data_dir.join("create_rgt_test.tdb");
 
-    // Migrate
-    reg_rs()
-        .args(["migrate", "-p", "migrate_test"])
-        .assert()
-        .success()
-        .stderr(predicate::str::contains("migrated:"))
-        .stderr(predicate::str::contains("1 test(s) migrated"));
+    // All three files should exist
+    assert!(test_rgt.exists(), ".rgt should exist after create");
+    assert!(test_out.exists(), ".out baseline should exist after create");
+    assert!(test_tdb.exists(), ".tdb cache should exist after create");
 
-    // .rgt and .out should now exist
-    assert!(test_rgt.exists(), ".rgt file should exist after migrate");
-    assert!(test_out.exists(), ".out file should exist after migrate");
-
-    // .rgt should contain the command
+    // .rgt should contain the command and metadata
     let rgt_content = fs::read_to_string(&test_rgt).unwrap();
     assert!(
-        rgt_content.contains("echo migrated"),
+        rgt_content.contains("echo hello_rgt"),
         ".rgt should contain command"
     );
     assert!(
-        rgt_content.contains("A migration test"),
+        rgt_content.contains("A direct rgt test"),
         ".rgt should contain desc"
     );
 
     // .out should contain the baseline stdout
     let out_content = fs::read_to_string(&test_out).unwrap();
-    assert_eq!(out_content, "migrated\n");
+    assert_eq!(out_content, "hello_rgt\n");
+
+    // Run should pass immediately (cache is populated)
+    reg_rs()
+        .args(["run", "-p", "create_rgt_test"])
+        .assert()
+        .success();
 
     // Clean up
-    let _ = fs::remove_file(&test_db);
-    let _ = fs::remove_file(format!("{}.lock", test_db.display()));
-    let _ = fs::remove_file(&test_rgt);
-    let _ = fs::remove_file(&test_out);
+    reg_rs()
+        .args(["remove", "-p", "create_rgt_test"])
+        .assert()
+        .success();
 }
 
 #[test]

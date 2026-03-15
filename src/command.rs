@@ -42,33 +42,56 @@ pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
     };
 
     let timeout_secs = config.extract_timeout();
-    let db_name = resolve_test_path(&test);
-    if let Some(test_result) = runner::run_one_timeout(&db_name, &command, false, timeout_secs)? {
-        db::reset_differences(&db_name)?;
-        db::reset_latest_results(&db_name)?;
+    let rgt_path = resolve_test_path(&test);
+    let tdb_path = crate::rgt::tdb_path_for_rgt(&rgt_path);
+    if let Some(test_result) =
+        runner::run_one_timeout(&tdb_path, &command, false, timeout_secs)?
+    {
+        // Write .rgt spec + .out/.err baselines
+        let preprocess = config.extract_preprocess();
+        let diff_mode = config.extract_diff_mode().filter(|m| m != "text");
+        let (desc, expects, flaky_note) = config.extract_doc_metadata();
+        let spec = crate::rgt::RgtSpec {
+            command,
+            timeout: if timeout_secs != 300 {
+                Some(timeout_secs)
+            } else {
+                None
+            },
+            preprocess: preprocess.clone(),
+            diff_mode: diff_mode.clone(),
+            exit_code: Some(test_result.exit_code),
+            desc,
+            expects,
+            flaky_note,
+        };
+        crate::rgt::write_rgt(&rgt_path, &spec)?;
+        crate::rgt::write_baseline(&rgt_path, &test_result.stdout, &test_result.stderr)?;
+
+        // Also populate .tdb cache so run/report work immediately
+        db::reset_differences(&tdb_path)?;
+        db::reset_latest_results(&tdb_path)?;
         db::store_results(
-            &db_name,
+            &tdb_path,
             &test_result,
             queries::StatementContext::original(),
         )?;
-        if let Some(preprocess) = config.extract_preprocess() {
-            db::store_metadata(&db_name, crate::preprocess::PREPROCESS_KEY, &preprocess)?;
+        if let Some(ref pp) = preprocess {
+            db::store_metadata(&tdb_path, crate::preprocess::PREPROCESS_KEY, pp)?;
         }
-        if let Some(diff_mode) = config.extract_diff_mode()
-            && diff_mode != "text"
-        {
-            db::store_metadata(&db_name, crate::normalize::DIFF_MODE_KEY, &diff_mode)?;
+        if let Some(ref dm) = diff_mode {
+            db::store_metadata(&tdb_path, crate::normalize::DIFF_MODE_KEY, dm)?;
         }
         if timeout_secs != 300 {
-            db::store_metadata(&db_name, "timeout", &timeout_secs.to_string())?;
+            db::store_metadata(&tdb_path, "timeout", &timeout_secs.to_string())?;
         }
-        store_doc_metadata(config, &db_name)?;
+        store_doc_metadata(config, &tdb_path)?;
     }
     Ok(())
 }
 
 /// Resolve a test path: if it has no directory component, place it in the
-/// data directory. Append `.tdb` extension if missing.
+/// data directory. Append `.rgt` extension if missing.
 fn resolve_test_path(test: &str) -> String {
     let path = std::path::Path::new(test);
     let mut resolved = if path.parent().is_some_and(|p| p != std::path::Path::new("")) {
@@ -78,14 +101,16 @@ fn resolve_test_path(test: &str) -> String {
         // Just a filename - put it in the data directory
         crate::data_dir().join(test)
     };
+    // Strip existing .tdb or .rgt extension, then add .rgt
     if resolved
         .extension()
-        .is_none_or(|ext| ext != crate::TDB_EXTENSION)
+        .is_some_and(|ext| ext == crate::TDB_EXTENSION || ext == crate::rgt::RGT_EXTENSION)
     {
-        let mut name = resolved.file_name().unwrap_or_default().to_os_string();
-        name.push(format!(".{}", crate::TDB_EXTENSION));
-        resolved.set_file_name(name);
+        resolved.set_extension("");
     }
+    let mut name = resolved.file_name().unwrap_or_default().to_os_string();
+    name.push(format!(".{}", crate::rgt::RGT_EXTENSION));
+    resolved.set_file_name(name);
     resolved.to_string_lossy().to_string()
 }
 
@@ -94,18 +119,110 @@ fn resolve_test_path(test: &str) -> String {
 pub fn update_latest(config: &config::Config) -> crate::error::Result<u32> {
     log::info!("command/update_latest");
     runner::run_many(config)?;
+    let quiet = config.is_quiet();
+    let verbosity = config.verbosity_level();
     // Count failures across all matched tests
     let pattern = config.extract_pattern().to_string();
     let tests = finder::discover(pattern)?;
+    let total = tests.found.len() as u32;
     let mut fail_count = 0u32;
+    let mut failed_paths = vec![];
     for test_path in &tests.found {
         let db = crate::db_path(test_path);
         let latest_count = db::count_latest_results(&db)?;
         if latest_count > 0 && db::count_differences(&db)? > 0 {
             fail_count += 1;
+            failed_paths.push(test_path.clone());
         }
     }
+    if quiet {
+        return Ok(fail_count);
+    }
+    let pass_count = total - fail_count;
+    if fail_count > 0 {
+        eprintln!(
+            "{} passed, {} failed (of {} total)",
+            pass_count, fail_count, total
+        );
+        for test_path in &failed_paths {
+            let name = std::path::Path::new(test_path)
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| test_path.clone());
+            eprintln!("  FAIL: {}", name);
+        }
+        if verbosity > 0 {
+            run_show_failure_details(&failed_paths, verbosity)?;
+        }
+    } else {
+        eprintln!("{} passed (of {} total)", pass_count, total);
+    }
     Ok(fail_count)
+}
+
+/// Show failure details for `run -v` and `run -vv`.
+///
+/// - verbosity 1: difference counts and types per test
+/// - verbosity 2+: full diff output per test
+fn run_show_failure_details(
+    failed_paths: &[String],
+    verbosity: u8,
+) -> crate::error::Result<()> {
+    use crate::diff;
+    for test_path in failed_paths {
+        let db = crate::db_path(test_path);
+        let name = std::path::Path::new(test_path)
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| test_path.clone());
+        let differences = db::read_differences(&db)?;
+        let same_count =
+            db::difference_count_by_type(&db, diff::RegressionType::StderrSame as u8)?
+                + db::difference_count_by_type(&db, diff::RegressionType::StdoutSame as u8)?;
+        let diff_count = differences.len() as u32 - same_count;
+
+        // Collect which types of differences exist
+        let mut types = vec![];
+        if db::difference_count_by_type(&db, diff::RegressionType::ActualCode as u8)? > 0 {
+            types.push("exit_code");
+        }
+        if db::difference_count_by_type(&db, diff::RegressionType::StderrAdd as u8)? > 0
+            || db::difference_count_by_type(&db, diff::RegressionType::StderrRemove as u8)? > 0
+        {
+            types.push("stderr");
+        }
+        if db::difference_count_by_type(&db, diff::RegressionType::StdoutAdd as u8)? > 0
+            || db::difference_count_by_type(&db, diff::RegressionType::StdoutRemove as u8)? > 0
+        {
+            types.push("stdout");
+        }
+
+        eprintln!();
+        let type_str = if types.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", types.join(", "))
+        };
+        eprintln!("  {} — {} difference(s){}", name, diff_count, type_str);
+
+        // Show doc metadata if present
+        if let Ok(Some(desc)) = db::read_metadata(&db, "desc") {
+            eprintln!("    desc:    {}", desc);
+        }
+        if let Ok(Some(expects)) = db::read_metadata(&db, "expects") {
+            eprintln!("    expects: {}", expects);
+        }
+
+        // -vv: show full diffs
+        if verbosity > 1 {
+            for difference in &differences {
+                if let Some(label) = diff::RegressionType::display_label(&difference.0) {
+                    eprintln!("    [{}] {}", label, difference.1);
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 /// remove test results
@@ -123,14 +240,35 @@ pub fn remove_all(config: &config::Config) -> crate::error::Result<()> {
         return Ok(());
     }
     for test in &tests.found {
-        db::drop_all_results(test)?;
-        // Clean up the .tdb file and its .lock file
-        if let Err(e) = std::fs::remove_file(test) {
-            log::debug!("could not remove {}: {}", test, e);
-        }
-        let lock_path = format!("{}.{}", test, crate::LOCK_EXTENSION);
-        if let Err(e) = std::fs::remove_file(&lock_path) {
-            log::debug!("could not remove {}: {}", lock_path, e);
+        let is_rgt = test.ends_with(&format!(".{}", crate::rgt::RGT_EXTENSION));
+        if is_rgt {
+            // Remove .rgt spec, .out baseline, .err baseline
+            let _ = std::fs::remove_file(test);
+            let out_path =
+                std::path::Path::new(test).with_extension(crate::rgt::OUT_EXTENSION);
+            let _ = std::fs::remove_file(&out_path);
+            let err_path =
+                std::path::Path::new(test).with_extension(crate::rgt::ERR_EXTENSION);
+            let _ = std::fs::remove_file(&err_path);
+            // Also remove .tdb cache and its lock
+            let tdb_path = crate::rgt::tdb_path_for_rgt(test);
+            let _ = db::drop_all_results(&tdb_path);
+            let _ = std::fs::remove_file(&tdb_path);
+            let lock_path = format!("{}.{}", tdb_path, crate::LOCK_EXTENSION);
+            let _ = std::fs::remove_file(&lock_path);
+            // Remove .rgt.lock if present
+            let rgt_lock = format!("{}.{}", test, crate::LOCK_EXTENSION);
+            let _ = std::fs::remove_file(&rgt_lock);
+        } else {
+            db::drop_all_results(test)?;
+            // Clean up the .tdb file and its .lock file
+            if let Err(e) = std::fs::remove_file(test) {
+                log::debug!("could not remove {}: {}", test, e);
+            }
+            let lock_path = format!("{}.{}", test, crate::LOCK_EXTENSION);
+            if let Err(e) = std::fs::remove_file(&lock_path) {
+                log::debug!("could not remove {}: {}", lock_path, e);
+            }
         }
     }
     log::info!("command/remove_all done");
@@ -622,6 +760,20 @@ pub fn reset_tests(config: &config::Config) -> crate::error::Result<()> {
 /// Generate reports and return the number of failed tests.
 pub fn report_latest(config: &config::Config) -> crate::error::Result<u32> {
     log::info!("command/report_latest");
+    if config.is_quiet() {
+        // Quiet mode: count failures without printing
+        let pattern = config.extract_pattern().to_string();
+        let tests = finder::discover(pattern)?;
+        let mut fail_count = 0u32;
+        for test_path in &tests.found {
+            let db = crate::db_path(test_path);
+            let latest_count = db::count_latest_results(&db)?;
+            if latest_count > 0 && db::count_differences(&db)? > 0 {
+                fail_count += 1;
+            }
+        }
+        return Ok(fail_count);
+    }
     let fail_count = generate_reports(config)?;
     log::info!("command/report_latest done");
     Ok(fail_count)
@@ -692,31 +844,40 @@ mod tests {
     fn test_resolve_bare_name() {
         let resolved = resolve_test_path("my_test");
         let data_dir = crate::data_dir();
-        assert_eq!(resolved, data_dir.join("my_test.tdb").to_string_lossy());
+        assert_eq!(resolved, data_dir.join("my_test.rgt").to_string_lossy());
     }
 
     #[test]
     fn test_resolve_bare_name_with_tdb() {
+        // Input has .tdb extension — should convert to .rgt
         let resolved = resolve_test_path("my_test.tdb");
         let data_dir = crate::data_dir();
-        assert_eq!(resolved, data_dir.join("my_test.tdb").to_string_lossy());
+        assert_eq!(resolved, data_dir.join("my_test.rgt").to_string_lossy());
+    }
+
+    #[test]
+    fn test_resolve_bare_name_with_rgt() {
+        let resolved = resolve_test_path("my_test.rgt");
+        let data_dir = crate::data_dir();
+        assert_eq!(resolved, data_dir.join("my_test.rgt").to_string_lossy());
     }
 
     #[test]
     fn test_resolve_path_with_directory() {
         let resolved = resolve_test_path("/tmp/tests/foo");
-        assert_eq!(resolved, "/tmp/tests/foo.tdb");
+        assert_eq!(resolved, "/tmp/tests/foo.rgt");
     }
 
     #[test]
     fn test_resolve_path_with_directory_and_tdb() {
+        // Input has .tdb extension — should convert to .rgt
         let resolved = resolve_test_path("/tmp/tests/foo.tdb");
-        assert_eq!(resolved, "/tmp/tests/foo.tdb");
+        assert_eq!(resolved, "/tmp/tests/foo.rgt");
     }
 
     #[test]
     fn test_resolve_relative_path_with_directory() {
         let resolved = resolve_test_path("subdir/foo");
-        assert_eq!(resolved, "subdir/foo.tdb");
+        assert_eq!(resolved, "subdir/foo.rgt");
     }
 }

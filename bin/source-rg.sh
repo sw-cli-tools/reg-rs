@@ -34,16 +34,24 @@ mgrg() { reg-rs migrate -p "${1:-.tdb}"; }
 hlrg() {
     cat <<'HELP'
 reg-rs shell aliases:
+  adrg <name> '<cmd>'   Add/create a test (.rgt + .out baseline)
   rnrg [pattern]        Run tests (default: all)
-  adrg <name> '<cmd>'   Add/create a test
+    rnrg                  run all tests
+    rnrg foo              run tests matching "foo"
+    rnrg foo -v           run with failure details
+    rnrg foo -vv          run with full diffs
+    rnrg foo -q           quiet (exit code only)
+    rnrg foo --parallel   run in parallel
   lsrg [pattern]        List tests with status
-  shrg <name> [-v|-vv]  Show test details
-  strg [pattern]        Start status server
-  rsrg <pattern>        Reset test results
+  shrg <name> [-v|-vv]  Show test details/baselines/diffs
   uprg <pattern>        Rebase — accept latest as baseline
+  rsrg <pattern>        Reset test results (clear .tdb cache)
   rmrg <pattern>        Remove test files
-  mgrg [pattern]        Migrate .tdb to .rgt format
+  strg [pattern]        Start status server
+  mgrg [pattern]        Migrate legacy .tdb to .rgt format
   hlrg                  Show this help
+
+Install: source /path/to/reg-rs/bin/source-rg.sh in .zshrc/.bashrc
 HELP
 }
 

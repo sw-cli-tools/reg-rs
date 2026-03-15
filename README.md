@@ -108,7 +108,9 @@ The `-p` pattern flag is optional — omit it to run all tests.
 reg-rs create -t my_test -c "echo hello world"
 
 # 2. Run all tests (auto-discovers data dir, matches all)
-reg-rs run
+reg-rs run                         # summary line output
+reg-rs run -v                      # show failure details
+reg-rs run -q                      # quiet: exit code only
 
 # 3. Run specific tests by pattern
 reg-rs run -p my_test
@@ -135,7 +137,7 @@ Creates a new test by running a command and storing its output as the baseline.
 reg-rs create -t <test_name> -c <command>
 
 # Options:
-#   -t, --test <name>      Test name (stored as name.tdb in data dir)
+#   -t, --test <name>      Test name (stored as name.rgt in data dir)
 #   -c, --command <cmd>    Command to execute and capture
 
 # Examples:
@@ -149,15 +151,19 @@ reg-rs c -t ls_test -c "ls -la"   # 'c' is an alias for 'create'
 Runs previously created tests and compares results against baselines.
 
 ```bash
-reg-rs run -p <pattern>
+reg-rs run -p <pattern> [-v|-vv] [-q] [-n]
 
 # Options:
 #   -p, --pattern <pat>    Pattern to match test names (supports glob patterns)
+#   -q, --quiet            No output, exit code only (0=pass, 1=regressions)
+#   -v                     Show failure details (test names + failure info)
+#   -vv                    Show failure details with full diffs
 #   -n, --dry-run          Print what would be run without executing
 
 # Examples:
-reg-rs run -p pwd_test                    # Run a specific test
-reg-rs run -p test                        # Run all matching tests
+reg-rs run -p pwd_test                    # Run a specific test (summary line)
+reg-rs run -p test -v                     # Run with failure details
+reg-rs run -q                             # Silent run, check exit code
 reg-rs r -p pwd_test -n                   # 'r' is alias; dry-run mode
 ```
 
@@ -187,10 +193,11 @@ reg-rs w -p test                      # 'w' is alias
 Reports on test results with configurable verbosity.
 
 ```bash
-reg-rs report -p <pattern> [-v|-vv|-vvv]
+reg-rs report -p <pattern> [-v|-vv|-vvv] [-q]
 
 # Options:
 #   -p, --pattern <pat>    Pattern to match test names
+#   -q, --quiet            No output, exit code only (0=pass, 1=regressions)
 #   -v                     Show test names
 #   -vv                    Show test names and failure info
 #   -vvv                   Show test names, failures, and differences
@@ -198,6 +205,7 @@ reg-rs report -p <pattern> [-v|-vv|-vvv]
 # Examples:
 reg-rs report -p pwd_test                 # Basic summary
 reg-rs report -p test -v                  # Show names
+reg-rs report -q                          # Silent, check exit code
 reg-rs p -p pwd_test -vvv                 # 'p' is alias; full details
 ```
 

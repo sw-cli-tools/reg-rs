@@ -9,7 +9,7 @@ const EXIT_REGRESSIONS: i32 = 1;
 #[tokio::main]
 async fn main() {
     let config = builder::build();
-    let default_level = if config.debug { "debug" } else { "info" };
+    let default_level = if config.debug { "debug" } else { "warn" };
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(default_level))
         .init();
     log::info!(target: "reg_rs::main", "env_logger initialized");

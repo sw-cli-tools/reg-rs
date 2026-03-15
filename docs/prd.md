@@ -35,8 +35,10 @@ reg-rs (pronounced "regress") is a command-line regression testing tool that cap
 - `complete` subcommand: outputs test names for shell tab-completion
 - Shell aliases (`bin/source-rg.sh`): `rnrg`, `lsrg`, `shrg`, `uprg`, etc.
 - `bin/regress` wrapper script for ergonomic usage
-- Conditional debug output (-d flag)
+- Conditional debug output (-d flag); default log level is `warn` (no SQL noise)
 - File-based logging (-l flag)
+- Verbosity and quiet flags on `run` (`-v`/`-vv`/`-q`) and `report` (`-q`)
+- `create` writes `.rgt` format directly (no intermediate `.tdb` step)
 
 ### Known Issues
 

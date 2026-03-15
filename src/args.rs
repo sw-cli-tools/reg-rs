@@ -21,6 +21,15 @@ WORKFLOW:
   2. Run the test:    reg-rs run -p my_test
   3. View results:    reg-rs report -p my_test -v
 
+SHELL ALIASES (source bin/source-rg.sh in your .zshrc/.bashrc):
+  adrg <name> '<cmd>'   Create a test        (reg-rs create)
+  rnrg [pattern]        Run tests            (reg-rs run)
+  lsrg [pattern]        List tests           (reg-rs list)
+  shrg <name> [-v|-vv]  Show test details    (reg-rs show)
+  uprg <pattern>        Rebase baseline      (reg-rs rebase)
+  rmrg <pattern>        Remove tests         (reg-rs remove)
+  hlrg                  Show alias help
+
 For more information on a specific command, run:
   reg-rs <command> --help"
 )]
@@ -257,6 +266,7 @@ EXAMPLES:
         long_about = "Reports on test results with configurable verbosity.
 
 VERBOSITY LEVELS:
+  -q      - Quiet: only exit code (0=pass, 1=fail)
   (none)  - Show only summary counts
   -v      - Also show test names
   -vv     - Also show failure information
@@ -265,6 +275,7 @@ VERBOSITY LEVELS:
 EXAMPLES:
   reg-rs report -p my_test            # basic summary
   reg-rs report -p my_test -v         # show names
+  reg-rs report -q -p my_test         # silent, check exit code only
   reg-rs p -p my_test -vvv            # full details (using alias)"
     )]
     Report {
@@ -274,6 +285,9 @@ EXAMPLES:
         /// Verbosity: -v adds names, -vv adds failures, -vvv adds differences
         #[clap(short, action = clap::ArgAction::Count)]
         verbosity: u8,
+        /// Quiet mode: suppress all output, only set exit code
+        #[clap(short, long)]
+        quiet: bool,
     },
     /// Runs a test (or tests) based on a test name pattern (alias r)
     #[clap(
@@ -284,9 +298,18 @@ EXAMPLES:
 Each matching test's command is re-executed, and the new output is compared
 against the stored baseline. Any differences are recorded as potential regressions.
 
+VERBOSITY LEVELS:
+  -q      - Quiet: only exit code (0=pass, 1=fail)
+  (none)  - Summary line with pass/fail counts and failing test names
+  -v      - Also show failure details (difference counts and types)
+  -vv     - Also show full diffs for each failure
+
 EXAMPLES:
   reg-rs run -p my_test                    # run a specific test
   reg-rs run -p test                       # run all matching tests
+  reg-rs run -p test -v                    # run with failure details
+  reg-rs run -p test -vv                   # run with full diffs
+  reg-rs run -q -p test                    # silent, check exit code only
   reg-rs r -p my_test -n                   # dry-run (show what would run)
   reg-rs r -p test --parallel              # run all matching tests in parallel"
     )]
@@ -300,6 +323,12 @@ EXAMPLES:
         /// Run tests in parallel using one thread per test
         #[clap(long)]
         parallel: bool,
+        /// Verbosity: -v adds failure details, -vv adds full diffs
+        #[clap(short, action = clap::ArgAction::Count)]
+        verbosity: u8,
+        /// Quiet mode: suppress all output, only set exit code
+        #[clap(short, long)]
+        quiet: bool,
     },
     /// Starts a server to monitor long running tests and/or show results (alias s)
     #[clap(
@@ -415,6 +444,7 @@ mod tests {
                 command: Subcommands::Report {
                     pattern: "pat001".to_string(),
                     verbosity: 0,
+                    quiet: false,
                 },
                 debug: false,
                 logging: false,
@@ -430,6 +460,7 @@ mod tests {
                 command: Subcommands::Report {
                     pattern: "pat001".to_string(),
                     verbosity: 3,
+                    quiet: false,
                 },
                 debug: true,
                 logging: false,
@@ -446,6 +477,8 @@ mod tests {
                     dry_run: false,
                     pattern: "pat001".to_string(),
                     parallel: false,
+                    verbosity: 0,
+                    quiet: false,
                 },
                 debug: false,
                 logging: false,
@@ -630,6 +663,8 @@ mod tests {
                     dry_run: true,
                     pattern: "pat001".to_string(),
                     parallel: false,
+                    verbosity: 0,
+                    quiet: false,
                 },
                 debug: true,
                 logging: false,

@@ -28,7 +28,7 @@ This runs `echo hello world`, captures stdout/stderr/exit code, and stores the r
 reg-rs run -p hello
 ```
 
-Compares the current output against the baseline. If `echo hello world` still outputs `hello world`, it passes.
+Compares the current output against the baseline. If `echo hello world` still outputs `hello world`, it passes. By default, `run` prints a one-line summary; use `-v` for failure details or `-q` for silent mode (exit code only: 0=pass, 1=regressions).
 
 ### Check results
 
@@ -119,8 +119,11 @@ reg-rs create -t ls_test -D "list files in current directory sorted by size"
 ### Running tests
 
 ```bash
-reg-rs run                        # run all tests
+reg-rs run                        # run all tests (summary line)
 reg-rs run -p my_test             # run matching tests
+reg-rs run -v                     # show failure details
+reg-rs run -vv                    # show failure details with full diffs
+reg-rs run -q                     # quiet mode: no output, exit code only
 reg-rs run -p test --parallel     # run all matching in parallel
 reg-rs run -p my_test -n          # dry run (show what would run)
 ```
@@ -142,6 +145,7 @@ reg-rs report                     # summary counts
 reg-rs report -v                  # + test names
 reg-rs report -vv                 # + failure info
 reg-rs report -vvv                # + detailed diffs
+reg-rs report -q                  # quiet mode: no output, exit code only
 ```
 
 ### Managing baselines
@@ -205,15 +209,13 @@ cd my-project
 mkdir -p work/reg-rs
 
 # Create tests (reg-rs auto-discovers work/reg-rs/)
+# create writes .rgt format directly — no migrate step needed
 reg-rs create -t version -c "myapp --version"
 reg-rs create -t help -c "myapp --help"
 reg-rs create -t basic -c "myapp process input.txt"
 
 # Run all tests
 reg-rs run
-
-# Migrate to git-friendly format
-reg-rs migrate
 
 # Track in git
 echo "*.tdb" >> .gitignore
@@ -292,3 +294,5 @@ Override with: `REG_RS_DATA_DIR=/path/to/tests reg-rs run`
 - Use `--parallel` for faster test runs when tests are independent
 - The `-p` pattern is optional on all commands — omit it to operate on all tests
 - Pattern matching is substring-based: `-p foo` matches `foobar`, `my_foo_test`, etc.
+- Use `-q` on `run` or `report` for CI scripts — no output, just exit codes (0=pass, 1=regressions, 2=error)
+- Debug output (`-d` flag) shows SQL queries and internal state; default log level is `warn` for clean output
