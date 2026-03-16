@@ -240,12 +240,8 @@ create_test "cor24_rust_countdown" \
   --expects "80332 instructions, halted"
 
 # ============================================================
-# Migrate to .rgt format and run tests
+# Run tests
 # ============================================================
-
-echo ""
-echo "--- Migrating to .rgt format ---"
-"$REG_RS_BIN" migrate -p cor24
 
 echo ""
 echo "--- Running tests ---"

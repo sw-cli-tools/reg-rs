@@ -27,50 +27,45 @@ rm -f "$REG_RS_DATA_DIR"/version_test.tdb "$REG_RS_DATA_DIR"/version_test.tdb.lo
       "$REG_RS_DATA_DIR"/version_test.rgt "$REG_RS_DATA_DIR"/version_test.out "$REG_RS_DATA_DIR"/version_test.err
 rm -rf "$REG_RS_DATA_DIR"/testdata/*
 
-# Create baseline test
+# Create baseline test (writes .rgt directly)
 echo ""
 echo "--- Step 1: Create a baseline test ---"
 echo 'version 1.0.0' > "$REG_RS_DATA_DIR"/testdata/version.txt
 "$REG_RS_BIN" create -t version_test -c "cat $REG_RS_DATA_DIR/testdata/version.txt"
 
-# Migrate to .rgt format
-echo ""
-echo "--- Step 2: Migrate to .rgt format ---"
-"$REG_RS_BIN" migrate -p version_test
-
 # Run test - should pass
 echo ""
-echo "--- Step 3: Run the test - should pass ---"
+echo "--- Step 2: Run the test - should pass ---"
 "$REG_RS_BIN" run -p version_test
 
 # List - shows status
 echo ""
-echo "--- Step 4: List shows PASS ---"
+echo "--- Step 3: List shows PASS ---"
 "$REG_RS_BIN" list -p version_test
 
 # Simulate a change (regression)
 echo ""
-echo "--- Step 5: Simulate a regression (version change) ---"
+echo "--- Step 4: Simulate a regression (version change) ---"
 echo 'version 2.0.0' > "$REG_RS_DATA_DIR"/testdata/version.txt
 
 # Run test again - should detect regression (exit code 1 = regressions found)
 echo ""
-echo "--- Step 6: Run the test again - detects the change ---"
+echo "--- Step 5: Run the test again - detects the change ---"
 "$REG_RS_BIN" run -p version_test || true
 
 # Show with diffs
 echo ""
-echo "--- Step 7: Show details with diffs ---"
+echo "--- Step 6: Show details with diffs ---"
 "$REG_RS_BIN" show -p version_test -vv
 
 # Rebase - accept the new output
 echo ""
-echo "--- Step 8: Rebase - accept new output as baseline ---"
+echo "--- Step 7: Rebase - accept new output as baseline ---"
 "$REG_RS_BIN" rebase -p version_test
 
 # Run again - should pass now
 echo ""
-echo "--- Step 9: Run again - passes with new baseline ---"
+echo "--- Step 8: Run again - passes with new baseline ---"
 "$REG_RS_BIN" run -p version_test
 
 # Report and check

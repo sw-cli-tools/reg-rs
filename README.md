@@ -8,19 +8,9 @@ A command-line utility that creates, discovers, runs, and reports on regression 
 - [Demos](#demos)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Commands](#commands)
-  - [create](#create)
-  - [run](#run)
-  - [list](#list)
-  - [show](#show)
-  - [report](#report)
-  - [rebase](#rebase)
-  - [migrate](#migrate)
-  - [reset](#reset)
-  - [remove](#remove)
-  - [status](#status)
+- [Usage](#usage)
+- [Handling Regressions](#handling-regressions)
 - [Test Formats](#test-formats)
-- [Shell Aliases](#shell-aliases)
 - [Architecture](#architecture)
 - [Development](#development)
 - [License](#license)
@@ -37,13 +27,12 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 
 - Create tests that capture command output and exit codes
 - Git-friendly `.rgt` text format (TOML spec + `.out`/`.err` baselines)
-- Run tests against matching patterns (sequential or parallel)
-- List, show, and report test results with varying verbosity
+- Run tests with configurable verbosity (`-v`, `-vv`) or quiet mode (`-q`)
 - Rebase baselines when output changes intentionally
-- Migrate existing `.tdb` tests to `.rgt` format
 - Shell aliases for quick access (`rnrg`, `lsrg`, `shrg`, etc.)
 - AI-powered test creation from natural language descriptions
 - Web-based status monitoring with live SSE updates
+- Parallel test execution
 
 ## Demos
 
@@ -51,7 +40,7 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 
 ![Basic Workflow](demo/basic.gif)
 
-*Create, run, report, and remove a regression test. Generate with `vhs demo/basic.tape`.*
+*Create, run, and report on a regression test. Generate with `vhs demo/basic.tape`.*
 
 ### Regression Detection
 
@@ -81,15 +70,35 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 ### Building from Source
 
 ```bash
-# Clone the repository
 git clone https://github.com/sw-cli-tools/reg-rs.git
 cd reg-rs
-
-# Build the project
 cargo build --release
 
-# The binary is at ./target/release/reg-rs
+# Install the binary
+cargo install --path .
 ```
+
+### Shell Aliases (for interactive use)
+
+The shell aliases are the recommended way to use reg-rs interactively. Add to your `.bashrc` or `.zshrc`:
+
+```bash
+source /path/to/reg-rs/bin/source-rg.sh
+```
+
+This gives you short commands with tab-completion:
+
+| Alias | Action | Example |
+|-------|--------|---------|
+| `adrg` | Add/create a test | `adrg my_test 'echo hi'` |
+| `rnrg` | Run tests | `rnrg` or `rnrg my_test` |
+| `lsrg` | List tests with status | `lsrg` |
+| `shrg` | Show test details | `shrg my_test -v` |
+| `uprg` | Rebase — accept new baseline | `uprg my_test` |
+| `rsrg` | Reset test results | `rsrg my_test` |
+| `rmrg` | Remove test | `rmrg old_test` |
+| `strg` | Start status server | `strg` |
+| `hlrg` | Show alias help | `hlrg` |
 
 ## Quick Start
 
@@ -101,178 +110,109 @@ reg-rs auto-discovers tests by checking (in order):
 3. Current directory (if it contains `.tdb` or `.rgt` files)
 4. `~/.local/reg-rs/` (default)
 
-The `-p` pattern flag is optional — omit it to run all tests.
-
 ```bash
-# 1. Create a test that captures the output of a command
-reg-rs create -t my_test -c "echo hello world"
+# 1. Create a test
+adrg hello 'echo hello world'
 
-# 2. Run all tests (auto-discovers data dir, matches all)
-reg-rs run                         # summary line output
-reg-rs run -v                      # show failure details
-reg-rs run -q                      # quiet: exit code only
+# 2. Run it
+rnrg hello
 
-# 3. Run specific tests by pattern
-reg-rs run -p my_test
+# 3. Check results
+lsrg                              # quick status overview
+shrg hello -v                     # detailed view with baseline
 
-# 4. View test results
-reg-rs list                    # quick status overview
-reg-rs show -p my_test -v      # detailed view with baseline
-reg-rs report -v               # formal report
+# 4. Run all tests
+rnrg
 
-# 5. If output changes intentionally, accept the new baseline
-reg-rs rebase -p my_test
-
-# 6. Migrate existing .tdb tests to git-friendly .rgt format
-reg-rs migrate
+# 5. Clean up
+rmrg hello
 ```
 
-## Commands
+## Usage
 
-### create
-
-Creates a new test by running a command and storing its output as the baseline.
+### Creating tests
 
 ```bash
-reg-rs create -t <test_name> -c <command>
+# Basic: capture command output as baseline
+adrg my_test 'echo hello'
 
-# Options:
-#   -t, --test <name>      Test name (stored as name.rgt in data dir)
-#   -c, --command <cmd>    Command to execute and capture
+# With metadata
+adrg my_test 'echo hello' --desc "Tests echo output" --timeout 10
 
-# Examples:
-reg-rs create -t pwd_test -c "pwd"
-reg-rs create -t version_test -c "git --version"
-reg-rs c -t ls_test -c "ls -la"   # 'c' is an alias for 'create'
+# With preprocessing (normalize output before diffing)
+adrg api_test 'curl -s localhost/api' -P "jq --sort-keys"
+
+# With diff mode (built-in normalization)
+adrg json_test 'myapp --json' -M json
+
+# AI-generated command (requires ANTHROPIC_API_KEY)
+reg-rs create -t ls_test -D "list files sorted by size"
 ```
 
-### run
-
-Runs previously created tests and compares results against baselines.
+### Running tests
 
 ```bash
-reg-rs run -p <pattern> [-v|-vv] [-q] [-n]
-
-# Options:
-#   -p, --pattern <pat>    Pattern to match test names (supports glob patterns)
-#   -q, --quiet            No output, exit code only (0=pass, 1=regressions)
-#   -v                     Show failure details (test names + failure info)
-#   -vv                    Show failure details with full diffs
-#   -n, --dry-run          Print what would be run without executing
-
-# Examples:
-reg-rs run -p pwd_test                    # Run a specific test (summary line)
-reg-rs run -p test -v                     # Run with failure details
-reg-rs run -q                             # Silent run, check exit code
-reg-rs r -p pwd_test -n                   # 'r' is alias; dry-run mode
+rnrg                               # run all tests (summary line)
+rnrg my_test                       # run matching tests
+rnrg my_test -v                    # show failure details
+rnrg my_test -vv                   # show failure details with full diffs
+rnrg -q                            # quiet mode: exit code only (0=pass, 1=fail)
+rnrg my_test --parallel            # run in parallel
 ```
 
-### list
-
-Lists tests with their name, command, and status (PASS/FAIL/pending).
+### Viewing results
 
 ```bash
-reg-rs list                           # list all tests
-reg-rs list -p my_test                # list matching tests
-reg-rs l -p test                      # 'l' is alias
+# Quick status
+lsrg                               # all tests
+lsrg my_test                       # matching tests
+
+# Detailed view
+shrg my_test                        # command, metadata, status
+shrg my_test -v                     # + baseline stdout/stderr
+shrg my_test -vv                    # + latest results and diffs
 ```
 
-### show
-
-Shows detailed test information including command, metadata, baselines, and diffs.
+### Managing baselines
 
 ```bash
-reg-rs show -p my_test                # command and metadata
-reg-rs show -p my_test -v             # also baseline output
-reg-rs show -p my_test -vv            # also latest results and diffs
-reg-rs w -p test                      # 'w' is alias
+# Accept latest output as new baseline
+uprg my_test
+
+# Clear latest results (mark as pending, keep baselines)
+rsrg my_test
+
+# Remove test entirely
+rmrg my_test
 ```
 
-### report
-
-Reports on test results with configurable verbosity.
+### Web dashboard
 
 ```bash
-reg-rs report -p <pattern> [-v|-vv|-vvv] [-q]
-
-# Options:
-#   -p, --pattern <pat>    Pattern to match test names
-#   -q, --quiet            No output, exit code only (0=pass, 1=regressions)
-#   -v                     Show test names
-#   -vv                    Show test names and failure info
-#   -vvv                   Show test names, failures, and differences
-
-# Examples:
-reg-rs report -p pwd_test                 # Basic summary
-reg-rs report -p test -v                  # Show names
-reg-rs report -q                          # Silent, check exit code
-reg-rs p -p pwd_test -vvv                 # 'p' is alias; full details
+strg                                # start on default port 4740
+strg my_test                        # filtered to matching tests
 ```
 
-### remove
+Open http://localhost:4740 to view live results with auto-updating via SSE.
 
-Removes tests and their associated result databases.
+## Handling Regressions
 
 ```bash
-reg-rs remove -p <pattern>
+# Run tests — one fails
+rnrg
+# version: FAIL
 
-# Options:
-#   -p, --pattern <pat>    Pattern to match tests to remove
+# See what changed
+shrg version -vv
+# Shows: expected "1.0.0", got "1.1.0"
 
-# Examples:
-reg-rs remove -p old_test
-reg-rs remove -p temp_
+# If the change is intentional, accept the new baseline
+uprg version
+
+# If the change is a bug, fix the code and re-run
+rnrg version
+# version: PASS
 ```
-
-### rebase
-
-Accepts the latest test output as the new expected baseline.
-
-```bash
-reg-rs rebase -p my_test              # accept latest output
-reg-rs u -p version                   # 'u' is alias (update)
-
-# For .rgt tests: updates .out/.err files
-# For .tdb tests: replaces original results with latest
-```
-
-### migrate
-
-Converts existing `.tdb` tests to `.rgt` text format.
-
-```bash
-reg-rs migrate                        # migrate all tests
-reg-rs migrate -p my_test             # migrate matching tests
-reg-rs m -p old_test                  # 'm' is alias
-```
-
-### reset
-
-Clears latest run results from the `.tdb` cache, keeping baselines intact.
-
-```bash
-reg-rs reset -p my_test               # reset matching tests
-reg-rs reset                          # reset all tests
-```
-
-### status
-
-Starts a web server to monitor test results.
-
-```bash
-reg-rs status -p <pattern> [-l <port>]
-
-# Options:
-#   -p, --pattern <pat>           Pattern to match tests to monitor
-#   -l, --localhost-port <port>   Port number (default: 4740)
-
-# Examples:
-reg-rs status -p test
-reg-rs status -p test -l 8080
-reg-rs s -p test                      # 's' is alias for 'status'
-```
-
-Open http://localhost:4740 (or your chosen port) to view the status page.
 
 ## Test Formats
 
@@ -305,30 +245,32 @@ Add to `.gitignore`:
 
 ### .tdb Format (legacy)
 
-Tests stored as SQLite databases. Use `reg-rs migrate` to convert to `.rgt` format.
+Tests stored as SQLite databases. Use `mgrg` (or `reg-rs migrate`) to convert to `.rgt` format.
 
-## Shell Aliases
-
-Source `bin/source-rg.sh` in your shell for quick access:
+### Setting up regression tests for a project
 
 ```bash
-source /path/to/reg-rs/bin/source-rg.sh
+cd my-project
+mkdir -p work/reg-rs
+
+# Create tests (reg-rs auto-discovers work/reg-rs/)
+adrg version 'myapp --version'
+adrg help 'myapp --help'
+adrg basic 'myapp process input.txt'
+
+# Run all tests
+rnrg
+
+# Track in git
+echo "*.tdb" >> .gitignore
+echo "*.lock" >> .gitignore
+git add work/reg-rs/*.rgt work/reg-rs/*.out work/reg-rs/*.err .gitignore
+git commit -m "add regression tests"
 ```
 
-| Alias | Action |
-|-------|--------|
-| `rnrg [pattern]` | Run tests |
-| `adrg <name> '<cmd>'` | Add/create a test |
-| `lsrg [pattern]` | List tests with status |
-| `shrg <name> [-v]` | Show test details |
-| `uprg <pattern>` | Rebase — accept latest as baseline |
-| `rsrg <pattern>` | Reset test results |
-| `rmrg <pattern>` | Remove test files |
-| `mgrg [pattern]` | Migrate .tdb to .rgt |
-| `strg [pattern]` | Start status server |
-| `hlrg` | Show alias help |
+## Full Command Reference
 
-Tab completion for test names is included (zsh and bash).
+The `reg-rs` CLI is designed for AI coding agents and shell scripts — explicit flags, structured output, and meaningful exit codes. For the full reference, see [docs/commands.md](docs/commands.md).
 
 ## Architecture
 
@@ -362,7 +304,7 @@ src/
 
 ### Data Flow
 
-1. **Create**: `main.rs` -> `command.rs` -> `runner.rs` -> `process.rs` -> `db.rs`
+1. **Create**: `main.rs` -> `command.rs` -> `runner.rs` -> `process.rs` -> `rgt.rs`
 2. **Run**: `main.rs` -> `command.rs` -> `runner.rs` -> `process.rs` -> `diff.rs` -> `db.rs`
 3. **Report**: `main.rs` -> `command.rs` -> `reporters/` -> `db.rs`
 4. **Status**: `main.rs` -> `command.rs` -> `status/server.rs` -> `db.rs`
@@ -372,7 +314,6 @@ src/
 ### Setup
 
 ```bash
-# Clone and build
 git clone https://github.com/sw-cli-tools/reg-rs.git
 cd reg-rs
 cargo build
@@ -398,14 +339,9 @@ cargo doc        # Generate documentation
 ### Testing
 
 ```bash
-# Run all tests
-cargo test
-
-# Run a specific test
-cargo test integration_test_reg_rs_help
-
-# Run tests with output
-cargo test -- --nocapture
+cargo test                                    # Run all tests
+cargo test integration_test_reg_rs_help       # Run a specific test
+cargo test -- --nocapture                     # Run tests with output
 ```
 
 ### Self-Testing (Dogfooding)
@@ -416,15 +352,13 @@ reg-rs tests its own CLI output for regressions. The demo scripts are run automa
 # cargo test runs all demo scripts (dogfood, basic workflow, regression detection)
 cargo test
 
-# Or run a demo script standalone (builds release, uses ./work/reg-rs/ for data)
+# Or run a demo script standalone
 bash demo/dogfood.sh
 bash demo/test_basic.sh
 bash demo/test_workflow.sh
 ```
 
-The demo scripts accept `REG_RS_BIN` to use a specific binary (integration tests use the debug build automatically).
-
-After making CLI changes, run `cargo test` to check if any help text changed unexpectedly. If the change was intentional, re-create the baselines with `demo/dogfood.sh`.
+After making CLI changes, run `cargo test` to check if any help text changed unexpectedly.
 
 ## Known Gaps
 

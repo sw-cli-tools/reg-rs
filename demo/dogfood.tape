@@ -1,5 +1,5 @@
 # reg-rs Dogfood Demo
-# reg-rs tests its own CLI output for regressions, then migrates to .rgt format
+# reg-rs tests its own CLI output for regressions
 #
 # To generate the GIF:
 #   vhs demo/dogfood.tape
@@ -32,8 +32,8 @@ Enter
 Sleep 500ms
 
 # Clean previous
-Type "rm -f $REG_RS_DATA_DIR/reg_rs_*.tdb $REG_RS_DATA_DIR/reg_rs_*.tdb.lock"
-Type " $REG_RS_DATA_DIR/reg_rs_*.rgt $REG_RS_DATA_DIR/reg_rs_*.out"
+Type "rm -f $REG_RS_DATA_DIR/reg_rs_*.rgt $REG_RS_DATA_DIR/reg_rs_*.out"
+Type " $REG_RS_DATA_DIR/reg_rs_*.tdb $REG_RS_DATA_DIR/reg_rs_*.tdb.lock"
 Enter
 Sleep 500ms
 
@@ -73,24 +73,8 @@ Type "rnrg reg_rs"
 Enter
 Sleep 2s
 
-# Step 4: Report
-Type "# Step 4: Report - all self-tests should pass"
-Enter
-Sleep 500ms
-Type "reg-rs report -p reg_rs -vv"
-Enter
-Sleep 3s
-
-# Step 5: Migrate to .rgt
-Type "# Step 5: Migrate to git-friendly .rgt format"
-Enter
-Sleep 500ms
-Type "mgrg reg_rs"
-Enter
-Sleep 2s
-
-# Step 6: Show a migrated test
-Type "# Step 6: Show a migrated test"
+# Step 4: Show a test
+Type "# Step 4: Show a test's baseline"
 Enter
 Sleep 500ms
 Type "shrg reg_rs_help -v"

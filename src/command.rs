@@ -44,9 +44,7 @@ pub fn create_original(config: &config::Config) -> crate::error::Result<()> {
     let timeout_secs = config.extract_timeout();
     let rgt_path = resolve_test_path(&test);
     let tdb_path = crate::rgt::tdb_path_for_rgt(&rgt_path);
-    if let Some(test_result) =
-        runner::run_one_timeout(&tdb_path, &command, false, timeout_secs)?
-    {
+    if let Some(test_result) = runner::run_one_timeout(&tdb_path, &command, false, timeout_secs)? {
         // Write .rgt spec + .out/.err baselines
         let preprocess = config.extract_preprocess();
         let diff_mode = config.extract_diff_mode().filter(|m| m != "text");
@@ -164,10 +162,7 @@ pub fn update_latest(config: &config::Config) -> crate::error::Result<u32> {
 ///
 /// - verbosity 1: difference counts and types per test
 /// - verbosity 2+: full diff output per test
-fn run_show_failure_details(
-    failed_paths: &[String],
-    verbosity: u8,
-) -> crate::error::Result<()> {
+fn run_show_failure_details(failed_paths: &[String], verbosity: u8) -> crate::error::Result<()> {
     use crate::diff;
     for test_path in failed_paths {
         let db = crate::db_path(test_path);
@@ -176,9 +171,8 @@ fn run_show_failure_details(
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_else(|| test_path.clone());
         let differences = db::read_differences(&db)?;
-        let same_count =
-            db::difference_count_by_type(&db, diff::RegressionType::StderrSame as u8)?
-                + db::difference_count_by_type(&db, diff::RegressionType::StdoutSame as u8)?;
+        let same_count = db::difference_count_by_type(&db, diff::RegressionType::StderrSame as u8)?
+            + db::difference_count_by_type(&db, diff::RegressionType::StdoutSame as u8)?;
         let diff_count = differences.len() as u32 - same_count;
 
         // Collect which types of differences exist
@@ -244,11 +238,9 @@ pub fn remove_all(config: &config::Config) -> crate::error::Result<()> {
         if is_rgt {
             // Remove .rgt spec, .out baseline, .err baseline
             let _ = std::fs::remove_file(test);
-            let out_path =
-                std::path::Path::new(test).with_extension(crate::rgt::OUT_EXTENSION);
+            let out_path = std::path::Path::new(test).with_extension(crate::rgt::OUT_EXTENSION);
             let _ = std::fs::remove_file(&out_path);
-            let err_path =
-                std::path::Path::new(test).with_extension(crate::rgt::ERR_EXTENSION);
+            let err_path = std::path::Path::new(test).with_extension(crate::rgt::ERR_EXTENSION);
             let _ = std::fs::remove_file(&err_path);
             // Also remove .tdb cache and its lock
             let tdb_path = crate::rgt::tdb_path_for_rgt(test);

@@ -914,10 +914,7 @@ fn integration_test_rebase_rgt_test() {
 
     // Run the .rgt test — will produce "rebased\n" which differs from "original output\n"
     // Exit code 1 = regressions detected (expected here)
-    reg_rs()
-        .args(["run", "-p", "rebase_test"])
-        .assert()
-        .code(1);
+    reg_rs().args(["run", "-p", "rebase_test"]).assert().code(1);
 
     // .tdb cache should exist now
     assert!(test_db.exists(), ".tdb cache should exist after run");

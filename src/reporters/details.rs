@@ -93,23 +93,20 @@ fn show_failures(
         let differences = db::read_differences(&db)?;
         log::debug!("show_failures differences: {:?}", &differences);
         let mut difference_types = vec![];
-        let same_count =
-            db::difference_count_by_type(&db, diff::RegressionType::StderrSame as u8)?
-                + db::difference_count_by_type(&db, diff::RegressionType::StdoutSame as u8)?;
+        let same_count = db::difference_count_by_type(&db, diff::RegressionType::StderrSame as u8)?
+            + db::difference_count_by_type(&db, diff::RegressionType::StdoutSame as u8)?;
         let differences_count = differences.len() as u32 - same_count;
         if verbosity_level > 2 {
             if 0 < db::difference_count_by_type(&db, diff::RegressionType::ActualCode as u8)? {
                 difference_types.push("exit_code".to_string());
             }
             if 0 < db::difference_count_by_type(&db, diff::RegressionType::StderrAdd as u8)?
-                || 0
-                    < db::difference_count_by_type(&db, diff::RegressionType::StderrRemove as u8)?
+                || 0 < db::difference_count_by_type(&db, diff::RegressionType::StderrRemove as u8)?
             {
                 difference_types.push("stderr".to_string());
             }
             if 0 < db::difference_count_by_type(&db, diff::RegressionType::StdoutAdd as u8)?
-                || 0
-                    < db::difference_count_by_type(&db, diff::RegressionType::StdoutRemove as u8)?
+                || 0 < db::difference_count_by_type(&db, diff::RegressionType::StdoutRemove as u8)?
             {
                 difference_types.push("stdout".to_string());
             }

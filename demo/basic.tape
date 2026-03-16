@@ -32,7 +32,7 @@ Enter
 Sleep 500ms
 
 # Clean any previous test
-Type "rm -f $REG_RS_DATA_DIR/hello.tdb $REG_RS_DATA_DIR/hello.tdb.lock"
+Type "rm -f $REG_RS_DATA_DIR/hello.*"
 Enter
 Sleep 500ms
 
