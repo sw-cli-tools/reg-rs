@@ -53,19 +53,21 @@ fn integration_test_reg_rs_help() {
             "Usage: reg-rs [OPTIONS] <COMMAND>",
         ))
         .stdout(predicate::str::contains("analyze"))
-        .stdout(predicate::str::contains(
-            "Creates a new test of a specified command",
-        ))
-        .stdout(predicate::str::contains("Lists tests matching"))
+        .stdout(predicate::str::contains("Create a new test"))
+        .stdout(predicate::str::contains("Lists all tests matching"))
         .stdout(predicate::str::contains("Shows detailed information"))
-        .stdout(predicate::str::contains("Converts .tdb tests to .rgt"))
-        .stdout(predicate::str::contains("Accepts latest test output"))
-        .stdout(predicate::str::contains("Clears latest results"))
+        .stdout(predicate::str::contains(
+            "Converts existing .tdb test databases",
+        ))
+        .stdout(predicate::str::contains("Accepts the latest test output"))
+        .stdout(predicate::str::contains("Clears latest run results"))
         .stdout(predicate::str::contains("Outputs test names for shell"))
-        .stdout(predicate::str::contains("Removes previously created test"))
-        .stdout(predicate::str::contains("Reports counts/summary"))
-        .stdout(predicate::str::contains("Runs a test"))
-        .stdout(predicate::str::contains("Starts a server to monitor"))
+        .stdout(predicate::str::contains(
+            "Removes test database files matching",
+        ))
+        .stdout(predicate::str::contains("Reports on test results"))
+        .stdout(predicate::str::contains("Runs previously created tests"))
+        .stdout(predicate::str::contains("Starts a web server to monitor"))
         .stdout(predicate::str::contains("-d, --debug"))
         .stdout(predicate::str::contains("-l, --logging"))
         .stdout(predicate::str::contains("-h, --help"))
@@ -90,9 +92,7 @@ fn integration_test_create_help() {
         .assert()
         .success()
         .stderr("")
-        .stdout(predicate::str::contains(
-            "Creates a new test of a specified command",
-        ))
+        .stdout(predicate::str::contains("Create a new test"))
         .stdout(predicate::str::contains("-t, --test"))
         .stdout(predicate::str::contains("-c, --command"));
 }
@@ -105,7 +105,7 @@ fn integration_test_run_help() {
         .assert()
         .success()
         .stderr("")
-        .stdout(predicate::str::contains("Runs a test"))
+        .stdout(predicate::str::contains("Runs previously created tests"))
         .stdout(predicate::str::contains("-p, --pattern"))
         .stdout(predicate::str::contains("-n, --dry-run"))
         .stdout(predicate::str::contains("--parallel"));
@@ -128,7 +128,7 @@ fn integration_test_report_help() {
         .assert()
         .success()
         .stderr("")
-        .stdout(predicate::str::contains("Reports counts/summary"))
+        .stdout(predicate::str::contains("Reports on test results"))
         .stdout(predicate::str::contains("-p, --pattern"))
         .stdout(predicate::str::contains("-v"));
 }
@@ -141,7 +141,9 @@ fn integration_test_remove_help() {
         .assert()
         .success()
         .stderr("")
-        .stdout(predicate::str::contains("Removes previously created test"))
+        .stdout(predicate::str::contains(
+            "Removes test database files matching",
+        ))
         .stdout(predicate::str::contains("-p, --pattern"));
 }
 
@@ -153,7 +155,7 @@ fn integration_test_status_help() {
         .assert()
         .success()
         .stderr("")
-        .stdout(predicate::str::contains("Starts a server to monitor"))
+        .stdout(predicate::str::contains("Starts a web server to monitor"))
         .stdout(predicate::str::contains("-p, --pattern"))
         .stdout(predicate::str::contains("-l, --localhost-port"));
 }
