@@ -56,9 +56,13 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 
 ### Web Status Dashboard
 
-![Web Status Dashboard](images/web-screen.png?ts=1773373732623)
+![Landing Page](images/landing.png?ts=1773786467090)
 
-*Live status dashboard showing 21 tests across multiple suites — failures with character-level diff highlighting, passing tests, and pending tests. Updates in real time via SSE.*
+*Summary landing page showing 65 tests across all projects (reg-rs, favicon, pjmai, rank-wav, cor24) with pass/fail/pending counts.*
+
+![Status Details](images/status-details.png?ts=1773786467090)
+
+*Detailed status view with per-test results, character-level diff highlighting for failures, and live SSE updates.*
 
 ## Installation
 
