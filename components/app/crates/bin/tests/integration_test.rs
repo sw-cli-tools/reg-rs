@@ -9,7 +9,7 @@ mod common;
 
 /// Build a Command for the reg-rs binary with the test data dir set
 fn reg_rs() -> Command {
-    let mut cmd = Command::cargo_bin("reg-rs").unwrap();
+    let mut cmd = Command::cargo_bin("reg-rs").expect("reg-rs binary not found");
     cmd.env("REG_RS_DATA_DIR", common::test_data_dir());
     cmd
 }
@@ -628,7 +628,7 @@ fn integration_test_status_server_landing_page() {
         .call()
         .expect("landing page GET failed");
     assert_eq!(resp.status(), 200);
-    let body = resp.into_string().unwrap();
+    let body = resp.into_string().expect("failed to read response body");
     assert!(body.contains("reg-rs"), "Landing page should contain title");
     assert!(
         body.contains("status_test"),
@@ -648,7 +648,7 @@ fn integration_test_status_server_landing_page() {
         .call()
         .expect("status page GET failed");
     assert_eq!(resp.status(), 200);
-    let body = resp.into_string().unwrap();
+    let body = resp.into_string().expect("failed to read response body");
     assert!(body.contains("status_test"), "Status page should show test");
 
     // Check API endpoint
@@ -656,9 +656,14 @@ fn integration_test_status_server_landing_page() {
         .call()
         .expect("api/status GET failed");
     assert_eq!(resp.status(), 200);
-    let json: serde_json::Value = resp.into_json().unwrap();
+    let json: serde_json::Value = resp.into_json().expect("failed to parse JSON response");
     assert_eq!(json["pattern"], "status_test");
-    assert!(json["total_count"].as_u64().unwrap() >= 1);
+    assert!(
+        json["total_count"]
+            .as_u64()
+            .expect("expected u64 field in JSON")
+            >= 1
+    );
     // _guard drops here, killing the server and freeing the port
 }
 
@@ -707,7 +712,7 @@ fn integration_test_sse_broadcasts_on_file_change() {
     let resp = ureq::get(&format!("{}/api/status", base_url))
         .call()
         .expect("api GET failed after change");
-    let updated: serde_json::Value = resp.into_json().unwrap();
+    let updated: serde_json::Value = resp.into_json().expect("failed to parse JSON response");
     let new_updated = updated["updated"].as_str().unwrap_or("").to_string();
 
     // The updated timestamp should have changed
@@ -936,7 +941,7 @@ fn integration_test_create_produces_rgt() {
     assert!(test_tdb.exists(), ".tdb cache should exist after create");
 
     // .rgt should contain the command and metadata
-    let rgt_content = fs::read_to_string(&test_rgt).unwrap();
+    let rgt_content = fs::read_to_string(&test_rgt).expect("failed to read test file");
     assert!(
         rgt_content.contains("echo hello_rgt"),
         ".rgt should contain command"
@@ -947,7 +952,7 @@ fn integration_test_create_produces_rgt() {
     );
 
     // .out should contain the baseline stdout
-    let out_content = fs::read_to_string(&test_out).unwrap();
+    let out_content = fs::read_to_string(&test_out).expect("failed to read test file");
     assert_eq!(out_content, "hello_rgt\n");
 
     // Run should pass immediately (cache is populated)
@@ -979,8 +984,8 @@ fn integration_test_rebase_rgt_test() {
     let _ = fs::remove_file(&test_out);
 
     // Create .rgt test manually
-    fs::write(&test_rgt, "command = \"echo rebased\"\n").unwrap();
-    fs::write(&test_out, "original output\n").unwrap();
+    fs::write(&test_rgt, "command = \"echo rebased\"\n").expect("failed to write test file");
+    fs::write(&test_out, "original output\n").expect("failed to write test file");
 
     // Run the .rgt test — will produce "rebased\n" which differs from "original output\n"
     // Exit code 1 = regressions detected (expected here)
@@ -1005,7 +1010,7 @@ fn integration_test_rebase_rgt_test() {
         .stderr(predicate::str::contains("1 test(s) rebased"));
 
     // .out should now contain the new output
-    let out_content = fs::read_to_string(&test_out).unwrap();
+    let out_content = fs::read_to_string(&test_out).expect("failed to read test file");
     assert_eq!(out_content, "rebased\n");
 
     // Run again — should pass now
@@ -1061,8 +1066,8 @@ fn integration_test_exit_codes() {
     // Set up .rgt test with mismatched baseline → exit 1
     let _ = fs::remove_file(&test_db);
     let _ = fs::remove_file(&lock_file);
-    fs::write(&test_rgt, "command = \"echo changed\"\n").unwrap();
-    fs::write(&test_out, "original\n").unwrap();
+    fs::write(&test_rgt, "command = \"echo changed\"\n").expect("failed to write test file");
+    fs::write(&test_out, "original\n").expect("failed to write test file");
 
     reg_rs()
         .args(["run", "-p", "exitcode_test"])

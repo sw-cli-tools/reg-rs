@@ -28,7 +28,7 @@ impl MockCommandExecutor {
 
 impl CommandExecutor for MockCommandExecutor {
     fn exec(&self, _command: &str) -> Result<(i32, String, String)> {
-        let mut responses = self.responses.lock().unwrap();
+        let mut responses = self.responses.lock().expect("mutex poisoned");
         if responses.is_empty() {
             Ok((0, String::new(), String::new()))
         } else {

@@ -16,13 +16,14 @@ fn test_run_no_defaults() {
             debug: true,
             logging: false,
         },
-        <Args as Parser>::try_parse_from(["test", "-d", "run", "-p", "pat001", "-n"]).unwrap()
+        <Args as Parser>::try_parse_from(["test", "-d", "run", "-p", "pat001", "-n"])
+            .expect("failed to parse CLI args")
     );
 }
 
 #[test]
 fn test_run_default_pattern() {
-    let args = <Args as Parser>::try_parse_from(["test", "run"]).unwrap();
+    let args = <Args as Parser>::try_parse_from(["test", "run"]).expect("failed to parse CLI args");
     match args.command {
         Subcommands::Run { pattern, .. } => assert_eq!(pattern, ".tdb"),
         _ => panic!("expected Run"),
@@ -31,7 +32,8 @@ fn test_run_default_pattern() {
 
 #[test]
 fn test_report_default_pattern() {
-    let args = <Args as Parser>::try_parse_from(["test", "report"]).unwrap();
+    let args =
+        <Args as Parser>::try_parse_from(["test", "report"]).expect("failed to parse CLI args");
     match args.command {
         Subcommands::Report { pattern, .. } => assert_eq!(pattern, ".tdb"),
         _ => panic!("expected Report"),
@@ -40,7 +42,8 @@ fn test_report_default_pattern() {
 
 #[test]
 fn test_show_defaults() {
-    let args = <Args as Parser>::try_parse_from(["test", "show"]).unwrap();
+    let args =
+        <Args as Parser>::try_parse_from(["test", "show"]).expect("failed to parse CLI args");
     match args.command {
         Subcommands::Show { pattern, verbosity } => {
             assert_eq!(pattern, ".tdb");
@@ -52,7 +55,8 @@ fn test_show_defaults() {
 
 #[test]
 fn test_show_with_verbosity() {
-    let args = <Args as Parser>::try_parse_from(["test", "show", "-p", "hello", "-vv"]).unwrap();
+    let args = <Args as Parser>::try_parse_from(["test", "show", "-p", "hello", "-vv"])
+        .expect("failed to parse CLI args");
     match args.command {
         Subcommands::Show { pattern, verbosity } => {
             assert_eq!(pattern, "hello");
@@ -64,7 +68,8 @@ fn test_show_with_verbosity() {
 
 #[test]
 fn test_show_alias() {
-    let args = <Args as Parser>::try_parse_from(["test", "w", "-p", "foo"]).unwrap();
+    let args = <Args as Parser>::try_parse_from(["test", "w", "-p", "foo"])
+        .expect("failed to parse CLI args");
     match args.command {
         Subcommands::Show { pattern, .. } => assert_eq!(pattern, "foo"),
         _ => panic!("expected Show"),
@@ -73,7 +78,8 @@ fn test_show_alias() {
 
 #[test]
 fn test_list_defaults() {
-    let args = <Args as Parser>::try_parse_from(["test", "list"]).unwrap();
+    let args =
+        <Args as Parser>::try_parse_from(["test", "list"]).expect("failed to parse CLI args");
     match args.command {
         Subcommands::List { pattern } => assert_eq!(pattern, ".tdb"),
         _ => panic!("expected List"),

@@ -3,11 +3,13 @@ use reg_rs_renderer::templates;
 
 #[test]
 fn test_classify_difference_known_types() {
-    let result = diff_format::classify_difference("1", "42").unwrap();
+    let result =
+        diff_format::classify_difference("1", "42").expect("expected classification for type 1");
     assert_eq!(result.kind, diff_format::DiffKind::Add);
     assert_eq!(result.label, "Actual exit code");
 
-    let result = diff_format::classify_difference("2", "0").unwrap();
+    let result =
+        diff_format::classify_difference("2", "0").expect("expected classification for type 2");
     assert_eq!(result.kind, diff_format::DiffKind::Remove);
     assert_eq!(result.label, "Expected exit code");
 }
@@ -20,7 +22,8 @@ fn test_classify_difference_skips_same() {
 
 #[test]
 fn test_classify_difference_escapes_html() {
-    let result = diff_format::classify_difference("6", "<b>xss</b>").unwrap();
+    let result = diff_format::classify_difference("6", "<b>xss</b>")
+        .expect("expected classification for type 6");
     assert!(result.value.contains("&lt;b&gt;"));
     assert!(!result.value.contains("<b>xss"));
 }

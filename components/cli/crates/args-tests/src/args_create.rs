@@ -21,7 +21,8 @@ fn test_create_defaults() {
             debug: false,
             logging: false,
         },
-        <Args as Parser>::try_parse_from(["test", "create", "-t", "pat001", "-c", "pwd"]).unwrap()
+        <Args as Parser>::try_parse_from(["test", "create", "-t", "pat001", "-c", "pwd"])
+            .expect("failed to parse CLI args")
     );
 }
 
@@ -45,7 +46,7 @@ fn test_create_no_defaults() {
             logging: false,
         },
         <Args as Parser>::try_parse_from(["test", "-d", "create", "-t", "pat001", "-c", "pwd"])
-            .unwrap()
+            .expect("failed to parse CLI args")
     );
 }
 
@@ -59,7 +60,8 @@ fn test_remove_defaults() {
             debug: false,
             logging: false,
         },
-        <Args as Parser>::try_parse_from(["test", "remove", "-p", "pat001"]).unwrap()
+        <Args as Parser>::try_parse_from(["test", "remove", "-p", "pat001"])
+            .expect("failed to parse CLI args")
     );
 }
 
@@ -73,7 +75,8 @@ fn test_remove_no_defaults() {
             debug: true,
             logging: false,
         },
-        <Args as Parser>::try_parse_from(["test", "-d", "remove", "-p", "pat001"]).unwrap()
+        <Args as Parser>::try_parse_from(["test", "-d", "remove", "-p", "pat001"])
+            .expect("failed to parse CLI args")
     );
 }
 
@@ -89,7 +92,8 @@ fn test_report_defaults() {
             debug: false,
             logging: false,
         },
-        <Args as Parser>::try_parse_from(["test", "report", "-p", "pat001"]).unwrap()
+        <Args as Parser>::try_parse_from(["test", "report", "-p", "pat001"])
+            .expect("failed to parse CLI args")
     );
 }
 
@@ -105,7 +109,8 @@ fn test_report_no_defaults() {
             debug: true,
             logging: false,
         },
-        <Args as Parser>::try_parse_from(["test", "-d", "report", "-p", "pat001", "-vvv"]).unwrap()
+        <Args as Parser>::try_parse_from(["test", "-d", "report", "-p", "pat001", "-vvv"])
+            .expect("failed to parse CLI args")
     );
 }
 
@@ -123,6 +128,7 @@ fn test_run_defaults() {
             debug: false,
             logging: false,
         },
-        <Args as Parser>::try_parse_from(["test", "run", "-p", "pat001"]).unwrap()
+        <Args as Parser>::try_parse_from(["test", "run", "-p", "pat001"])
+            .expect("failed to parse CLI args")
     );
 }

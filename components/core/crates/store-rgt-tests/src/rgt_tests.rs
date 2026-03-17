@@ -4,10 +4,11 @@ use tempfile::TempDir;
 
 #[test]
 fn test_parse_rgt_minimal() {
-    let dir = TempDir::new().unwrap();
+    let dir = TempDir::new().expect("failed to create temp dir");
     let path = dir.path().join("test.rgt");
-    std::fs::write(&path, "command = \"echo hello\"\n").unwrap();
-    let spec = rgt::parse_rgt(path.to_str().unwrap()).unwrap();
+    std::fs::write(&path, "command = \"echo hello\"\n").expect("failed to write test file");
+    let spec = rgt::parse_rgt(path.to_str().expect("temp path is valid UTF-8"))
+        .expect("failed to parse rgt");
     assert_eq!(spec.command, "echo hello");
     assert!(spec.timeout.is_none());
     assert!(spec.exit_code.is_none());
@@ -15,7 +16,7 @@ fn test_parse_rgt_minimal() {
 
 #[test]
 fn test_parse_rgt_full() {
-    let dir = TempDir::new().unwrap();
+    let dir = TempDir::new().expect("failed to create temp dir");
     let path = dir.path().join("test.rgt");
     std::fs::write(
         &path,
@@ -30,8 +31,9 @@ expects = "hello"
 flaky_note = "None"
 "#,
     )
-    .unwrap();
-    let spec = rgt::parse_rgt(path.to_str().unwrap()).unwrap();
+    .expect("failed to write test file");
+    let spec = rgt::parse_rgt(path.to_str().expect("temp path is valid UTF-8"))
+        .expect("failed to parse rgt");
     assert_eq!(spec.command, "echo hello");
     assert_eq!(spec.timeout, Some(10));
     assert_eq!(spec.exit_code, Some(0));
@@ -40,7 +42,7 @@ flaky_note = "None"
 
 #[test]
 fn test_write_rgt_roundtrip() {
-    let dir = TempDir::new().unwrap();
+    let dir = TempDir::new().expect("failed to create temp dir");
     let path = dir.path().join("test.rgt");
     let spec = rgt::RgtSpec {
         command: "echo hello".to_string(),
@@ -52,8 +54,10 @@ fn test_write_rgt_roundtrip() {
         expects: None,
         flaky_note: None,
     };
-    rgt::write_rgt(path.to_str().unwrap(), &spec).unwrap();
-    let parsed = rgt::parse_rgt(path.to_str().unwrap()).unwrap();
+    rgt::write_rgt(path.to_str().expect("temp path is valid UTF-8"), &spec)
+        .expect("failed to write rgt");
+    let parsed = rgt::parse_rgt(path.to_str().expect("temp path is valid UTF-8"))
+        .expect("failed to parse rgt");
     assert_eq!(parsed.command, "echo hello");
     assert_eq!(parsed.timeout, Some(10));
     assert_eq!(parsed.exit_code, Some(0));
@@ -61,15 +65,20 @@ fn test_write_rgt_roundtrip() {
 
 #[test]
 fn test_write_baseline_with_stderr() {
-    let dir = TempDir::new().unwrap();
+    let dir = TempDir::new().expect("failed to create temp dir");
     let rgt = dir.path().join("test.rgt");
-    rgt::write_baseline(rgt.to_str().unwrap(), "out\n", "err\n").unwrap();
+    rgt::write_baseline(
+        rgt.to_str().expect("temp path is valid UTF-8"),
+        "out\n",
+        "err\n",
+    )
+    .expect("failed to write baseline");
     assert_eq!(
-        std::fs::read_to_string(dir.path().join("test.out")).unwrap(),
+        std::fs::read_to_string(dir.path().join("test.out")).expect("failed to read .out file"),
         "out\n"
     );
     assert_eq!(
-        std::fs::read_to_string(dir.path().join("test.err")).unwrap(),
+        std::fs::read_to_string(dir.path().join("test.err")).expect("failed to read .err file"),
         "err\n"
     );
 }

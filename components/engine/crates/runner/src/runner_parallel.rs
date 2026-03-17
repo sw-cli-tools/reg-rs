@@ -23,7 +23,10 @@ pub fn run_many_parallel(tests: &[String], dry_run: bool) -> reg_rs_types::error
             let errors = &errors;
             s.spawn(move || {
                 if let Err(e) = dispatch::run_and_diff(test, dry_run) {
-                    errors.lock().unwrap().push(format!("{}: {}", test, e));
+                    errors
+                        .lock()
+                        .expect("mutex poisoned collecting test errors")
+                        .push(format!("{}: {}", test, e));
                 }
             });
         }
@@ -36,7 +39,9 @@ pub fn run_many_parallel(tests: &[String], dry_run: bool) -> reg_rs_types::error
         elapsed.as_secs_f64()
     );
 
-    let errors = errors.into_inner().unwrap();
+    let errors = errors
+        .into_inner()
+        .expect("mutex poisoned extracting test errors");
     if errors.is_empty() {
         Ok(())
     } else {

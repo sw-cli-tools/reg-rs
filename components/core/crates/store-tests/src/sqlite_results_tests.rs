@@ -6,9 +6,12 @@ use reg_rs_types::types::TestResults;
 use tempfile::TempDir;
 
 fn test_db() -> (TempDir, String) {
-    let dir = TempDir::new().unwrap();
+    let dir = TempDir::new().expect("failed to create temp dir");
     let path = dir.path().join("test.db");
-    (dir, path.to_str().unwrap().to_string())
+    (
+        dir,
+        path.to_str().expect("temp path is valid UTF-8").to_string(),
+    )
 }
 
 fn create_original_table(db: &str) {
@@ -19,7 +22,7 @@ fn create_original_table(db: &str) {
             statements::CREATE_TEST_RESULTS_TABLE_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to create original table");
 }
 
 fn sample_results() -> TestResults {
@@ -44,7 +47,7 @@ fn test_create_and_drop_table() {
             statements::DROP_TABLE_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to drop table");
 }
 
 #[test]
@@ -59,7 +62,7 @@ fn test_write_and_read_results() {
             statements::INSERT_TEST_RESULTS_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to write results");
     let read = sqlite::read_results(
         &db,
         &queries::get_statement(
@@ -67,7 +70,7 @@ fn test_write_and_read_results() {
             statements::SELECT_TEST_RESULTS_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to read results");
     assert_eq!(read.name, "test1");
     assert_eq!(read.command, "echo hello");
     assert_eq!(read.exit_code, 0);
@@ -86,7 +89,7 @@ fn test_count_rows() {
             statements::COUNT_TABLE_ROWS_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to count rows");
     assert_eq!(count, 0);
 
     sqlite::write_results(
@@ -97,7 +100,7 @@ fn test_count_rows() {
             statements::INSERT_TEST_RESULTS_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to write results");
     let count = sqlite_diff::count_rows(
         &db,
         &queries::get_statement(
@@ -105,7 +108,7 @@ fn test_count_rows() {
             statements::COUNT_TABLE_ROWS_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to count rows");
     assert_eq!(count, 1);
 }
 
@@ -121,7 +124,7 @@ fn test_delete_all_rows() {
             statements::INSERT_TEST_RESULTS_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to write results");
     sqlite::delete_all_rows(
         &db,
         &queries::get_statement(
@@ -129,7 +132,7 @@ fn test_delete_all_rows() {
             statements::DELETE_ALL_ROWS_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to delete all rows");
     let count = sqlite_diff::count_rows(
         &db,
         &queries::get_statement(
@@ -137,6 +140,6 @@ fn test_delete_all_rows() {
             statements::COUNT_TABLE_ROWS_TEMPLATE,
         ),
     )
-    .unwrap();
+    .expect("failed to count rows");
     assert_eq!(count, 0);
 }

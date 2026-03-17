@@ -2,13 +2,13 @@ use reg_rs_types::normalize::{DiffMode, apply};
 
 #[test]
 fn test_text_mode_passthrough() {
-    let result = apply("hello world", &DiffMode::Text).unwrap();
+    let result = apply("hello world", &DiffMode::Text).expect("failed to apply text normalization");
     assert_eq!(result, "hello world");
 }
 
 #[test]
 fn test_text_mode_empty() {
-    let result = apply("", &DiffMode::Text).unwrap();
+    let result = apply("", &DiffMode::Text).expect("failed to apply text normalization");
     assert_eq!(result, "");
 }
 
@@ -24,8 +24,18 @@ fn test_display_json() {
 
 #[test]
 fn test_from_str_valid() {
-    assert_eq!("text".parse::<DiffMode>().unwrap(), DiffMode::Text);
-    assert_eq!("json".parse::<DiffMode>().unwrap(), DiffMode::Json);
+    assert_eq!(
+        "text"
+            .parse::<DiffMode>()
+            .expect("failed to parse diff mode"),
+        DiffMode::Text
+    );
+    assert_eq!(
+        "json"
+            .parse::<DiffMode>()
+            .expect("failed to parse diff mode"),
+        DiffMode::Json
+    );
 }
 
 #[test]

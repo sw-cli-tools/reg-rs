@@ -11,7 +11,7 @@ fn test_extract_command_valid_response() {
             }
         ]
     });
-    let command = extract_command(&response).unwrap();
+    let command = extract_command(&response).expect("failed to extract command");
     assert_eq!(command, "ls -la");
 }
 
@@ -25,7 +25,7 @@ fn test_extract_command_trims_whitespace() {
             }
         ]
     });
-    let command = extract_command(&response).unwrap();
+    let command = extract_command(&response).expect("failed to extract command");
     assert_eq!(command, "echo hello");
 }
 

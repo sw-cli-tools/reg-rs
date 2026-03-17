@@ -9,7 +9,7 @@ fn test_get_differences_identical() {
 fn test_get_differences_different() {
     let diffs = diff::get_differences("hello", "world");
     assert!(diffs.is_some());
-    let diffs = diffs.unwrap();
+    let diffs = diffs.expect("expected differences between 'hello' and 'world'");
     assert!(!diffs.is_empty());
 }
 
@@ -21,13 +21,15 @@ fn test_get_differences_empty_strings() {
 #[test]
 fn test_get_differences_added_content() {
     use text_diff::Difference;
-    let diffs = diff::get_differences("", "new content").unwrap();
+    let diffs =
+        diff::get_differences("", "new content").expect("expected differences for added content");
     assert!(diffs.iter().any(|d| matches!(d, Difference::Add(_))));
 }
 
 #[test]
 fn test_get_differences_removed_content() {
     use text_diff::Difference;
-    let diffs = diff::get_differences("old content", "").unwrap();
+    let diffs =
+        diff::get_differences("old content", "").expect("expected differences for removed content");
     assert!(diffs.iter().any(|d| matches!(d, Difference::Rem(_))));
 }
