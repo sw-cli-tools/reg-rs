@@ -1,0 +1,10 @@
+[package]
+name = "reg-rs-args-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-args = { path = "../args" }
+
+[dev-dependencies]
+clap = { version = "4.4.6", features = ["derive"] }

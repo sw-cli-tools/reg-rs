@@ -1,0 +1,8 @@
+[package]
+name = "reg-rs-exec"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+log = "0.4.20"

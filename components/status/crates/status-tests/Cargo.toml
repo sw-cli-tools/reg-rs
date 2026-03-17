@@ -1,0 +1,8 @@
+[package]
+name = "reg-rs-status-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-status = { path = "../status" }
+reg-rs-renderer = { path = "../renderer" }

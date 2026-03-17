@@ -1,0 +1,14 @@
+[package]
+name = "reg-rs-modify"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+reg-rs-store = { path = "../../../core/crates/store" }
+reg-rs-store-rgt = { path = "../../../core/crates/store-rgt" }
+reg-rs-runner = { path = "../../../engine/crates/runner" }
+reg-rs-config = { path = "../../../cli/crates/config" }
+reg-rs-discover = { path = "../../../cli/crates/discover" }
+reg-rs-status = { path = "../../../status/crates/status" }
+log = "0.4.20"

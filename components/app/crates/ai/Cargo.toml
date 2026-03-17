@@ -1,0 +1,13 @@
+[package]
+name = "reg-rs-ai"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+reg-rs-store = { path = "../../../core/crates/store" }
+reg-rs-discover = { path = "../../../cli/crates/discover" }
+reg-rs-exec = { path = "../../../engine/crates/exec" }
+log = "0.4.20"
+serde_json = "1.0"
+ureq = { version = "2", features = ["json"] }

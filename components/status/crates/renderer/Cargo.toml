@@ -1,0 +1,12 @@
+[package]
+name = "reg-rs-renderer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+reg-rs-store = { path = "../../../core/crates/store" }
+reg-rs-store-rgt = { path = "../../../core/crates/store-rgt" }
+log = "0.4.20"
+serde = { version = "1.0.193", features = ["derive"] }
+tinytemplate = "1.2.1"

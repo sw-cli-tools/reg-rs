@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "crates/types",
+    "crates/store",
+    "crates/store-rgt",
+    "crates/types-tests",
+    "crates/store-tests",
+    "crates/store-rgt-tests",
+]
+resolver = "3"

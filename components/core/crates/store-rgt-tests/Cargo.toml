@@ -1,0 +1,10 @@
+[package]
+name = "reg-rs-store-rgt-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-store-rgt = { path = "../store-rgt" }
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,9 @@
+[package]
+name = "reg-rs-store-rgt"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../types" }
+serde = { version = "1.0.193", features = ["derive"] }
+toml = "0.8"

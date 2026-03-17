@@ -16,37 +16,49 @@ reg-rs (pronounced "regress") is a CLI utility for creating, running, and managi
 - Documentation: `cargo doc`
 
 ## Architecture
-The codebase follows a modular architecture with clear separation of concerns:
+The codebase is split across 6 component workspaces, each with focused crates (max 7 modules per crate):
 
-- **Main Entry**: `src/main.rs` + `src/lib.rs` - Entry point and module declarations
-- **Command Processing**: `src/command.rs` + `src/builder.rs` - Handles subcommands (create, run, report, remove, list, show, migrate, rebase, reset, complete, status, analyze)
-- **Test Execution**: `src/runner.rs` + `src/process.rs` - Runs tests and captures output
-- **Preprocessing**: `src/preprocess.rs` - Output normalization before diffing (pipes through shell commands)
-- **AI Integration**: `src/ai.rs` - Natural language test creation via Claude API (`--describe` flag)
-- **Database Layer**: `src/db.rs` + `src/sqlite.rs` + `src/queries.rs` - SQLite storage for test results
-- **Reporting**: `src/reporters/*.rs` - Different report formats (summary, details, passes, failures, differences)
-- **Status Server**: `src/status/*.rs` - Web-based monitoring server (port 4740)
-- **Templates**: `src/templates/*.rs` - SQL and HTML template generation
-- **RGT Format**: `src/rgt.rs` - TOML-based `.rgt` test specifications with `.out`/`.err` baselines
+### Components
+- **reg-rs** (binary) — Thin CLI dispatcher: `src/main.rs` only
+- **reg-rs-core** — Types, constants, SQLite storage, .rgt format
+  - `types` — Error types, constants, normalization, regression types
+  - `store` — SQLite read/write, file locking, queries
+  - `store-rgt` — .rgt TOML parser/writer, path utilities
+- **reg-rs-engine** — Test execution and reporting
+  - `exec` — Command executor, process capture, preprocessing
+  - `runner` — Test runner, diff engine, dispatch (.rgt vs .tdb)
+  - `report` — Report generation (summary, details, failures, passes)
+- **reg-rs-status** — Real-time web monitoring
+  - `status` — Axum web server, SSE, file watcher
+  - `renderer` — HTML templates, diff formatting
+- **reg-rs-cli** — Argument parsing, configuration, test discovery
+  - `args` — Clap Args struct, Subcommands enum, version generation
+  - `config` — Config struct (7 methods), CreateOptions, builder, logging, time
+  - `discover` — Test file finder, data directory discovery
+- **reg-rs-app** — Command handlers and AI integration
+  - `commands` — create, run, report handlers + shared utils
+  - `inspect` — show (rgt/tdb split), list, complete handlers
+  - `modify` — remove, rebase, reset, migrate, status handlers
+  - `ai` — Claude API command generation, failure analysis, context gathering
 
-## Key Patterns
-- All commands flow through: `main.rs` → `builder::build()` → `command::{action}()` → specific modules
+### Key Patterns
+- All commands flow through: `main.rs` → `builder::build()` → component crate handler
 - Two test formats: `.rgt` (TOML spec + `.out`/`.err` baselines, git-friendly) and `.tdb` (SQLite, legacy)
 - `.rgt` takes precedence over `.tdb` when both exist for the same test stem
 - `.tdb` files serve as runtime cache for `.rgt` tests (latest results, diffs) — gitignored
 - Data directory auto-discovered: `$REG_RS_DATA_DIR` → `./work/reg-rs/` → cwd (if has .tdb/.rgt) → `~/.local/reg-rs/`
 - `-p` pattern is optional on all subcommands (defaults to match all)
-- `resolve_test_path()` in `command.rs` auto-places tests in data dir and appends `.tdb`
+- `resolve_test_path()` in `reg-rs-commands/utils.rs` auto-places tests in data dir and appends `.rgt`
 - Debug output via `log::debug!()`, enabled with `-d` flag (sets log level to debug via `env_logger`)
 - Status monitoring uses Axum web framework (async with Tokio)
-- Dependency injection via `CommandExecutor` trait (`executor.rs`) with `MockCommandExecutor` for tests
-- Internal functions use `pub(crate)` visibility; only types/functions needed by `main.rs` are `pub`
+- Dependency injection via `CommandExecutor` trait in `reg-rs-exec` with `MockCommandExecutor` for tests
+- Each crate exposes `pub` API; internal helpers stay private or `pub(crate)`
 - External `.lock` files prevent SQLite file-lock conflicts (one per `.tdb` database)
 - DB functions use `with_lock()` RAII wrapper for consistent lock/unlock pattern
-- Custom `RegError` enum (`error.rs`) with `thiserror` — used consistently across all modules
+- Custom `RegError` enum in `reg-rs-types` with `thiserror` — used consistently across all crates
 - `RegressionType::from_code()` parses type codes; `display_label()` converts to human-readable labels
 - Magic strings extracted as constants: `TDB_EXTENSION`, `LOCK_EXTENSION`, `FILE_WATCH_DEBOUNCE_SECS`, `REQUIRED_BLANK`
-- `build.rs` generates version string with timestamp into `$OUT_DIR/generated.rs`
+- `reg-rs-args/build.rs` generates version string with timestamp into `$OUT_DIR/generated.rs`
 - Demo scripts (`demo/*.sh`) are tested via `cargo test` — reg-rs dogfoods itself
 - Per-test metadata stored in `metadata_table` (key-value pairs) in each `.tdb` file — backward compatible
 - `--preprocess` flag on `create` stores a shell command applied to stdout/stderr before diffing
@@ -55,8 +67,8 @@ The codebase follows a modular architecture with clear separation of concerns:
 - Preprocess and diff-mode compose: preprocess runs first (external), then diff-mode normalizes (built-in)
 - `--context` flag on `create` runs a command and includes output in AI prompt (requires `--describe`)
 - `--desc`, `--expects`, `--flaky-note` flags on `create` store self-documenting test metadata, shown in failure reports
-- `runner.rs` dispatches `.rgt` vs `.tdb` tests: `.rgt` reads spec from TOML + baselines from `.out`/`.err`; `.tdb` reads from SQLite
-- `diff::process_differences_with_settings()` accepts preprocess/diff_mode as params (for `.rgt` tests)
+- `reg-rs-runner/dispatch.rs` dispatches `.rgt` vs `.tdb` tests: `.rgt` reads spec from TOML + baselines from `.out`/`.err`; `.tdb` reads from SQLite
+- `reg-rs-runner/diff.rs` `process_differences_with_settings()` accepts preprocess/diff_mode as params (for `.rgt` tests)
 - Shell aliases in `bin/source-rg.sh`: `rnrg` (run), `adrg` (add), `lsrg` (list), `shrg` (show), `uprg` (rebase), etc.
 
 ## Code Style Guidelines

@@ -1,0 +1,13 @@
+[package]
+name = "reg-rs-runner"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+reg-rs-store = { path = "../../../core/crates/store" }
+reg-rs-store-rgt = { path = "../../../core/crates/store-rgt" }
+reg-rs-exec = { path = "../exec" }
+chrono = "0.4.31"
+log = "0.4.20"
+text-diff = "0.4.0"

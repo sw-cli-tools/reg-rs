@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "crates/commands",
+    "crates/inspect",
+    "crates/modify",
+    "crates/ai",
+    "crates/commands-tests",
+    "crates/ai-tests",
+    "crates/bin",
+]
+resolver = "3"

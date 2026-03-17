@@ -1,0 +1,9 @@
+[package]
+name = "reg-rs-config-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-args = { path = "../args" }
+reg-rs-config = { path = "../config" }
+reg-rs-types = { path = "../../../core/crates/types" }

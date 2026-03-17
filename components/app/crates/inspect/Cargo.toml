@@ -1,0 +1,12 @@
+[package]
+name = "reg-rs-inspect"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+reg-rs-store = { path = "../../../core/crates/store" }
+reg-rs-store-rgt = { path = "../../../core/crates/store-rgt" }
+reg-rs-config = { path = "../../../cli/crates/config" }
+reg-rs-discover = { path = "../../../cli/crates/discover" }
+log = "0.4.20"

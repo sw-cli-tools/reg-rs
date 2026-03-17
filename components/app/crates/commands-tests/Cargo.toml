@@ -1,0 +1,8 @@
+[package]
+name = "reg-rs-commands-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-commands = { path = "../commands" }
+reg-rs-discover = { path = "../../../cli/crates/discover" }

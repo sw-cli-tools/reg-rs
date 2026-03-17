@@ -1,0 +1,31 @@
+[package]
+name = "reg-rs"
+version = "0.1.0"
+authors = ["Mike Wright <wrightmikea@gmail.com>"]
+edition = "2024"
+
+[[bin]]
+name = "reg-rs"
+path = "src/main.rs"
+
+[dependencies]
+# Component crates
+reg-rs-types = { path = "../../../core/crates/types" }
+reg-rs-args = { path = "../../../cli/crates/args" }
+reg-rs-config = { path = "../../../cli/crates/config" }
+reg-rs-commands = { path = "../commands" }
+reg-rs-inspect = { path = "../inspect" }
+reg-rs-modify = { path = "../modify" }
+reg-rs-ai = { path = "../ai" }
+
+# Direct dependencies
+env_logger = "0.10.1"
+log = "0.4.20"
+tokio = { version = "1.35.1", features = ["full"] }
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+serde_json = "1.0"
+ureq = { version = "2", features = ["json"] }

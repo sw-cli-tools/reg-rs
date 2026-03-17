@@ -1,0 +1,12 @@
+[package]
+name = "reg-rs-config"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-args = { path = "../args" }
+reg-rs-types = { path = "../../../core/crates/types" }
+env_logger = "0.10.1"
+fern = { version = "0.6.2", features = ["date-based"] }
+log = "0.4.20"
+chrono = "0.4.31"

@@ -1,0 +1,11 @@
+[package]
+name = "reg-rs-ai-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-ai = { path = "../ai" }
+reg-rs-types = { path = "../../../core/crates/types" }
+
+[dev-dependencies]
+serde_json = "1.0"

@@ -1,0 +1,19 @@
+[package]
+name = "reg-rs-status"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+reg-rs-store = { path = "../../../core/crates/store" }
+reg-rs-renderer = { path = "../renderer" }
+reg-rs-runner = { path = "../../../engine/crates/runner" }
+axum = "0.7.4"
+async-stream = "0.3"
+futures-util = "0.3"
+chrono = "0.4.31"
+log = "0.4.20"
+serde = { version = "1.0.193", features = ["derive"] }
+notify = "4.0.15"
+tokio = { version = "1.35.1", features = ["full"] }
+walkdir = "2.4.0"

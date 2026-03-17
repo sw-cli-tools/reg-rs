@@ -1,0 +1,9 @@
+[package]
+name = "reg-rs-discover"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+log = "0.4.20"
+walkdir = "2.4.0"

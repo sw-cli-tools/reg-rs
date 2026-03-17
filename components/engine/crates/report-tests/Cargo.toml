@@ -1,0 +1,8 @@
+[package]
+name = "reg-rs-report-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reg-rs-types = { path = "../../../core/crates/types" }
+reg-rs-report = { path = "../report" }
