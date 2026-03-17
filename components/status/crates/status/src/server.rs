@@ -21,11 +21,16 @@ pub async fn start(
     let app_state = AppState::new(pattern.to_string(), data_dir);
 
     // Pre-populate state with discovered tests
-    if !initial_tests.is_empty()
-        && let Ok(runs) = reg_rs_renderer::test_runner::collect_test_runs(initial_tests)
-        && let Ok(mut guard) = app_state.state_data.lock()
-    {
-        guard.runs = runs;
+    if !initial_tests.is_empty() {
+        match reg_rs_renderer::test_runner::collect_test_runs(initial_tests) {
+            Ok(runs) => {
+                log::info!("server/start - loaded {} test(s)", runs.len());
+                if let Ok(mut guard) = app_state.state_data.lock() {
+                    guard.runs = runs;
+                }
+            }
+            Err(e) => log::warn!("server/start - failed to load tests: {}", e),
+        }
     }
 
     let _handles = crate::monitor::launch_monitor(app_state.clone());
