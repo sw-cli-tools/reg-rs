@@ -6,5 +6,6 @@ members = [
     "crates/args-tests",
     "crates/config-tests",
     "crates/discover-tests",
+    "crates/bench",
 ]
 resolver = "3"
