@@ -56,13 +56,25 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 
 ### Web Status Dashboard
 
-![Landing Page](images/landing.png?ts=1773786467090)
+#### All Tests Passing
 
-*Summary landing page showing 65 tests across all projects (reg-rs, favicon, pjmai, rank-wav, cor24) with pass/fail/pending counts.*
+![Landing Page — All Passing](images/landing-passing-examples.png?ts=1773786887974)
 
-![Status Details](images/status-details.png?ts=1773786467090)
+*Summary landing page showing 65 tests across all projects (reg-rs, favicon, pjmai, rank-wav, cor24) — all passing.*
 
-*Detailed status view with per-test results, character-level diff highlighting for failures, and live SSE updates.*
+![Status Details — All Passing](images/status-details-passing-examples.png?ts=1773786887974)
+
+*Detailed status view with per-test pass/fail results and live SSE updates.*
+
+#### Failure Examples
+
+![Landing Page — With Failures](images/landing-failure-examples.png?ts=1773786887974)
+
+*Summary page showing 10 failures (cor24 tests with stale baselines) alongside 55 passing tests.*
+
+![Status Details — With Failures](images/status-details-failure-examples.png?ts=1773786887974)
+
+*Detailed view showing character-level diff highlighting for failing tests — exit code mismatches, stdout/stderr differences.*
 
 ## Installation
 
