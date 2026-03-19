@@ -48,7 +48,7 @@ pub struct StateData {
 impl StateData {
     fn new(pattern: String, data_dir: PathBuf) -> Self {
         let date = chrono::Local::now();
-        let now = format!("{}", date.format("%Y-%m-%dT%H:%M:%S"));
+        let now = format!("{}", date.format("%Y-%m-%dT%H:%M:%S%:z"));
         Self {
             pattern,
             test_paths: vec![],

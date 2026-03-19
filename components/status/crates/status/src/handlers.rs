@@ -184,7 +184,7 @@ fn refresh_state(state: &AppState) {
             if let Ok(mut guard) = state.state_data.lock() {
                 guard.runs = runs;
                 let date = chrono::Local::now();
-                guard.state_updated = format!("{}", date.format("%Y-%m-%dT%H:%M:%S"));
+                guard.state_updated = format!("{}", date.format("%Y-%m-%dT%H:%M:%S%:z"));
             }
         }
         Err(e) => log::error!("Failed to refresh test runs: {}", e),

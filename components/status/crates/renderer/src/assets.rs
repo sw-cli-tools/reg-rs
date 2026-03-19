@@ -38,11 +38,25 @@ pub const LANDING_CSS: &str = r##"
 /// JS updates DOM elements by ID directly — no fetch, no DOM parsing.
 pub const LANDING_SCRIPT: &str = r##"
 var n = 0;
+var prev = '';
 var src = new EventSource('/events');
 src.onmessage = function(e) {
   n++;
-  document.getElementById('sse-badge').textContent = 'SSE: ' + n;
   var d = JSON.parse(e.data);
+  var key = d.pass + ',' + d.fail + ',' + d.pending;
+  var badge = document.getElementById('sse-badge');
+  if (key !== prev) {
+    prev = key;
+    var now = new Date();
+    var off = now.getTimezoneOffset();
+    var sign = off <= 0 ? '+' : '-';
+    var ah = String(Math.floor(Math.abs(off)/60)).padStart(2,'0');
+    var am = String(Math.abs(off)%60).padStart(2,'0');
+    var ts = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'T'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+sign+ah+':'+am;
+    badge.textContent = 'SSE: ' + n + '  ' + ts;
+  } else {
+    badge.textContent = 'SSE: ' + n + '  ' + badge.textContent.split('  ').pop();
+  }
   document.getElementById('c-pass').textContent = d.pass + ' passed';
   document.getElementById('c-fail').textContent = d.fail + ' failed';
   document.getElementById('c-pending').textContent = d.pending + ' pending';
