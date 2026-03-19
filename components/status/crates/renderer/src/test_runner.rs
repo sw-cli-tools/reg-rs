@@ -24,6 +24,15 @@ pub fn collect_test_runs(test_paths: &[String]) -> reg_rs_types::error::Result<V
 
 /// Collect data for a single test, returning an error if the .tdb is unreadable.
 fn collect_one_test(test_name: &str, db_path: &str) -> reg_rs_types::error::Result<TestDetails> {
+    // If .tdb doesn't exist yet, return a pending entry
+    if !std::path::Path::new(db_path).exists() {
+        return Ok(TestDetails {
+            created: String::new(),
+            diffs: None,
+            name: test_name.to_string(),
+            last_ran: None,
+        });
+    }
     let original_result = db::read_original_results(db_path)?;
     let (last_ran, diffs) = collect_latest_result(db_path)?;
     Ok(TestDetails {

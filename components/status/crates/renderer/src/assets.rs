@@ -33,47 +33,33 @@ pub const LANDING_CSS: &str = r##"
   footer { text-align: center; color: var(--muted); font-size: 1em; margin-top: 32px; }
 "##;
 
-/// JavaScript for SSE live updates on landing page
+/// JavaScript for SSE live updates on landing page.
+/// Server sends JSON: {"pass":N,"fail":N,"pending":N,"total":N}
+/// JS updates DOM elements by ID directly — no fetch, no DOM parsing.
 pub const LANDING_SCRIPT: &str = r##"
-(function() {
-  var eventCount = 0;
-  function addCounter() {
-    var footer = document.querySelector('footer');
-    if (footer && !document.getElementById('sse-count')) {
-      var span = document.createElement('span');
-      span.id = 'sse-count';
-      span.style.cssText = 'display:block;margin-top:8px;font-family:var(--mono);font-size:1em;opacity:0.8;';
-      span.textContent = 'live ● 0 updates';
-      footer.appendChild(span);
-    }
+var n = 0;
+var src = new EventSource('/events');
+src.onmessage = function(e) {
+  n++;
+  document.getElementById('sse-badge').textContent = 'SSE: ' + n;
+  var d = JSON.parse(e.data);
+  document.getElementById('c-pass').textContent = d.pass + ' passed';
+  document.getElementById('c-fail').textContent = d.fail + ' failed';
+  document.getElementById('c-pending').textContent = d.pending + ' pending';
+  document.getElementById('c-total').textContent = d.total + ' total';
+  var s = document.getElementById('status-line');
+  if (d.fail > 0) {
+    s.innerHTML = '<span class="status-indicator fail">&#10007; ' + d.fail + ' failed</span>';
+  } else if (d.pending > 0) {
+    s.innerHTML = '<span class="status-indicator pending">? ' + d.pending + ' not yet run</span>';
+  } else {
+    s.innerHTML = '<span class="status-indicator pass">&#10003; All ' + d.total + ' tests passing</span>';
   }
-  function updateCounter() {
-    var el = document.getElementById('sse-count');
-    if (el) el.textContent = 'live ● ' + eventCount + ' update' + (eventCount === 1 ? '' : 's');
-  }
-  addCounter();
-  if (typeof EventSource !== 'undefined') {
-    var es = new EventSource('/events');
-    es.onmessage = function() {
-      eventCount++;
-      fetch(location.href).then(function(r) { return r.text(); }).then(function(html) {
-        var doc = new DOMParser().parseFromString(html, 'text/html');
-        var newBody = doc.querySelector('.container');
-        var oldBody = document.querySelector('.container');
-        if (newBody && oldBody) {
-          oldBody.innerHTML = newBody.innerHTML;
-          addCounter();
-          updateCounter();
-        }
-      });
-    };
-    es.onerror = function() {
-      var el = document.getElementById('sse-count');
-      if (el) el.textContent = 'disconnected ○ ' + eventCount + ' updates';
-      setTimeout(function() { es.close(); }, 5000);
-    };
-  }
-}})();
+};
+src.onerror = function() {
+  document.getElementById('sse-badge').style.background = '#dc2626';
+  document.getElementById('sse-badge').textContent = 'SSE: off';
+};
 "##;
 
 /// CSS for status dashboard (base + layout + stats + sections + items)
@@ -126,23 +112,33 @@ pub const STATUS_CSS: &str = r##"
   footer a { color: #3b82f6; text-decoration: none; }
 "##;
 
-/// JavaScript for SSE live updates on status page
+/// JavaScript for SSE live updates on status page.
+/// Uses fetch to reload the full page content since the status view has
+/// complex test listings that can't be updated with simple JSON.
 pub const STATUS_SCRIPT: &str = r##"
-(function() {
-  if (typeof EventSource !== 'undefined') {
-    var es = new EventSource('/events');
-    es.onmessage = function() {
-      fetch(location.href).then(function(r) { return r.text(); }).then(function(html) {
-        var doc = new DOMParser().parseFromString(html, 'text/html');
-        var newBody = doc.querySelector('.container');
-        var oldBody = document.querySelector('.container');
-        if (newBody && oldBody) {
-          oldBody.innerHTML = newBody.innerHTML;
-        }
-      });
-    };
-  }
-})();
+var n = 0;
+var badge = document.createElement('div');
+badge.id = 'sse-badge';
+badge.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;background:#16a34a;color:#fff;font-family:ui-monospace,monospace;font-size:1.5em;font-weight:700;padding:8px 16px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+badge.textContent = 'SSE: 0';
+document.body.appendChild(badge);
+var src = new EventSource('/events');
+src.onmessage = function() {
+  n++;
+  badge.textContent = 'SSE: ' + n;
+  fetch('/status', {cache: 'no-store'}).then(function(r) {
+    return r.text();
+  }).then(function(html) {
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    var nc = doc.querySelector('.container');
+    var oc = document.querySelector('.container');
+    if (nc && oc) oc.innerHTML = nc.innerHTML;
+  });
+};
+src.onerror = function() {
+  badge.style.background = '#dc2626';
+  badge.textContent = 'SSE: off';
+};
 "##;
 
 /// Status view template (body content only — wrapped in HTML page by server)

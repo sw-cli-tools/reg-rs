@@ -66,7 +66,7 @@ pub async fn serve_api_status(State(state): State<AppState>) -> impl IntoRespons
     }
 }
 
-/// Serve SSE event stream
+/// Serve SSE event stream with JSON data payload
 pub async fn serve_sse(
     State(state): State<AppState>,
 ) -> axum::response::sse::Sse<
@@ -78,17 +78,33 @@ pub async fn serve_sse(
     let stream = async_stream::stream! {
         loop {
             match rx.recv().await {
-                Ok(()) => {
-                    yield Ok(axum::response::sse::Event::default().data("update"));
-                }
-                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
-                    yield Ok(axum::response::sse::Event::default().data("update"));
+                Ok(()) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                    refresh_state(&state);
+                    let json = build_sse_json(&state);
+                    yield Ok(axum::response::sse::Event::default().data(json));
                 }
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
             }
         }
     };
     axum::response::sse::Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default())
+}
+
+/// Build JSON payload for SSE events
+fn build_sse_json(state: &AppState) -> String {
+    match state.state_data.lock() {
+        Ok(guard) => {
+            let (failed, passed, not_run) = templates::categorize_runs(&guard.runs);
+            format!(
+                r#"{{"pass":{},"fail":{},"pending":{},"total":{}}}"#,
+                passed.len(),
+                failed.len(),
+                not_run.len(),
+                guard.runs.len()
+            )
+        }
+        Err(_) => r#"{"pass":0,"fail":0,"pending":0,"total":0}"#.to_string(),
+    }
 }
 
 /// Serve the status dashboard view
@@ -151,20 +167,19 @@ fn build_status_page(state_data: &crate::state::StateData) -> reg_rs_types::erro
 
 /// Refresh state by collecting test runs from database.
 ///
-/// Uses the test paths already stored in state (discovered at startup by the binary).
-/// The monitor notifies on file changes; this re-reads DB state.
+/// Uses the stable test_paths list (set once at startup) to re-read
+/// current results from disk on every request.
 fn refresh_state(state: &AppState) {
-    // Read current test names from state
-    let test_names: Vec<String> = match state.state_data.lock() {
-        Ok(guard) => guard.runs.iter().map(|r| r.name.clone()).collect(),
+    let test_paths: Vec<String> = match state.state_data.lock() {
+        Ok(guard) => guard.test_paths.clone(),
         Err(_) => return,
     };
 
-    if test_names.is_empty() {
+    if test_paths.is_empty() {
         return;
     }
 
-    match reg_rs_renderer::test_runner::collect_test_runs(&test_names) {
+    match reg_rs_renderer::test_runner::collect_test_runs(&test_paths) {
         Ok(runs) => {
             if let Ok(mut guard) = state.state_data.lock() {
                 guard.runs = runs;

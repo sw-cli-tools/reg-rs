@@ -21,8 +21,8 @@ export REG_RS_DATA_DIR="${REG_RS_DATA_DIR:-./work/reg-rs/cor24-tests}"
 export RUST_LOG="${RUST_LOG:-warn}"
 
 DBG="$COR24_DIR/target/debug/cor24-dbg"
-RUN="$COR24_DIR/rust-to-cor24/target/release/cor24-run"
-TRANS="$COR24_DIR/rust-to-cor24/target/release/msp430-to-cor24"
+RUN="$COR24_DIR/rust-to-cor24/target/debug/cor24-run"
+TRANS="$COR24_DIR/rust-to-cor24/target/debug/msp430-to-cor24"
 PROGRAMS="$COR24_DIR/tests/programs"
 DEMOS="$COR24_DIR/rust-to-cor24/demos"
 

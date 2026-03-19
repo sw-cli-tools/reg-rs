@@ -33,7 +33,9 @@ impl AppState {
 pub struct StateData {
     /// Test name pattern
     pub pattern: String,
-    /// List of test results
+    /// Discovered test file paths (stable, set once at startup)
+    pub test_paths: Vec<String>,
+    /// List of test results (refreshed on each request)
     pub runs: Vec<reg_rs_renderer::templates::TestDetails>,
     /// Server start time
     pub server_started: String,
@@ -49,6 +51,7 @@ impl StateData {
         let now = format!("{}", date.format("%Y-%m-%dT%H:%M:%S"));
         Self {
             pattern,
+            test_paths: vec![],
             runs: vec![],
             server_started: now,
             state_updated: "".to_string(),

@@ -108,16 +108,17 @@ const LANDING_HTML: &str = r##"<!DOCTYPE html>
 <title>reg-rs</title>
 <style>{css}</style>
 </head><body>
+<div id="sse-badge" style="position:fixed;top:16px;right:16px;z-index:9999;background:#16a34a;color:#fff;font-family:ui-monospace,monospace;font-size:1.5em;font-weight:700;padding:8px 16px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">SSE: 0</div>
 <div class="container">
   <h1>reg-rs</h1>
   <div class="meta">pattern: <code>{pattern}</code></div>
   <div class="summary">
-    {status}
+    <div id="status-line">{status}</div>
     <div class="counts">
-      <span>{pass} passed</span>
-      <span>{fail} failed</span>
-      <span>{pending} pending</span>
-      <span>{total} total</span>
+      <span id="c-pass">{pass} passed</span>
+      <span id="c-fail">{fail} failed</span>
+      <span id="c-pending">{pending} pending</span>
+      <span id="c-total">{total} total</span>
     </div>
   </div>
   <ul class="views">

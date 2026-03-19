@@ -639,8 +639,8 @@ fn integration_test_status_server_landing_page() {
         "Landing page should have SSE client"
     );
     assert!(
-        body.contains("sse-count"),
-        "Landing page should have SSE counter"
+        body.contains("sse-badge"),
+        "Landing page should have SSE counter badge"
     );
 
     // Check status dashboard

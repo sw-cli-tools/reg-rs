@@ -20,8 +20,11 @@ pub async fn start(
 
     let app_state = AppState::new(pattern.to_string(), data_dir);
 
-    // Pre-populate state with discovered tests
+    // Store discovered test paths and pre-populate results
     if !initial_tests.is_empty() {
+        if let Ok(mut guard) = app_state.state_data.lock() {
+            guard.test_paths = initial_tests.to_vec();
+        }
         match reg_rs_renderer::test_runner::collect_test_runs(initial_tests) {
             Ok(runs) => {
                 log::info!("server/start - loaded {} test(s)", runs.len());
