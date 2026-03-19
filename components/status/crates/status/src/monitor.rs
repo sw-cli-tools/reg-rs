@@ -25,12 +25,14 @@ pub fn launch_monitor(app_state: AppState) -> Vec<std::thread::JoinHandle<()>> {
 
 /// Watch for test result changes
 fn watch(app_state: AppState) -> Result<(), RegError> {
-    let data_dir = match app_state.state_data.lock() {
+    let raw_dir = match app_state.state_data.lock() {
         Ok(guard) => guard.data_dir.clone(),
         Err(e) => {
             return Err(RegError::MutexPoisoned(format!("monitor startup: {}", e)));
         }
     };
+    // Canonicalize to absolute path — notify watcher needs this for reliable event delivery
+    let data_dir = raw_dir.canonicalize().unwrap_or_else(|_| raw_dir.clone());
     log::info!("monitor/watch data_dir: {:?}", &data_dir);
 
     let (tx, rx) = channel();
