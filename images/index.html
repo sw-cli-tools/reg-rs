@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>reg-rs Status Dashboard — Live Update Progression</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+  h1 { border-bottom: 2px solid #333; padding-bottom: 8px; }
+  h2 { color: #333; margin-top: 40px; }
+  p { color: #555; line-height: 1.6; }
+  code { background: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+  .screenshot { margin: 20px 0; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; background: white; }
+  .screenshot img { width: 100%; display: block; }
+  .caption { padding: 12px 16px; background: #fafafa; border-top: 1px solid #eee; font-size: 0.9em; color: #666; }
+  .step { display: inline-block; background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-right: 8px; }
+  .cmd { display: block; margin: 12px 0; padding: 10px 14px; background: #1e293b; color: #e2e8f0; border-radius: 6px; font-family: ui-monospace, monospace; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<h1>reg-rs Status Dashboard — Live Update Progression</h1>
+<p>The status dashboard updates in real time via SSE (Server-Sent Events) as regression tests complete.
+These screenshots show the progression from 0 tests run to all 65+ complete, with one intentional failure (favicon_help).</p>
+
+<h2>Landing Page Progression</h2>
+<div class="cmd">bash scripts/demo-landing.sh</div>
+<p>Resets all tests, starts the server at <code>http://localhost:4740/</code>, then runs tests with staggered delays.</p>
+
+<div class="screenshot">
+  <img src="landing-0.png" alt="Landing — 0 tests run">
+  <div class="caption"><span class="step">0 / 65</span> All tests pending. Server just started, no tests run yet.</div>
+</div>
+
+<div class="screenshot">
+  <img src="landing-20.png" alt="Landing — ~20 tests run">
+  <div class="caption"><span class="step">~20 / 65</span> First batch complete. Counts updating live via SSE.</div>
+</div>
+
+<div class="screenshot">
+  <img src="landing-40.png" alt="Landing — ~40 tests run">
+  <div class="caption"><span class="step">~40 / 65</span> Mid-run. Pass count climbing, one failure detected (favicon_help — intentional).</div>
+</div>
+
+<div class="screenshot">
+  <img src="landing-65.png" alt="Landing — all tests complete">
+  <div class="caption"><span class="step">65 / 65</span> All tests complete. 64 passed, 1 failed (favicon_help — sabotaged baseline).</div>
+</div>
+
+<h2>Status Detail Page Progression</h2>
+<div class="cmd">bash scripts/demo-status.sh</div>
+<p>Same flow but viewing <code>http://localhost:4740/status</code> — shows per-test results with diff highlighting for failures.</p>
+
+<div class="screenshot">
+  <img src="status-0.png" alt="Status — 0 tests run">
+  <div class="caption"><span class="step">0 / 65</span> All tests pending. No results yet.</div>
+</div>
+
+<div class="screenshot">
+  <img src="status-20.png" alt="Status — ~20 tests run">
+  <div class="caption"><span class="step">~20 / 65</span> First batch complete. Passing tests appear with green checkmarks.</div>
+</div>
+
+<div class="screenshot">
+  <img src="status-40.png" alt="Status — ~40 tests run">
+  <div class="caption"><span class="step">~40 / 65</span> Mid-run. Failure section shows favicon_help with character-level diff highlighting.</div>
+</div>
+
+<div class="screenshot">
+  <img src="status-65.png" alt="Status — all tests complete">
+  <div class="caption"><span class="step">65 / 65</span> All complete. Failures section shows the sabotaged test with baseline vs actual diff.</div>
+</div>
+
+</body>
+</html>

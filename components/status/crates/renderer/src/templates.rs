@@ -108,10 +108,10 @@ const LANDING_HTML: &str = r##"<!DOCTYPE html>
 <title>reg-rs</title>
 <style>{css}</style>
 </head><body>
-<div id="sse-badge" style="position:fixed;top:16px;right:16px;z-index:9999;background:#16a34a;color:#fff;font-family:ui-monospace,monospace;font-size:1.5em;font-weight:700;padding:8px 16px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">SSE: 0</div>
+<div id="sse-badge" style="position:fixed;bottom:12px;right:12px;z-index:9999;background:#16a34a;color:#fff;font-family:ui-monospace,monospace;font-size:0.85em;font-weight:600;padding:6px 12px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.12);opacity:0.9;">SSE: 0</div>
 <div class="container">
   <h1>reg-rs</h1>
-  <div class="meta">pattern: <code>{pattern}</code></div>
+  <div class="meta">pattern: <code>{pattern}</code> &nbsp; data: <code>{data_dir}</code> &nbsp; <span id="current-test"></span></div>
   <div class="summary">
     <div id="status-line">{status}</div>
     <div class="counts">
@@ -140,12 +140,14 @@ pub fn landing_page(
     pass: usize,
     pending: usize,
     total: usize,
+    data_dir: &str,
 ) -> String {
     let status = status_indicator(fail, pending, total, pass);
     LANDING_HTML
         .replace("{css}", assets::LANDING_CSS)
         .replace("{status}", &status)
         .replace("{pattern}", pattern)
+        .replace("{data_dir}", data_dir)
         .replace("{pass}", &pass.to_string())
         .replace("{fail}", &fail.to_string())
         .replace("{pending}", &pending.to_string())

@@ -64,7 +64,22 @@ echo "--- Generating WAV test fixtures ---"
 # Only generate fixtures that don't already exist — noise.wav is
 # non-deterministic (different random samples each run), so
 # regenerating it would invalidate baselines.
-gen() { [ -f "$1" ] && echo "  exists: $1" || { sox "${@:2}" "$1" 2>/dev/null && echo "  created: $1"; }; }
+gen() {
+  local out="$1"; shift
+  if [ -f "$out" ]; then
+    echo "  exists: $out"
+  else
+    # sox wants: sox [input] [output] [effects]
+    # Args are: -n -r 44100 -b 16 synth 0.5 sine 220
+    # Split at 'synth'/'whitenoise' boundary: format flags go before output, effects after
+    local fmt=() eff=() past_fmt=false
+    for arg in "$@"; do
+      if [ "$arg" = "synth" ] || [ "$arg" = "whitenoise" ]; then past_fmt=true; fi
+      if $past_fmt; then eff+=("$arg"); else fmt+=("$arg"); fi
+    done
+    sox "${fmt[@]}" "$out" "${eff[@]}" 2>/dev/null && echo "  created: $out"
+  fi
+}
 
 gen "$WAVS_DIR/sine_220hz.wav" -n -r 44100 -b 16 synth 0.5 sine 220
 gen "$WAVS_DIR/sine_440hz.wav" -n -r 44100 -b 16 synth 0.5 sine 440

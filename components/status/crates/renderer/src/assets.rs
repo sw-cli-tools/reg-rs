@@ -61,6 +61,7 @@ src.onmessage = function(e) {
   document.getElementById('c-fail').textContent = d.fail + ' failed';
   document.getElementById('c-pending').textContent = d.pending + ' pending';
   document.getElementById('c-total').textContent = d.total + ' total';
+  if (d.test) document.getElementById('current-test').textContent = 'test: ' + d.test;
   var s = document.getElementById('status-line');
   if (d.fail > 0) {
     s.innerHTML = '<span class="status-indicator fail">&#10007; ' + d.fail + ' failed</span>';
@@ -133,7 +134,7 @@ pub const STATUS_SCRIPT: &str = r##"
 var n = 0;
 var badge = document.createElement('div');
 badge.id = 'sse-badge';
-badge.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;background:#16a34a;color:#fff;font-family:ui-monospace,monospace;font-size:1.5em;font-weight:700;padding:8px 16px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+badge.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:9999;background:#16a34a;color:#fff;font-family:ui-monospace,monospace;font-size:0.85em;font-weight:600;padding:6px 12px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.12);opacity:0.9;';
 badge.textContent = 'SSE: 0';
 document.body.appendChild(badge);
 var src = new EventSource('/events');

@@ -26,22 +26,40 @@ pub struct ApiStatusResponse {
 pub async fn serve_landing(State(state): State<AppState>) -> impl IntoResponse {
     refresh_state(&state);
 
-    let (pattern, server_started, fail, pass, pending, total) = match state.state_data.lock() {
-        Ok(guard) => {
-            let (failed, passed, not_run) = templates::categorize_runs(&guard.runs);
-            (
-                guard.pattern.clone(),
-                guard.server_started.clone(),
-                failed.len(),
-                passed.len(),
-                not_run.len(),
-                guard.runs.len(),
-            )
-        }
-        Err(_) => ("unknown".to_string(), String::new(), 0, 0, 0, 0),
-    };
+    let (pattern, server_started, fail, pass, pending, total, data_dir) =
+        match state.state_data.lock() {
+            Ok(guard) => {
+                let (failed, passed, not_run) = templates::categorize_runs(&guard.runs);
+                (
+                    guard.pattern.clone(),
+                    guard.server_started.clone(),
+                    failed.len(),
+                    passed.len(),
+                    not_run.len(),
+                    guard.runs.len(),
+                    guard.data_dir.display().to_string(),
+                )
+            }
+            Err(_) => (
+                "unknown".to_string(),
+                String::new(),
+                0,
+                0,
+                0,
+                0,
+                String::new(),
+            ),
+        };
 
-    let html = templates::landing_page(&pattern, &server_started, fail, pass, pending, total);
+    let html = templates::landing_page(
+        &pattern,
+        &server_started,
+        fail,
+        pass,
+        pending,
+        total,
+        &data_dir,
+    );
     (StatusCode::OK, Html(html))
 }
 
@@ -78,9 +96,14 @@ pub async fn serve_sse(
     let stream = async_stream::stream! {
         loop {
             match rx.recv().await {
-                Ok(()) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                Ok(changed) => {
                     refresh_state(&state);
-                    let json = build_sse_json(&state);
+                    let json = build_sse_json(&state, &changed);
+                    yield Ok(axum::response::sse::Event::default().data(json));
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                    refresh_state(&state);
+                    let json = build_sse_json(&state, "");
                     yield Ok(axum::response::sse::Event::default().data(json));
                 }
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
@@ -91,19 +114,21 @@ pub async fn serve_sse(
 }
 
 /// Build JSON payload for SSE events
-fn build_sse_json(state: &AppState) -> String {
+fn build_sse_json(state: &AppState, changed_test: &str) -> String {
     match state.state_data.lock() {
         Ok(guard) => {
             let (failed, passed, not_run) = templates::categorize_runs(&guard.runs);
+            let test = changed_test.replace('"', "");
             format!(
-                r#"{{"pass":{},"fail":{},"pending":{},"total":{}}}"#,
+                r#"{{"pass":{},"fail":{},"pending":{},"total":{},"test":"{}"}}"#,
                 passed.len(),
                 failed.len(),
                 not_run.len(),
-                guard.runs.len()
+                guard.runs.len(),
+                test
             )
         }
-        Err(_) => r#"{"pass":0,"fail":0,"pending":0,"total":0}"#.to_string(),
+        Err(_) => r#"{"pass":0,"fail":0,"pending":0,"total":0,"test":""}"#.to_string(),
     }
 }
 
@@ -180,7 +205,14 @@ fn refresh_state(state: &AppState) {
     }
 
     match reg_rs_renderer::test_runner::collect_test_runs(&test_paths) {
-        Ok(runs) => {
+        Ok(mut runs) => {
+            // Sort: most recently run first, pending (no last_ran) at bottom
+            runs.sort_by(|a, b| match (&b.last_ran, &a.last_ran) {
+                (Some(b_ts), Some(a_ts)) => b_ts.cmp(a_ts),
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                (None, None) => a.name.cmp(&b.name),
+            });
             if let Ok(mut guard) = state.state_data.lock() {
                 guard.runs = runs;
                 let date = chrono::Local::now();

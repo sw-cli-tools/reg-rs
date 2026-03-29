@@ -7,8 +7,8 @@ use tokio::sync::broadcast;
 pub struct AppState {
     /// Shared state data
     pub state_data: Arc<Mutex<StateData>>,
-    /// Broadcast channel for SSE updates
-    pub update_tx: broadcast::Sender<()>,
+    /// Broadcast channel for SSE updates (carries changed file path)
+    pub update_tx: broadcast::Sender<String>,
 }
 
 impl AppState {
@@ -22,9 +22,9 @@ impl AppState {
         }
     }
 
-    /// Notify all SSE subscribers that state has changed
-    pub fn notify_update(&self) {
-        let _ = self.update_tx.send(());
+    /// Notify all SSE subscribers that a file has changed
+    pub fn notify_update(&self, changed_path: String) {
+        let _ = self.update_tx.send(changed_path);
     }
 }
 

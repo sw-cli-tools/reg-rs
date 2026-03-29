@@ -1,0 +1,1196 @@
+
+
+
+
+I have a test tool reg-rs with shell aliases like rnrg (run regression test) that many of my CLI projects used to detect regressions in CLI output after changes.  I want to integrate this with emacs so when my emacs shell is in a project I can hit a key-binding to run these tests for a project, much like some Rust/Cargo packages can run cargo test (which runs all the tests, not just these .rgt tests). look at: https://github.com/sw-cli-tools/reg-rs for details)
+
+
+Thought for 15s
+You want an Emacs workflow where, from a project shell or buffer, one key runs your project’s reg-rs regression tests in the same spirit as cargo test, but targeting your .rgt suites and your rnrg/related aliases.
+
+Requirements
+The pieces that matter are:
+
+reg-rs already supports interactive shell aliases like rnrg, lsrg, shrg, uprg, etc., intended for daily use. 
+
+rnrg can run all tests, matching tests, verbose output, quiet mode, and parallel execution. 
+
+reg-rs auto-discovers tests from a few locations, including ./work/reg-rs/, the current directory when it contains .tdb or .rgt files, and a default local directory. 
+
+The aliases come from bin/source-rg.sh, which is meant to be sourced from your shell rc file. 
+
+That gives two good Emacs integration architectures:
+
+High-level design
+Option A: call the alias through a shell
+Best when you want exact parity with your normal terminal behavior.
+
+Pros
+
+Uses the exact rnrg behavior you already trust
+
+Respects whatever your shell alias setup does
+
+Minimal friction
+
+Cons
+
+Aliases only exist in interactive/login shell contexts unless you explicitly source them
+
+Slightly more fragile than calling the binary directly
+
+Option B: call reg-rs directly
+Best when you want robustness from Emacs.
+
+Pros
+
+No alias-loading issues
+
+Easier to control from Elisp
+
+Better for project-local automation
+
+Cons
+
+You must know the exact CLI subcommand shape you want
+
+If your daily habit is rnrg, it is a tiny bit less ergonomic
+
+For your use case, I would do both:
+
+a default command that runs the alias via bash -lc or zsh -lc
+
+a fallback/direct version that calls the binary if needed
+
+Recommended behavior
+Use a project-aware command that:
+
+finds the project root
+
+sets default-directory to that root
+
+runs rnrg
+
+optionally prompts for an extra filter string
+
+displays output in a compilation buffer so next-error and standard Emacs navigation work
+
+That gives you a clean “press key → run regression suite for current project” flow.
+
+Low-level design
+Here is a solid Emacs Lisp implementation.
+
+Core runner
+;;; reg-rs integration for Emacs
+
+(require 'project)
+(require 'compile)
+(require 'subr-x)
+
+(defgroup mike-reg-rs nil
+  "Run reg-rs regression tests from Emacs."
+  :group 'tools)
+
+(defcustom mike/reg-rs-shell "bash"
+  "Shell used to run reg-rs aliases."
+  :type 'string
+  :group 'mike-reg-rs)
+
+(defcustom mike/reg-rs-alias-init
+  "source ~/.zshrc >/dev/null 2>&1 || true"
+  "Shell snippet used before invoking rnrg.
+Set this to source the file that defines your reg-rs aliases.
+Examples:
+  \"source ~/.zshrc >/dev/null 2>&1 || true\"
+  \"source ~/.bashrc >/dev/null 2>&1 || true\"
+  \"source /path/to/reg-rs/bin/source-rg.sh\""
+  :type 'string
+  :group 'mike-reg-rs)
+
+(defcustom mike/reg-rs-default-args ""
+  "Default extra arguments passed to rnrg."
+  :type 'string
+  :group 'mike-reg-rs)
+
+(defun mike/project-root ()
+  "Return current project root or `default-directory`."
+  (if-let ((pr (project-current nil)))
+      (project-root pr)
+    default-directory))
+
+(defun mike/reg-rs--make-shell-command (args)
+  "Build shell command to run rnrg with ARGS."
+  (string-join
+   (delq nil
+         (list mike/reg-rs-alias-init
+               (format "rnrg %s" (string-trim args))))
+   " && "))
+
+(defun mike/reg-rs-run (&optional args)
+  "Run reg-rs tests for the current project.
+With prefix arg or when called interactively with prompt, allow ARGS."
+  (interactive
+   (list
+    (read-string
+     "rnrg args: "
+     mike/reg-rs-default-args)))
+  (let* ((default-directory (mike/project-root))
+         (cmd (mike/reg-rs--make-shell-command args))
+         (full-cmd (format "%s -lc %S" mike/reg-rs-shell cmd)))
+    (compilation-start full-cmd 'compilation-mode
+                       (lambda (_) "*reg-rs*"))))
+
+(defun mike/reg-rs-run-all ()
+  "Run all reg-rs tests in the current project."
+  (interactive)
+  (mike/reg-rs-run ""))
+
+(defun mike/reg-rs-run-verbose ()
+  "Run all reg-rs tests with verbose output."
+  (interactive)
+  (mike/reg-rs-run "-v"))
+
+(defun mike/reg-rs-run-failed-detail ()
+  "Run all reg-rs tests with full diffs."
+  (interactive)
+  (mike/reg-rs-run "-vv"))
+
+(defun mike/reg-rs-run-parallel ()
+  "Run all reg-rs tests in parallel."
+  (interactive)
+  (mike/reg-rs-run "--parallel"))
+Key bindings
+If you use project.el, this is a nice pattern:
+
+(with-eval-after-load 'project
+  (define-key project-prefix-map (kbd "r") #'mike/reg-rs-run-all)
+  (define-key project-prefix-map (kbd "R") #'mike/reg-rs-run))
+Then:
+
+C-x p r → run all .rgt tests in current project
+
+C-x p R → prompt for args like my_test -vv
+
+If you want a single global binding:
+
+(global-set-key (kbd "<f9>") #'mike/reg-rs-run-all)
+(global-set-key (kbd "C-c r") #'mike/reg-rs-run)
+Better shell robustness
+Because aliases are shell-defined, I would usually prefer sourcing the alias file directly instead of relying on the whole shell rc:
+
+(setq mike/reg-rs-shell "bash")
+(setq mike/reg-rs-alias-init
+      "source ~/src/reg-rs/bin/source-rg.sh")
+That maps closely to the repo’s documented alias setup, which recommends sourcing bin/source-rg.sh from your shell config. 
+
+This is less noisy and more deterministic than loading your full .zshrc.
+
+Project-local customization
+Some projects may need custom default args. For example:
+
+always run parallel
+
+always run quiet
+
+run only a subset by default
+
+You can make that directory-local:
+
+((nil . ((mike/reg-rs-default-args . "--parallel"))))
+Or for one project:
+
+((nil . ((mike/reg-rs-default-args . "cli_smoke -vv"))))
+Alternative: call reg-rs directly
+If alias indirection becomes annoying, define a direct runner too.
+
+(defcustom mike/reg-rs-binary "reg-rs"
+  "Path to reg-rs binary."
+  :type 'string
+  :group 'mike-reg-rs)
+
+(defun mike/reg-rs-direct-run (&optional args)
+  "Run reg-rs directly in current project root."
+  (interactive
+   (list (read-string "reg-rs args: " "run ")))
+  (let ((default-directory (mike/project-root)))
+    (compilation-start
+     (format "%s %s" mike/reg-rs-binary args)
+     'compilation-mode
+     (lambda (_) "*reg-rs-direct*"))))
+I would keep this around as a backup.
+
+Smarter project detection
+Since reg-rs discovers tests from several places, including ./work/reg-rs/ and the current directory when it has .rgt or .tdb files, running from the project root should usually be enough. 
+
+If some repos keep tests below the root, add a locator:
+
+(defun mike/reg-rs-root ()
+  "Find the nearest directory suitable for reg-rs."
+  (or (locate-dominating-file default-directory "work/reg-rs")
+      (locate-dominating-file
+       default-directory
+       (lambda (dir)
+         (directory-files dir nil "\\.\\(rgt\\|tdb\\)\\'")))
+      (mike/project-root)))
+Then replace (mike/project-root) with (mike/reg-rs-root).
+
+That helps in monorepos or nested CLI subprojects.
+
+Nice extras
+1. Re-run last reg-rs command
+(defvar mike/reg-rs-last-args "")
+
+(defun mike/reg-rs-run (&optional args)
+  (interactive
+   (list
+    (read-string "rnrg args: " mike/reg-rs-last-args)))
+  (setq mike/reg-rs-last-args args)
+  (let* ((default-directory (mike/project-root))
+         (cmd (mike/reg-rs--make-shell-command args))
+         (full-cmd (format "%s -lc %S" mike/reg-rs-shell cmd)))
+    (compilation-start full-cmd 'compilation-mode
+                       (lambda (_) "*reg-rs*"))))
+
+(defun mike/reg-rs-rerun ()
+  (interactive)
+  (mike/reg-rs-run mike/reg-rs-last-args))
+2. Transient menu
+If you like discoverable commands, a transient prefix for:
+
+run all
+
+run with -v
+
+run with -vv
+
+run --parallel
+
+list via lsrg
+
+show via shrg
+
+rebase via uprg
+
+would be a very good fit.
+
+3. Integration with compile-command
+For projects dominated by reg-rs:
+
+(setq-local compile-command
+            (format "%s -lc %S"
+                    mike/reg-rs-shell
+                    (mike/reg-rs--make-shell-command "")))
+Then plain M-x compile or your existing compile key runs rnrg.
+
+Recommended setup
+This is the setup I’d actually use:
+
+(setq mike/reg-rs-shell "bash")
+(setq mike/reg-rs-alias-init "source ~/src/reg-rs/bin/source-rg.sh")
+(global-set-key (kbd "<f9>") #'mike/reg-rs-run-all)
+(global-set-key (kbd "C-c r") #'mike/reg-rs-run)
+That gives:
+
+<f9> → run all regression tests for current project
+
+C-c r → prompt for something like:
+
+``
+
+my_test
+
+my_test -v
+
+--parallel
+
+smoke -vv
+
+Benefits, risks, alternatives
+Benefits
+matches your current terminal muscle memory
+
+works across many CLI projects
+
+project-root aware
+
+uses compilation buffers, so output is easy to revisit
+
+Risks
+aliases may not load in non-interactive shells
+
+monorepos may need a custom test root finder
+
+if rnrg output is not compiler-style, next-error won’t do much beyond buffer navigation
+
+Alternatives
+EAT/vterm command injection if you want to run inside a live shell buffer instead of compilation mode
+
+project-specific commands via dir-locals
+
+a transient UI if you want a richer command palette
+
+direct binary invocation if alias setup becomes brittle
+
+My recommendation
+Start with compilation-mode + shell alias sourcing. It is the simplest thing that will feel native in Emacs and closest to your existing rnrg workflow.
+
+After that, add either:
+
+a transient menu, or
+
+compile-command integration
+
+depending on whether you want discoverability or minimal keystrokes.
+
+If you want, I can turn this into a polished Emacs package file with transient bindings and optional vterm support.
+
+
+I have another project pjmai-rs (https://github.com/sw-cli-tools/pjmai-rs) that I want to use C-c p for.  I want to use my own projectile alternative.  C-c p is currently unbound.  I was thinking of using C-c p j <a-z> for pjmai-rs actions and C-c p r <a-z> for reg-rs actions.  Note that pjm is shell-oriented but reg-rs does not need to be (could run in an ephemeral shell/output results buffer).  Suggest elisp setup for reg-rs
+
+
+Thought for 12s
+You want C-c p to become your project/workflow prefix, with:
+
+C-c p j <a-z> for pjmai-rs
+
+C-c p r <a-z> for reg-rs
+
+pjmai-rs staying shell-oriented
+
+reg-rs running happily in an ephemeral compile/output buffer
+
+That is a good split.
+
+Given reg-rs already provides interactive aliases like rnrg, lsrg, shrg, uprg, rsrg, and rmrg, and it auto-discovers tests from $REG_RS_DATA_DIR, ./work/reg-rs/, the current directory when it contains .rgt/.tdb, and ~/.local/reg-rs/, the cleanest Emacs integration is to run those commands from the current project root in compilation-mode. 
+
+Recommended architecture
+Prefix map layout
+I would make one top-level prefix map:
+
+C-c p r r → run all reg-rs tests
+
+C-c p r t → prompt for test/filter args and run
+
+C-c p r l → list tests
+
+C-c p r s → show one test in detail
+
+C-c p r u → accept/rebase changed baseline
+
+C-c p r x → reset test results
+
+C-c p r d → delete/remove a test
+
+C-c p r a → add/create a test
+
+C-c p r R → rerun last reg-rs command
+
+That keeps r as the namespace and then mostly mnemonic single letters after that.
+
+For reg-rs, I would not bind directly to a persistent shell buffer by default. The tool is already built around short commands and summary/detail reporting, so compile/compilation-start is the better default. reg-rs supports running tests, listing status, showing details, rebasing baselines, resetting results, removing tests, and creating tests through those alias commands. 
+
+Design choices
+Why compilation-mode for reg-rs
+Benefits:
+
+ephemeral buffer
+
+easy rerun
+
+standard Emacs navigation
+
+no dependence on whichever interactive shell buffer happens to be current
+
+project-root aware
+
+This fits especially well because reg-rs is a CLI regression tool whose main workflow is create, run, inspect, rebase, and remove tests. 
+
+Why use aliases rather than the raw binary
+The README explicitly says the shell aliases are the recommended interactive interface and gives rnrg, lsrg, shrg, uprg, rsrg, rmrg, and adrg as the intended shortcuts. 
+
+So for Emacs, I would preserve that model and source bin/source-rg.sh before invoking commands. That gives you the exact behavior you use outside Emacs. The repo documents sourcing that file from your shell startup. 
+
+Suggested Elisp setup
+Here is a practical setup focused on reg-rs.
+
+;;; my-reg-rs.el --- reg-rs integration under C-c p r -*- lexical-binding: t; -*-
+
+(require 'cl-lib)
+(require 'compile)
+(require 'project)
+(require 'subr-x)
+
+(defgroup my-reg-rs nil
+  "Run reg-rs commands from Emacs."
+  :group 'tools)
+
+(defcustom my/reg-rs-shell "bash"
+  "Shell used to invoke reg-rs aliases."
+  :type 'string
+  :group 'my-reg-rs)
+
+(defcustom my/reg-rs-source-command
+  "source ~/src/reg-rs/bin/source-rg.sh"
+  "Shell fragment that enables reg-rs aliases."
+  :type 'string
+  :group 'my-reg-rs)
+
+(defcustom my/reg-rs-buffer-name "*reg-rs*"
+  "Default compilation buffer name for reg-rs."
+  :type 'string
+  :group 'my-reg-rs)
+
+(defvar my/reg-rs-last-command "rnrg"
+  "Last reg-rs alias command run, without shell wrapper.")
+
+(defun my/project-root ()
+  "Return current project root, or `default-directory` if none."
+  (if-let ((pr (project-current nil)))
+      (expand-file-name (project-root pr))
+    (expand-file-name default-directory)))
+
+(defun my/reg-rs-root ()
+  "Best-effort root for reg-rs execution."
+  (let ((root (my/project-root)))
+    (or (locate-dominating-file root "work/reg-rs")
+        (locate-dominating-file
+         root
+         (lambda (dir)
+           (directory-files dir nil "\\.\\(rgt\\|tdb\\)\\'")))
+        root)))
+
+(defun my/reg-rs--shell-command (cmd)
+  "Wrap CMD in a shell that sources reg-rs aliases."
+  (format "%s -lc %S"
+          my/reg-rs-shell
+          (format "%s && %s"
+                  my/reg-rs-source-command
+                  cmd)))
+
+(defun my/reg-rs--run (cmd &optional buffer-name)
+  "Run reg-rs alias CMD from project root using compilation mode."
+  (setq my/reg-rs-last-command cmd)
+  (let ((default-directory (my/reg-rs-root)))
+    (compilation-start
+     (my/reg-rs--shell-command cmd)
+     'compilation-mode
+     (lambda (_mode)
+       (or buffer-name my/reg-rs-buffer-name)))))
+
+(defun my/reg-rs-rerun ()
+  "Rerun the last reg-rs command."
+  (interactive)
+  (my/reg-rs--run my/reg-rs-last-command))
+
+(defun my/reg-rs-run-all ()
+  "Run all reg-rs tests."
+  (interactive)
+  (my/reg-rs--run "rnrg"))
+
+(defun my/reg-rs-run (args)
+  "Run rnrg with ARGS."
+  (interactive (list (read-string "rnrg args: ")))
+  (my/reg-rs--run
+   (string-trim (format "rnrg %s" args))))
+
+(defun my/reg-rs-list ()
+  "List tests and status."
+  (interactive)
+  (my/reg-rs--run "lsrg" "*reg-rs-list*"))
+
+(defun my/reg-rs-show (args)
+  "Show detailed test info via shrg."
+  (interactive (list (read-string "shrg args: ")))
+  (my/reg-rs--run
+   (string-trim (format "shrg %s" args))
+   "*reg-rs-show*"))
+
+(defun my/reg-rs-update (args)
+  "Accept changed baseline via uprg."
+  (interactive (list (read-string "uprg args: ")))
+  (my/reg-rs--run
+   (string-trim (format "uprg %s" args))
+   "*reg-rs-update*"))
+
+(defun my/reg-rs-reset (args)
+  "Reset test results via rsrg."
+  (interactive (list (read-string "rsrg args: ")))
+  (my/reg-rs--run
+   (string-trim (format "rsrg %s" args))
+   "*reg-rs-reset*"))
+
+(defun my/reg-rs-remove (args)
+  "Remove test(s) via rmrg."
+  (interactive (list (read-string "rmrg args: ")))
+  (my/reg-rs--run
+   (string-trim (format "rmrg %s" args))
+   "*reg-rs-remove*"))
+
+(defun my/reg-rs-add (args)
+  "Create a test via adrg."
+  (interactive (list (read-string "adrg args: ")))
+  (my/reg-rs--run
+   (string-trim (format "adrg %s" args))
+   "*reg-rs-add*"))
+Keybinding setup under C-c p r
+(defvar my/project-tools-map (make-sparse-keymap)
+  "Top-level keymap for project tools.")
+
+(defvar my/project-tools-reg-rs-map (make-sparse-keymap)
+  "Keymap for reg-rs commands.")
+
+(define-key global-map (kbd "C-c p") my/project-tools-map)
+(define-key my/project-tools-map (kbd "r") my/project-tools-reg-rs-map)
+
+(define-key my/project-tools-reg-rs-map (kbd "r") #'my/reg-rs-run-all)
+(define-key my/project-tools-reg-rs-map (kbd "t") #'my/reg-rs-run)
+(define-key my/project-tools-reg-rs-map (kbd "l") #'my/reg-rs-list)
+(define-key my/project-tools-reg-rs-map (kbd "s") #'my/reg-rs-show)
+(define-key my/project-tools-reg-rs-map (kbd "u") #'my/reg-rs-update)
+(define-key my/project-tools-reg-rs-map (kbd "x") #'my/reg-rs-reset)
+(define-key my/project-tools-reg-rs-map (kbd "d") #'my/reg-rs-remove)
+(define-key my/project-tools-reg-rs-map (kbd "a") #'my/reg-rs-add)
+(define-key my/project-tools-reg-rs-map (kbd "R") #'my/reg-rs-rerun)
+That gives you a clean namespace:
+
+C-c p r r run all
+
+C-c p r t run with args
+
+C-c p r l list
+
+C-c p r s show
+
+C-c p r u update baseline
+
+C-c p r x reset
+
+C-c p r d delete
+
+C-c p r a add
+
+C-c p r R rerun last
+
+Why this shape works well
+High-level
+It matches how reg-rs is meant to be used interactively:
+
+create tests
+
+run tests
+
+inspect results
+
+accept intentional output changes
+
+clean up old tests 
+
+Low-level
+It also matches reg-rs discovery rules. Running from project root is usually enough because the tool checks ./work/reg-rs/, then current directory if .rgt/.tdb files are present, before falling back elsewhere. 
+
+That means you do not need a lot of Emacs-side discovery logic.
+
+Optional refinements
+1. Make C-c p r r use parallel mode
+reg-rs supports parallel test execution. If most projects benefit from that, change:
+
+(defun my/reg-rs-run-all ()
+  (interactive)
+  (my/reg-rs--run "rnrg --parallel"))
+The README lists parallel test execution as a feature. 
+
+2. Add verbose variants
+Since reg-rs supports -v and -vv, you could add:
+
+(defun my/reg-rs-run-verbose ()
+  (interactive)
+  (my/reg-rs--run "rnrg -v"))
+
+(defun my/reg-rs-run-very-verbose ()
+  (interactive)
+  (my/reg-rs--run "rnrg -vv"))
+Those verbosity modes are documented in the repo. 
+
+Then bind maybe:
+
+(define-key my/project-tools-reg-rs-map (kbd "v") #'my/reg-rs-run-verbose)
+(define-key my/project-tools-reg-rs-map (kbd "V") #'my/reg-rs-run-very-verbose)
+3. Make compile-command project-local
+If you like M-x compile or recompile, you can set:
+
+(setq-local compile-command
+            (my/reg-rs--shell-command "rnrg"))
+That gives you standard Emacs compile workflow for the current project.
+
+4. Add a root override
+For monorepos, add a directory-local variable:
+
+(defcustom my/reg-rs-root-file nil
+  "Optional file or directory marker to locate the reg-rs root."
+  :type '(choice (const nil) string)
+  :group 'my-reg-rs)
+Then have my/reg-rs-root honor it. That lets individual repos define their own rooting rules.
+
+Pros and cons
+Pros
+Keeps your own C-c p namespace
+
+Does not depend on Projectile
+
+Preserves the documented alias-based reg-rs workflow 
+
+Uses ephemeral output buffers instead of tying up a shell
+
+Easy to extend later with pjmai-rs
+
+Cons
+Alias-based execution means Emacs must source source-rg.sh
+
+If your shell environment is elaborate, a stripped-down shell source line may miss some variables
+
+compilation-mode is excellent for run/list/show, but less natural than a persistent shell for interactive follow-up tweaking
+
+My recommendation
+For reg-rs, I would standardize on this:
+
+C-c p r ... namespace
+
+run via compilation-mode
+
+source ~/src/reg-rs/bin/source-rg.sh
+
+execute from project root
+
+keep one “rerun last” command
+
+Then let pjmai-rs own the shell-oriented side under C-c p j ....
+
+If you want, I can next sketch the matching C-c p j keymap and show how the two systems can share one small “current project root + preferred shell buffer” layer.
+
+
+I also want to allow configure reg-rs as C-c r <a-z> if that makes sense
+
+Yes, that makes sense.
+
+Recommendation
+Use both:
+
+C-c p r <a-z> as the project-tools namespace
+
+C-c r <a-z> as a fast global shortcut for reg-rs
+
+That gives you:
+
+a coherent hierarchy under C-c p ...
+
+a short muscle-memory path for the thing you run often
+
+Why this is a good split
+C-c p r ...
+This is the structured home for project-related actions.
+
+Good for:
+
+consistency with C-c p j ...
+
+discoverability
+
+future growth
+
+C-c r ...
+This is the convenience layer.
+
+Good for:
+
+“run regressions now”
+
+“show/list/update quickly”
+
+fewer keystrokes
+
+So I would treat C-c p r ... as the canonical namespace and C-c r ... as aliases onto the most common commands.
+
+Suggested binding layout
+Canonical namespace
+C-c p r r → run all
+
+C-c p r t → run with args
+
+C-c p r l → list tests
+
+C-c p r s → show test
+
+C-c p r u → update baseline
+
+C-c p r x → reset results
+
+C-c p r d → delete/remove test
+
+C-c p r a → add test
+
+C-c p r R → rerun last
+
+Global convenience namespace
+Keep only the high-frequency commands here:
+
+C-c r r → run all
+
+C-c r t → run with args
+
+C-c r l → list
+
+C-c r s → show
+
+C-c r u → update baseline
+
+C-c r R → rerun last
+
+I would not mirror every low-frequency command under C-c r.
+That keeps C-c r small and memorable.
+
+Elisp setup
+Here is a clean way to wire both prefixes to the same commands.
+
+;;; reg-rs keymaps
+
+(defvar my/project-tools-map (make-sparse-keymap)
+  "Top-level keymap for project tools.")
+
+(defvar my/project-tools-reg-rs-map (make-sparse-keymap)
+  "Keymap for reg-rs commands under C-c p r.")
+
+(defvar my/reg-rs-short-map (make-sparse-keymap)
+  "Short keymap for reg-rs commands under C-c r.")
+
+;; Top-level prefixes
+(define-key global-map (kbd "C-c p") my/project-tools-map)
+(define-key global-map (kbd "C-c r") my/reg-rs-short-map)
+
+;; Canonical project namespace
+(define-key my/project-tools-map (kbd "r") my/project-tools-reg-rs-map)
+
+;; C-c p r ...
+(define-key my/project-tools-reg-rs-map (kbd "r") #'my/reg-rs-run-all)
+(define-key my/project-tools-reg-rs-map (kbd "t") #'my/reg-rs-run)
+(define-key my/project-tools-reg-rs-map (kbd "l") #'my/reg-rs-list)
+(define-key my/project-tools-reg-rs-map (kbd "s") #'my/reg-rs-show)
+(define-key my/project-tools-reg-rs-map (kbd "u") #'my/reg-rs-update)
+(define-key my/project-tools-reg-rs-map (kbd "x") #'my/reg-rs-reset)
+(define-key my/project-tools-reg-rs-map (kbd "d") #'my/reg-rs-remove)
+(define-key my/project-tools-reg-rs-map (kbd "a") #'my/reg-rs-add)
+(define-key my/project-tools-reg-rs-map (kbd "R") #'my/reg-rs-rerun)
+
+;; C-c r ...
+(define-key my/reg-rs-short-map (kbd "r") #'my/reg-rs-run-all)
+(define-key my/reg-rs-short-map (kbd "t") #'my/reg-rs-run)
+(define-key my/reg-rs-short-map (kbd "l") #'my/reg-rs-list)
+(define-key my/reg-rs-short-map (kbd "s") #'my/reg-rs-show)
+(define-key my/reg-rs-short-map (kbd "u") #'my/reg-rs-update)
+(define-key my/reg-rs-short-map (kbd "R") #'my/reg-rs-rerun)
+Even better: generate both maps from one table
+Since you like building your own tooling, this is a nicer long-term shape.
+
+(defvar my/reg-rs-bindings
+  '(("r" . my/reg-rs-run-all)
+    ("t" . my/reg-rs-run)
+    ("l" . my/reg-rs-list)
+    ("s" . my/reg-rs-show)
+    ("u" . my/reg-rs-update)
+    ("x" . my/reg-rs-reset)
+    ("d" . my/reg-rs-remove)
+    ("a" . my/reg-rs-add)
+    ("R" . my/reg-rs-rerun)))
+
+(defun my/apply-bindings (keymap bindings)
+  "Apply BINDINGS to KEYMAP."
+  (dolist (entry bindings)
+    (define-key keymap (kbd (car entry)) (cdr entry))))
+
+(defvar my/project-tools-map (make-sparse-keymap))
+(defvar my/project-tools-reg-rs-map (make-sparse-keymap))
+(defvar my/reg-rs-short-map (make-sparse-keymap))
+
+(define-key global-map (kbd "C-c p") my/project-tools-map)
+(define-key global-map (kbd "C-c r") my/reg-rs-short-map)
+(define-key my/project-tools-map (kbd "r") my/project-tools-reg-rs-map)
+
+(my/apply-bindings my/project-tools-reg-rs-map my/reg-rs-bindings)
+
+(my/apply-bindings
+ my/reg-rs-short-map
+ '(("r" . my/reg-rs-run-all)
+   ("t" . my/reg-rs-run)
+   ("l" . my/reg-rs-list)
+   ("s" . my/reg-rs-show)
+   ("u" . my/reg-rs-update)
+   ("R" . my/reg-rs-rerun)))
+That avoids drift.
+
+Behavioral recommendation
+Use C-c p r ... for:
+full namespace
+
+complete command set
+
+future expansion
+
+Use C-c r ... for:
+the commands you do repeatedly
+
+fast regressions while editing code
+
+reruns and baseline updates
+
+That is very similar to how many people end up using:
+
+a “full structured prefix”
+
+plus a “fast lane” prefix
+
+without giving up organization.
+
+One refinement I would make
+You may want:
+
+C-c r r → run all
+
+C-c r f → run with filter/prompt
+
+C-c r u → update baseline
+
+C-c r l → list
+
+C-c r s → show
+
+C-c r R → rerun last
+
+Using f for “filter” may feel better than t for the prompted run.
+
+Example:
+
+(define-key my/reg-rs-short-map (kbd "r") #'my/reg-rs-run-all)
+(define-key my/reg-rs-short-map (kbd "f") #'my/reg-rs-run)
+(define-key my/reg-rs-short-map (kbd "l") #'my/reg-rs-list)
+(define-key my/reg-rs-short-map (kbd "s") #'my/reg-rs-show)
+(define-key my/reg-rs-short-map (kbd "u") #'my/reg-rs-update)
+(define-key my/reg-rs-short-map (kbd "R") #'my/reg-rs-rerun)
+That is a little more semantic.
+
+Pros and cons
+Pros
+short path for frequent regression work
+
+keeps C-c p as your unified project namespace
+
+low cognitive load
+
+easy to extend
+
+Cons
+duplicate bindings can drift unless generated from one table
+
+too many commands under C-c r can make it feel noisy
+
+you will want to be disciplined about what belongs in “fast lane”
+
+My preferred final shape
+I would use:
+
+Full
+C-c p r ...
+
+Short
+C-c r r
+
+C-c r f
+
+C-c r l
+
+C-c r s
+
+C-c r u
+
+C-c r R
+
+That gives you structure plus speed.
+
+If you want, I can next write a complete Emacs snippet that includes:
+
+the reg-rs runner functions,
+
+both keymaps,
+
+and a matching placeholder C-c p j map for pjmai-rs.
+
+
+I think I want to make the two tools (packages) independent.  So c-C p r is for rmpj not reg-rs and all reg-rs commands go through c-C p r
+
+oops, I meant reg-rs only: c-C r <a-z> 
+
+Got it — that’s actually a much cleaner separation:
+
+pjmai-rs owns C-c p ...
+
+reg-rs owns only C-c r ...
+
+No overlap, no coupling, no mental collision
+
+That’s the right call 👍
+
+Final Design
+reg-rs = standalone tool namespace
+C-c r r   run all tests
+C-c r f   run with filter / args
+C-c r l   list tests
+C-c r s   show test details
+C-c r u   update baseline
+C-c r x   reset results
+C-c r d   delete test
+C-c r a   add test
+C-c r R   rerun last
+This gives you a tight, tool-centric interface.
+
+Architecture
+Requirements recap
+No dependency on pjmai-rs
+
+Project-aware (root detection)
+
+Uses reg-rs aliases (rnrg, lsrg, etc.)
+
+Runs in ephemeral buffer (not shell)
+
+Fast repeat (rerun last)
+
+Works across all CLI projects
+
+High-level design
+Emacs Keymap (C-c r)
+        ↓
+Elisp command (my/reg-rs-*)
+        ↓
+project root detection
+        ↓
+shell wrapper (source-rg.sh + rnrg/lsrg/etc)
+        ↓
+compilation-mode buffer
+Clean, self-contained implementation
+This is fully independent of anything else.
+
+Core execution layer
+(require 'compile)
+(require 'project)
+(require 'subr-x)
+
+(defgroup my/reg-rs nil
+  "reg-rs integration."
+  :group 'tools)
+
+(defcustom my/reg-rs-shell "bash"
+  "Shell used to run reg-rs."
+  :type 'string)
+
+(defcustom my/reg-rs-source
+  "source ~/src/reg-rs/bin/source-rg.sh"
+  "Command to enable reg-rs aliases."
+  :type 'string)
+
+(defvar my/reg-rs-last-command "rnrg"
+  "Last reg-rs command.")
+
+(defun my/reg-rs-project-root ()
+  (if-let ((pr (project-current nil)))
+      (project-root pr)
+    default-directory))
+
+(defun my/reg-rs-root ()
+  (or (locate-dominating-file default-directory "work/reg-rs")
+      (locate-dominating-file
+       default-directory
+       (lambda (d)
+         (directory-files d nil "\\.\\(rgt\\|tdb\\)\\'")))
+      (my/reg-rs-project-root)))
+
+(defun my/reg-rs--cmd (cmd)
+  (format "%s -lc %S"
+          my/reg-rs-shell
+          (format "%s && %s" my/reg-rs-source cmd)))
+
+(defun my/reg-rs--run (cmd &optional buffer)
+  (setq my/reg-rs-last-command cmd)
+  (let ((default-directory (my/reg-rs-root)))
+    (compilation-start
+     (my/reg-rs--cmd cmd)
+     'compilation-mode
+     (lambda (_) (or buffer "*reg-rs*")))))
+Commands
+(defun my/reg-rs-run-all ()
+  (interactive)
+  (my/reg-rs--run "rnrg"))
+
+(defun my/reg-rs-run (args)
+  (interactive (list (read-string "rnrg args: ")))
+  (my/reg-rs--run (string-trim (format "rnrg %s" args))))
+
+(defun my/reg-rs-list ()
+  (interactive)
+  (my/reg-rs--run "lsrg" "*reg-rs-list*"))
+
+(defun my/reg-rs-show (args)
+  (interactive (list (read-string "shrg args: ")))
+  (my/reg-rs--run (format "shrg %s" args) "*reg-rs-show*"))
+
+(defun my/reg-rs-update (args)
+  (interactive (list (read-string "uprg args: ")))
+  (my/reg-rs--run (format "uprg %s" args) "*reg-rs-update*"))
+
+(defun my/reg-rs-reset (args)
+  (interactive (list (read-string "rsrg args: ")))
+  (my/reg-rs--run (format "rsrg %s" args) "*reg-rs-reset*"))
+
+(defun my/reg-rs-remove (args)
+  (interactive (list (read-string "rmrg args: ")))
+  (my/reg-rs--run (format "rmrg %s" args) "*reg-rs-remove*"))
+
+(defun my/reg-rs-add (args)
+  (interactive (list (read-string "adrg args: ")))
+  (my/reg-rs--run (format "adrg %s" args) "*reg-rs-add*"))
+
+(defun my/reg-rs-rerun ()
+  (interactive)
+  (my/reg-rs--run my/reg-rs-last-command))
+Keymap (standalone)
+(defvar my/reg-rs-map (make-sparse-keymap)
+  "Keymap for reg-rs under C-c r.")
+
+(define-key global-map (kbd "C-c r") my/reg-rs-map)
+
+(define-key my/reg-rs-map (kbd "r") #'my/reg-rs-run-all)
+(define-key my/reg-rs-map (kbd "f") #'my/reg-rs-run)
+(define-key my/reg-rs-map (kbd "l") #'my/reg-rs-list)
+(define-key my/reg-rs-map (kbd "s") #'my/reg-rs-show)
+(define-key my/reg-rs-map (kbd "u") #'my/reg-rs-update)
+(define-key my/reg-rs-map (kbd "x") #'my/reg-rs-reset)
+(define-key my/reg-rs-map (kbd "d") #'my/reg-rs-remove)
+(define-key my/reg-rs-map (kbd "a") #'my/reg-rs-add)
+(define-key my/reg-rs-map (kbd "R") #'my/reg-rs-rerun)
+Behavioral Notes
+Why this works well
+1. Clean separation
+pjmai-rs = shell workflow (C-c p)
+
+reg-rs = regression workflow (C-c r)
+
+No cognitive overlap.
+
+2. Stateless execution
+Each command:
+
+finds root
+
+runs
+
+exits
+
+No lingering shell state → fewer bugs.
+
+3. Matches reg-rs mental model
+reg-rs is designed around:
+
+create tests
+
+run tests
+
+inspect results
+
+accept changes
+
+clean up
+
+This keymap mirrors that lifecycle exactly.
+
+4. Fast iteration loop
+Typical flow becomes:
+
+edit code
+C-c r r      run tests
+C-c r u      accept changes
+C-c r R      rerun
+Very tight feedback loop.
+
+Optional upgrades (worth it)
+1. Default parallel execution
+(defun my/reg-rs-run-all ()
+  (interactive)
+  (my/reg-rs--run "rnrg --parallel"))
+2. Verbosity shortcuts
+(defun my/reg-rs-run-verbose ()
+  (interactive)
+  (my/reg-rs--run "rnrg -v"))
+
+(defun my/reg-rs-run-vv ()
+  (interactive)
+  (my/reg-rs--run "rnrg -vv"))
+Bind:
+
+C-c r v
+C-c r V
+3. compile-command integration
+(setq-local compile-command
+            (my/reg-rs--cmd "rnrg"))
+Then:
+
+M-x compile
+M-x recompile
+4. Smart default filter (future)
+You could later integrate with:
+
+current buffer → infer CLI
+
+last changed test
+
+git diff
+
+Pros / Cons
+Pros
+completely decoupled from pjmai-rs
+
+minimal key depth
+
+very fast workflow
+
+robust (no interactive shell dependency)
+
+consistent across projects
+
+Cons
+requires alias sourcing (but controlled)
+
+no persistent shell context (by design)
+
+duplication if you later want shared infra (but that’s optional)
+
+Final verdict
+This is a very strong design:
+
+C-c p → project/system tools (pjmai-rs)
+
+C-c r → regression system (reg-rs)
+
+It mirrors how you think about the tools:
+
+one is environment/navigation
+
+one is validation/testing
+
+If you want next step, I can:
+
+unify logging between pjmai-rs + reg-rs
+
+add a transient UI for C-c r
+
+or integrate reg-rs results with a diff viewer inside Emacs (very powerful for .rgt)
+
+
+
+

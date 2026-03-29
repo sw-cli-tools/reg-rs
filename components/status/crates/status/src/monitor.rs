@@ -6,7 +6,27 @@ use notify::{RecursiveMode, Watcher};
 
 use reg_rs_types::error::RegError;
 
+use notify::DebouncedEvent;
+
 use crate::state::AppState;
+
+/// Extract the file path from a notify event, returning the stem as the test name.
+fn extract_event_path(event: &DebouncedEvent) -> String {
+    let path = match event {
+        DebouncedEvent::Write(p)
+        | DebouncedEvent::Create(p)
+        | DebouncedEvent::Remove(p)
+        | DebouncedEvent::Rename(_, p)
+        | DebouncedEvent::NoticeWrite(p)
+        | DebouncedEvent::NoticeRemove(p)
+        | DebouncedEvent::Chmod(p) => Some(p),
+        _ => None,
+    };
+    path.and_then(|p| p.file_stem())
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_string()
+}
 
 /// Launch monitor thread.
 pub fn launch_monitor(app_state: AppState) -> Vec<std::thread::JoinHandle<()>> {
@@ -55,9 +75,10 @@ fn run_event_loop(
 ) -> Result<(), RegError> {
     loop {
         match rx.recv() {
-            Ok(event) => {
+            Ok(ref event) => {
                 log::debug!("monitor/watch event: {:?}", event);
-                app_state.notify_update();
+                let path = extract_event_path(event);
+                app_state.notify_update(path);
             }
             Err(e) => {
                 log::error!("monitor/watch: channel closed: {}", e);
