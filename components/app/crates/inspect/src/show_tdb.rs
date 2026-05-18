@@ -20,7 +20,7 @@ pub(crate) fn show_one_tdb(
 ) -> Result<()> {
     let original = db::read_original_results(test_path)?;
 
-    println!("=== {} ({}) ===", name, status);
+    println!("=== {name} ({status}) ===");
     println!("command:  {}", original.command);
     println!("created:  {}", original.time_created);
     println!("exit:     {}", original.exit_code);

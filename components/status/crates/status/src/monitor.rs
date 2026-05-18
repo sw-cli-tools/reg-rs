@@ -35,8 +35,8 @@ pub fn launch_monitor(app_state: AppState) -> Vec<std::thread::JoinHandle<()>> {
     handles.push({
         thread::spawn(move || {
             if let Err(e) = watch(app_state) {
-                log::error!("monitor/watch exited with error: {}", e);
-                eprintln!("Warning: file monitor stopped: {}", e);
+                log::error!("monitor/watch exited with error: {e}");
+                eprintln!("Warning: file monitor stopped: {e}");
             }
         })
     });
@@ -48,7 +48,7 @@ fn watch(app_state: AppState) -> Result<(), RegError> {
     let raw_dir = match app_state.state_data.lock() {
         Ok(guard) => guard.data_dir.clone(),
         Err(e) => {
-            return Err(RegError::MutexPoisoned(format!("monitor startup: {}", e)));
+            return Err(RegError::MutexPoisoned(format!("monitor startup: {e}")));
         }
     };
     // Canonicalize to absolute path — notify watcher needs this for reliable event delivery
@@ -57,12 +57,12 @@ fn watch(app_state: AppState) -> Result<(), RegError> {
 
     let (tx, rx) = channel();
     let mut watcher = notify::watcher(tx, Duration::from_secs(2))
-        .map_err(|e| RegError::Notification(format!("failed to create watcher: {}", e)))?;
+        .map_err(|e| RegError::Notification(format!("failed to create watcher: {e}")))?;
 
     watcher
         .watch(&data_dir, RecursiveMode::Recursive)
         .map_err(|e| {
-            RegError::Notification(format!("failed to watch directory {:?}: {}", data_dir, e))
+            RegError::Notification(format!("failed to watch directory {data_dir:?}: {e}"))
         })?;
 
     run_event_loop(&app_state, rx)
@@ -76,15 +76,14 @@ fn run_event_loop(
     loop {
         match rx.recv() {
             Ok(ref event) => {
-                log::debug!("monitor/watch event: {:?}", event);
+                log::debug!("monitor/watch event: {event:?}");
                 let path = extract_event_path(event);
                 app_state.notify_update(path);
             }
             Err(e) => {
-                log::error!("monitor/watch: channel closed: {}", e);
+                log::error!("monitor/watch: channel closed: {e}");
                 return Err(RegError::Notification(format!(
-                    "file watcher channel closed: {}",
-                    e
+                    "file watcher channel closed: {e}"
                 )));
             }
         }

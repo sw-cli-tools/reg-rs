@@ -7,7 +7,7 @@ pub fn complete(config: &Config) -> Result<()> {
     let tests = reg_rs_discover::finder::discover(pattern)?;
     for test_path in &tests.found {
         let name = format_test_name(test_path);
-        println!("{}", name);
+        println!("{name}");
     }
     Ok(())
 }

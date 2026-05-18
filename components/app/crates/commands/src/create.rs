@@ -62,9 +62,9 @@ fn resolve_ai_command(opts: &CreateOptions, description: &str) -> Result<Option<
     eprintln!("AI generated command: {}", &command);
     eprint!("Proceed? [y/n] ");
     let mut input = String::new();
-    std::io::stdin().read_line(&mut input).map_err(|e| {
-        reg_rs_types::error::RegError::Other(format!("Failed to read input: {}", e))
-    })?;
+    std::io::stdin()
+        .read_line(&mut input)
+        .map_err(|e| reg_rs_types::error::RegError::Other(format!("Failed to read input: {e}")))?;
     if !input.trim().eq_ignore_ascii_case("y") {
         eprintln!("Aborted.");
         return Ok(None);

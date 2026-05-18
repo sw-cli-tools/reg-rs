@@ -113,7 +113,7 @@ fn show_failure_entry(
     let rendered = tt
         .render("f", &ctx)
         .map_err(|e| reg_rs_types::error::RegError::Template(e.to_string()))?;
-    println!("{}", rendered);
+    println!("{rendered}");
     Ok(())
 }
 
@@ -145,7 +145,7 @@ fn show_verbose_differences(
         .iter()
         .filter_map(|difference| {
             RegressionType::display_label(&difference.0).map(|label| DisplayDifference {
-                type_name: format!("{:022}", label),
+                type_name: format!("{label:022}"),
                 chunk: difference.1.to_string(),
             })
         })
@@ -161,7 +161,7 @@ fn show_verbose_differences(
     let rendered = tt
         .render("differences_report_template", &ctx)
         .map_err(|e| reg_rs_types::error::RegError::Template(e.to_string()))?;
-    println!("{}", rendered);
+    println!("{rendered}");
     Ok(())
 }
 
@@ -172,13 +172,13 @@ fn show_doc_metadata(test: &str) -> reg_rs_types::error::Result<()> {
     let flaky_note = db_ops::read_metadata(test, "flaky_note")?;
     if desc.is_some() || expects.is_some() || flaky_note.is_some() {
         if let Some(d) = desc {
-            println!("    desc:       {}", d);
+            println!("    desc:       {d}");
         }
         if let Some(e) = expects {
-            println!("    expects:    {}", e);
+            println!("    expects:    {e}");
         }
         if let Some(f) = flaky_note {
-            println!("    flaky_note: {}", f);
+            println!("    flaky_note: {f}");
         }
     }
     Ok(())

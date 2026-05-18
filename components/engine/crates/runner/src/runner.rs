@@ -24,7 +24,7 @@ pub fn run_one_timeout(
         timeout_secs
     );
     if dry_run {
-        println!("dry-run: test name: {}, command: {}", test_name, command);
+        println!("dry-run: test name: {test_name}, command: {command}");
         Ok(None)
     } else {
         let (exit_code, stderr, stdout) =
@@ -53,7 +53,7 @@ pub fn run_one(
         dry_run
     );
     if dry_run {
-        println!("dry-run: test name: {}, command: {}", test_name, command);
+        println!("dry-run: test name: {test_name}, command: {command}");
         Ok(None)
     } else {
         let (exit_code, stderr, stdout) = process::exec(command.to_string())?;
@@ -82,7 +82,7 @@ pub fn run_one_with_executor(
         dry_run
     );
     if dry_run {
-        println!("dry-run: test name: {}, command: {}", test_name, command);
+        println!("dry-run: test name: {test_name}, command: {command}");
         Ok(None)
     } else {
         let (exit_code, stderr, stdout) = executor.exec(command)?;

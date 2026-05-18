@@ -16,7 +16,7 @@ pub fn collect_test_runs(test_paths: &[String]) -> reg_rs_types::error::Result<V
         let db_path = rgt_store::db_path(test_name);
         match collect_one_test(test_name, &db_path) {
             Ok(details) => test_runs.push(details),
-            Err(e) => log::warn!("skipping {}: {}", test_name, e),
+            Err(e) => log::warn!("skipping {test_name}: {e}"),
         }
     }
     Ok(test_runs)

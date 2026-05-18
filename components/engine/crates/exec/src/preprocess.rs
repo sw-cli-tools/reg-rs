@@ -14,7 +14,7 @@ pub fn apply(input: &str, preprocess: Option<&str>) -> Result<String> {
         _ => return Ok(input.to_string()),
     };
 
-    log::debug!("preprocess/apply cmd={}", cmd);
+    log::debug!("preprocess/apply cmd={cmd}");
 
     let mut child = Command::new("sh")
         .arg("-c")
@@ -23,17 +23,17 @@ pub fn apply(input: &str, preprocess: Option<&str>) -> Result<String> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| RegError::Other(format!("Failed to spawn preprocess command: {}", e)))?;
+        .map_err(|e| RegError::Other(format!("Failed to spawn preprocess command: {e}")))?;
 
     if let Some(mut stdin) = child.stdin.take() {
         stdin
             .write_all(input.as_bytes())
-            .map_err(|e| RegError::Other(format!("Failed to write to preprocess stdin: {}", e)))?;
+            .map_err(|e| RegError::Other(format!("Failed to write to preprocess stdin: {e}")))?;
     }
 
     let output = child
         .wait_with_output()
-        .map_err(|e| RegError::Other(format!("Preprocess command failed: {}", e)))?;
+        .map_err(|e| RegError::Other(format!("Preprocess command failed: {e}")))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);

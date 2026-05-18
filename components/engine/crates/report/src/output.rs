@@ -23,7 +23,7 @@ fn categorize_tests(found_tests: &[String]) -> reg_rs_types::error::Result<Categ
             not_yet_run.push(test_name.to_string());
         } else {
             let difference_count = db_ops::count_differences(&db_path)?;
-            log::debug!("difference_count: {}", difference_count);
+            log::debug!("difference_count: {difference_count}");
             if difference_count > 0 {
                 failed.push(test_name.to_string());
             } else {

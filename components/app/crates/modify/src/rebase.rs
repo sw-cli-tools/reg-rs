@@ -27,14 +27,14 @@ pub fn rebase(config: &Config) -> Result<()> {
             rebased += 1;
         }
     }
-    eprintln!("{} test(s) rebased", rebased);
+    eprintln!("{rebased} test(s) rebased");
     log::info!("command/rebase done");
     Ok(())
 }
 
 /// Rebase a single test, returning true if rebased.
 fn rebase_one(test_path: &str) -> Result<bool> {
-    let is_rgt = test_path.ends_with(&format!(".{}", RGT_EXTENSION));
+    let is_rgt = test_path.ends_with(&format!(".{RGT_EXTENSION}"));
     let tdb_path = if is_rgt {
         rgt_util::tdb_path_for_rgt(test_path)
     } else {
@@ -43,10 +43,7 @@ fn rebase_one(test_path: &str) -> Result<bool> {
 
     let latest_count = db_ops::count_latest_results(&tdb_path)?;
     if latest_count == 0 {
-        eprintln!(
-            "skip: {} (no latest results — run the test first)",
-            test_path
-        );
+        eprintln!("skip: {test_path} (no latest results — run the test first)");
         return Ok(false);
     }
 
@@ -79,6 +76,6 @@ fn rebase_one(test_path: &str) -> Result<bool> {
     }
 
     db_ops::clear_differences(&tdb_path)?;
-    eprintln!("rebased: {}", test_path);
+    eprintln!("rebased: {test_path}");
     Ok(true)
 }

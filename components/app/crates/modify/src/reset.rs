@@ -20,7 +20,7 @@ pub fn reset(config: &Config) -> Result<()> {
     }
     let mut reset_count = 0;
     for test_path in &tests.found {
-        let is_rgt = test_path.ends_with(&format!(".{}", RGT_EXTENSION));
+        let is_rgt = test_path.ends_with(&format!(".{RGT_EXTENSION}"));
         let tdb_path = if is_rgt {
             rgt_util::tdb_path_for_rgt(test_path)
         } else {
@@ -30,9 +30,9 @@ pub fn reset(config: &Config) -> Result<()> {
         db_ops::reset_differences(&tdb_path)?;
         reset_count += 1;
         let name = format_test_name(test_path);
-        eprintln!("reset: {}", name);
+        eprintln!("reset: {name}");
     }
-    eprintln!("{} test(s) reset", reset_count);
+    eprintln!("{reset_count} test(s) reset");
     log::info!("command/reset done");
     Ok(())
 }

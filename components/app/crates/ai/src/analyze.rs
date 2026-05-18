@@ -27,7 +27,7 @@ const API_URL: &str = "https://api.anthropic.com/v1/messages";
 
 /// Analyze failures for tests matching a pattern.
 pub fn analyze_failures(pattern: &str) -> Result<()> {
-    log::info!("analyze/analyze_failures pattern={}", pattern);
+    log::info!("analyze/analyze_failures pattern={pattern}");
 
     let tests = reg_rs_discover::finder::discover(pattern.to_string())?;
     if tests.found.is_empty() {
@@ -47,11 +47,11 @@ pub fn analyze_failures(pattern: &str) -> Result<()> {
 
 /// Analyze a single test's failure.
 fn analyze_one(db_name: &str) -> Result<()> {
-    log::info!("analyze/analyze_one {}", db_name);
+    log::info!("analyze/analyze_one {db_name}");
 
     let diff_count = db_ops::count_differences(db_name)?;
     if diff_count == 0 {
-        eprintln!("  {} — no differences (passed)", db_name);
+        eprintln!("  {db_name} — no differences (passed)");
         return Ok(());
     }
 
@@ -62,8 +62,8 @@ fn analyze_one(db_name: &str) -> Result<()> {
     let prompt = build_analysis_prompt(&original, &latest, &differences);
     let analysis = call_api(&prompt)?;
 
-    eprintln!("\n--- Analysis: {} ---", db_name);
-    eprintln!("{}", analysis);
+    eprintln!("\n--- Analysis: {db_name} ---");
+    eprintln!("{analysis}");
     eprintln!("---\n");
 
     Ok(())
@@ -74,7 +74,7 @@ pub fn format_differences(differences: &[(String, String)]) -> String {
     let mut diff_text = String::new();
     for (type_code, chunk) in differences {
         let label = RegressionType::display_label(type_code).unwrap_or("unchanged");
-        diff_text.push_str(&format!("  {}: {}\n", label, chunk));
+        diff_text.push_str(&format!("  {label}: {chunk}\n"));
     }
     diff_text
 }
@@ -132,13 +132,12 @@ pub fn build_analysis_prompt(
 pub fn call_api(prompt: &str) -> Result<String> {
     let api_key = env::var(API_KEY_ENV).map_err(|_| {
         RegError::Config(format!(
-            "{} environment variable not set. Get an API key at https://console.anthropic.com/",
-            API_KEY_ENV
+            "{API_KEY_ENV} environment variable not set. Get an API key at https://console.anthropic.com/"
         ))
     })?;
 
     let model = env::var(MODEL_ENV).unwrap_or_else(|_| DEFAULT_MODEL.to_string());
-    log::info!("analyze/call_api model={}", model);
+    log::info!("analyze/call_api model={model}");
 
     let body = json!({
         "model": model,
@@ -156,11 +155,11 @@ pub fn call_api(prompt: &str) -> Result<String> {
         .set("anthropic-version", "2023-06-01")
         .set("content-type", "application/json")
         .send_json(&body)
-        .map_err(|e| RegError::Other(format!("Claude API request failed: {}", e)))?;
+        .map_err(|e| RegError::Other(format!("Claude API request failed: {e}")))?;
 
     let response_body: serde_json::Value = response
         .into_json()
-        .map_err(|e| RegError::Other(format!("Failed to parse Claude API response: {}", e)))?;
+        .map_err(|e| RegError::Other(format!("Failed to parse Claude API response: {e}")))?;
 
     let text = response_body["content"]
         .as_array()
@@ -168,8 +167,7 @@ pub fn call_api(prompt: &str) -> Result<String> {
         .and_then(|block| block["text"].as_str())
         .ok_or_else(|| {
             RegError::Other(format!(
-                "Unexpected Claude API response format: {}",
-                response_body
+                "Unexpected Claude API response format: {response_body}"
             ))
         })?;
 

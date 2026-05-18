@@ -32,15 +32,15 @@ pub struct RgtSpec {
 /// Parse a `.rgt` TOML file into an `RgtSpec`.
 pub fn parse_rgt(path: &str) -> Result<RgtSpec> {
     let content = std::fs::read_to_string(path)
-        .map_err(|e| RegError::Other(format!("cannot read {}: {}", path, e)))?;
-    toml::from_str(&content).map_err(|e| RegError::Other(format!("cannot parse {}: {}", path, e)))
+        .map_err(|e| RegError::Other(format!("cannot read {path}: {e}")))?;
+    toml::from_str(&content).map_err(|e| RegError::Other(format!("cannot parse {path}: {e}")))
 }
 
 /// Read the companion `.out` file (expected stdout baseline).
 pub fn read_baseline_stdout(rgt_path: &str) -> Result<String> {
     let out_path = companion_path(rgt_path, OUT_EXTENSION);
     std::fs::read_to_string(&out_path)
-        .map_err(|e| RegError::Other(format!("cannot read {}: {}", out_path, e)))
+        .map_err(|e| RegError::Other(format!("cannot read {out_path}: {e}")))
 }
 
 /// Read the companion `.err` file (expected stderr baseline).
@@ -50,29 +50,28 @@ pub fn read_baseline_stderr(rgt_path: &str) -> Result<String> {
     match std::fs::read_to_string(&err_path) {
         Ok(content) => Ok(content),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
-        Err(e) => Err(RegError::Other(format!("cannot read {}: {}", err_path, e))),
+        Err(e) => Err(RegError::Other(format!("cannot read {err_path}: {e}"))),
     }
 }
 
 /// Write an `RgtSpec` as a TOML `.rgt` file.
 pub fn write_rgt(path: &str, spec: &RgtSpec) -> Result<()> {
     let content = toml::to_string_pretty(spec)
-        .map_err(|e| RegError::Other(format!("cannot serialize spec: {}", e)))?;
-    std::fs::write(path, content)
-        .map_err(|e| RegError::Other(format!("cannot write {}: {}", path, e)))
+        .map_err(|e| RegError::Other(format!("cannot serialize spec: {e}")))?;
+    std::fs::write(path, content).map_err(|e| RegError::Other(format!("cannot write {path}: {e}")))
 }
 
 /// Write baseline `.out` and `.err` files alongside an `.rgt` file.
 pub fn write_baseline(rgt_path: &str, stdout: &str, stderr: &str) -> Result<()> {
     let out_path = companion_path(rgt_path, OUT_EXTENSION);
     std::fs::write(&out_path, stdout)
-        .map_err(|e| RegError::Other(format!("cannot write {}: {}", out_path, e)))?;
+        .map_err(|e| RegError::Other(format!("cannot write {out_path}: {e}")))?;
     let err_path = companion_path(rgt_path, ERR_EXTENSION);
     if stderr.is_empty() {
         let _ = std::fs::remove_file(&err_path);
     } else {
         std::fs::write(&err_path, stderr)
-            .map_err(|e| RegError::Other(format!("cannot write {}: {}", err_path, e)))?;
+            .map_err(|e| RegError::Other(format!("cannot write {err_path}: {e}")))?;
     }
     Ok(())
 }

@@ -31,7 +31,7 @@ fn is_hidden(entry: &DirEntry) -> bool {
 
 /// Check if a file has a recognized test extension (.rgt or .tdb).
 fn is_test_file(path: &str) -> bool {
-    path.ends_with(&format!(".{}", TDB_EXTENSION)) || path.ends_with(&format!(".{}", RGT_EXTENSION))
+    path.ends_with(&format!(".{TDB_EXTENSION}")) || path.ends_with(&format!(".{RGT_EXTENSION}"))
 }
 
 /// Discover tests matching a substring pattern in the data directory.
@@ -83,7 +83,7 @@ pub fn discover_in(dir: &std::path::Path, pattern: &str) -> Result<TestNames> {
     for path in all_files {
         let p = std::path::Path::new(&path);
         let stem = p.with_extension("").to_string_lossy().to_string();
-        let is_rgt = path.ends_with(&format!(".{}", RGT_EXTENSION));
+        let is_rgt = path.ends_with(&format!(".{RGT_EXTENSION}"));
         by_stem
             .entry(stem)
             .and_modify(|existing| {

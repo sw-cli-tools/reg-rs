@@ -28,19 +28,16 @@ pub fn run(config: &Config) -> Result<u32> {
     }
     let pass_count = total - fail_count;
     if fail_count > 0 {
-        eprintln!(
-            "{} passed, {} failed (of {} total)",
-            pass_count, fail_count, total
-        );
+        eprintln!("{pass_count} passed, {fail_count} failed (of {total} total)");
         for test_path in &failed_paths {
             let name = crate::utils::format_test_name(test_path);
-            eprintln!("  FAIL: {}", name);
+            eprintln!("  FAIL: {name}");
         }
         if verbosity > 0 {
             run_show_failure_details(&failed_paths, verbosity)?;
         }
     } else {
-        eprintln!("{} passed (of {} total)", pass_count, total);
+        eprintln!("{pass_count} passed (of {total} total)");
     }
     Ok(fail_count)
 }
@@ -94,13 +91,13 @@ fn run_show_failure_details(failed_paths: &[String], verbosity: u8) -> Result<()
         } else {
             format!(" ({})", types.join(", "))
         };
-        eprintln!("  {} — {} difference(s){}", name, diff_count, type_str);
+        eprintln!("  {name} — {diff_count} difference(s){type_str}");
 
         if let Ok(Some(desc)) = db_ops::read_metadata(&db_path, "desc") {
-            eprintln!("    desc:    {}", desc);
+            eprintln!("    desc:    {desc}");
         }
         if let Ok(Some(expects)) = db_ops::read_metadata(&db_path, "expects") {
-            eprintln!("    expects: {}", expects);
+            eprintln!("    expects: {expects}");
         }
 
         if verbosity > 1 {

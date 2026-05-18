@@ -35,8 +35,7 @@ fn test_exec_timeout_kills_long_running_command() {
     let err = result.unwrap_err().to_string();
     assert!(
         err.contains("timed out"),
-        "error should mention timeout: {}",
-        err
+        "error should mention timeout: {err}"
     );
 }
 

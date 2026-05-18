@@ -24,14 +24,14 @@ pub fn migrate(config: &Config) -> Result<()> {
     }
     let mut migrated = 0;
     for test_path in &tests.found {
-        if test_path.ends_with(&format!(".{}", RGT_EXTENSION)) {
-            eprintln!("skip: {} (already .rgt)", test_path);
+        if test_path.ends_with(&format!(".{RGT_EXTENSION}")) {
+            eprintln!("skip: {test_path} (already .rgt)");
             continue;
         }
         migrate_one(test_path)?;
         migrated += 1;
     }
-    eprintln!("{} test(s) migrated to .rgt format", migrated);
+    eprintln!("{migrated} test(s) migrated to .rgt format");
     log::info!("command/migrate done");
     Ok(())
 }
@@ -45,7 +45,7 @@ fn migrate_one(tdb_path: &str) -> Result<()> {
         .to_string();
 
     if std::path::Path::new(&rgt_path).exists() {
-        eprintln!("skip: {} (.rgt already exists)", tdb_path);
+        eprintln!("skip: {tdb_path} (.rgt already exists)");
         return Ok(());
     }
 
@@ -69,6 +69,6 @@ fn migrate_one(tdb_path: &str) -> Result<()> {
 
     rgt::write_rgt(&rgt_path, &spec)?;
     rgt::write_baseline(&rgt_path, &original.stdout, &original.stderr)?;
-    eprintln!("migrated: {} -> {}", tdb_path, rgt_path);
+    eprintln!("migrated: {tdb_path} -> {rgt_path}");
     Ok(())
 }

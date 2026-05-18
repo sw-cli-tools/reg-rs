@@ -13,7 +13,7 @@ pub fn run_many_sequential(tests: &[String], dry_run: bool) -> reg_rs_types::err
 /// Run tests in parallel using scoped threads (one thread per test)
 pub fn run_many_parallel(tests: &[String], dry_run: bool) -> reg_rs_types::error::Result<()> {
     let test_count = tests.len();
-    eprintln!("running {} tests in parallel", test_count);
+    eprintln!("running {test_count} tests in parallel");
     let start = std::time::Instant::now();
 
     let errors: Mutex<Vec<String>> = Mutex::new(Vec::new());
@@ -26,7 +26,7 @@ pub fn run_many_parallel(tests: &[String], dry_run: bool) -> reg_rs_types::error
                     errors
                         .lock()
                         .expect("mutex poisoned collecting test errors")
-                        .push(format!("{}: {}", test, e));
+                        .push(format!("{test}: {e}"));
                 }
             });
         }

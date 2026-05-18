@@ -31,7 +31,7 @@ fn project_root() -> PathBuf {
 /// and REG_RS_DATA_DIR pointing at an isolated test directory.
 fn run_demo_script(script_name: &str) -> process::Output {
     let bin_path = debug_bin_path();
-    let data_dir = common::test_data_dir().join(format!("demo_{}", script_name));
+    let data_dir = common::test_data_dir().join(format!("demo_{script_name}"));
     let _ = fs::create_dir_all(&data_dir);
     let script_path = project_root().join("demo").join(script_name);
 
@@ -41,7 +41,7 @@ fn run_demo_script(script_name: &str) -> process::Output {
         .env("REG_RS_DATA_DIR", &data_dir)
         .current_dir(project_root())
         .output()
-        .unwrap_or_else(|e| panic!("failed to run {}: {}", script_name, e))
+        .unwrap_or_else(|e| panic!("failed to run {script_name}: {e}"))
 }
 
 #[test]
@@ -518,15 +518,14 @@ fn allocate_port() -> u16 {
 /// Kill any process listening on the given port (belt).
 fn kill_port_holder(port: u16) {
     let _ = process::Command::new("lsof")
-        .args(["-ti", &format!(":{}", port)])
+        .args(["-ti", &format!(":{port}")])
         .output()
         .ok()
-        .and_then(|out| {
+        .map(|out| {
             let pids = String::from_utf8_lossy(&out.stdout);
             for pid in pids.split_whitespace() {
                 let _ = process::Command::new("kill").arg(pid).output();
             }
-            Some(())
         });
     std::thread::sleep(std::time::Duration::from_millis(100));
 }
@@ -563,13 +562,12 @@ fn start_status_server_robust(pattern: &str, data_dir: &std::path::Path) -> (Ser
         .spawn()
         .expect("failed to start status server");
 
-    let base_url = format!("http://127.0.0.1:{}", port);
+    let base_url = format!("http://127.0.0.1:{port}");
 
     // Verify the server bound successfully by polling
     assert!(
         wait_for_server(&base_url, 10),
-        "Server on port {} did not start within 10s",
-        port
+        "Server on port {port} did not start within 10s"
     );
 
     (ServerGuard { child, port }, base_url)
@@ -577,7 +575,7 @@ fn start_status_server_robust(pattern: &str, data_dir: &std::path::Path) -> (Ser
 
 /// Wait for the API to report at least one test, retrying up to `timeout_secs`.
 fn wait_for_api_tests(base_url: &str, timeout_secs: u64) -> serde_json::Value {
-    let api_url = format!("{}/api/status", base_url);
+    let api_url = format!("{base_url}/api/status");
     let start = std::time::Instant::now();
     while start.elapsed() < std::time::Duration::from_secs(timeout_secs) {
         if let Ok(resp) = ureq::get(&api_url).call() {
@@ -589,7 +587,7 @@ fn wait_for_api_tests(base_url: &str, timeout_secs: u64) -> serde_json::Value {
         }
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
-    panic!("API did not report tests within {}s", timeout_secs);
+    panic!("API did not report tests within {timeout_secs}s");
 }
 
 /// Wait for the server to be ready by polling the given URL
@@ -644,7 +642,7 @@ fn integration_test_status_server_landing_page() {
     );
 
     // Check status dashboard
-    let resp = ureq::get(&format!("{}/status", base_url))
+    let resp = ureq::get(&format!("{base_url}/status"))
         .call()
         .expect("status page GET failed");
     assert_eq!(resp.status(), 200);
@@ -652,7 +650,7 @@ fn integration_test_status_server_landing_page() {
     assert!(body.contains("status_test"), "Status page should show test");
 
     // Check API endpoint
-    let resp = ureq::get(&format!("{}/api/status", base_url))
+    let resp = ureq::get(&format!("{base_url}/api/status"))
         .call()
         .expect("api/status GET failed");
     assert_eq!(resp.status(), 200);
@@ -709,7 +707,7 @@ fn integration_test_sse_broadcasts_on_file_change() {
     std::thread::sleep(std::time::Duration::from_secs(5));
 
     // Check that the state was updated
-    let resp = ureq::get(&format!("{}/api/status", base_url))
+    let resp = ureq::get(&format!("{base_url}/api/status"))
         .call()
         .expect("api GET failed after change");
     let updated: serde_json::Value = resp.into_json().expect("failed to parse JSON response");
@@ -718,18 +716,17 @@ fn integration_test_sse_broadcasts_on_file_change() {
     // The updated timestamp should have changed
     assert_ne!(
         initial_updated, new_updated,
-        "State should update after file change (initial: {}, new: {})",
-        initial_updated, new_updated
+        "State should update after file change (initial: {initial_updated}, new: {new_updated})"
     );
 
     // Verify the test now shows as having been run
     let tests = updated["tests"]
         .as_array()
-        .unwrap_or_else(|| panic!("expected tests array in response: {}", updated));
+        .unwrap_or_else(|| panic!("expected tests array in response: {updated}"));
     let sse_test = tests
         .iter()
         .find(|t| t["name"].as_str().unwrap_or("").contains("sse_test"))
-        .unwrap_or_else(|| panic!("expected sse_test in tests: {:?}", tests));
+        .unwrap_or_else(|| panic!("expected sse_test in tests: {tests:?}"));
     assert!(
         sse_test["last_ran"].is_string(),
         "Test should have a last_ran timestamp after running"
@@ -760,8 +757,7 @@ fn integration_test_demo_dogfood() {
     );
     assert!(
         stdout.contains("reg-rs successfully tested itself"),
-        "dogfood.sh should complete successfully:\n{}",
-        stdout
+        "dogfood.sh should complete successfully:\n{stdout}"
     );
 }
 
@@ -780,8 +776,7 @@ fn integration_test_demo_test_basic() {
     );
     assert!(
         stdout.contains("All steps completed successfully"),
-        "test_basic.sh should complete successfully:\n{}",
-        stdout
+        "test_basic.sh should complete successfully:\n{stdout}"
     );
 }
 
@@ -800,8 +795,7 @@ fn integration_test_demo_test_workflow() {
     );
     assert!(
         stdout.contains("reg-rs successfully detected the regression"),
-        "test_workflow.sh should detect regression:\n{}",
-        stdout
+        "test_workflow.sh should detect regression:\n{stdout}"
     );
 }
 

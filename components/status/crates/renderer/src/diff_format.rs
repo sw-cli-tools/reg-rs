@@ -119,8 +119,8 @@ pub fn highlight_diff(old: &str, new: &str) -> (String, String) {
         (old.to_string(), new.to_string())
     } else {
         (
-            format!("{}<mark>{}</mark>{}", old_prefix, old_mid, old_suffix),
-            format!("{}<mark>{}</mark>{}", new_prefix, new_mid, new_suffix),
+            format!("{old_prefix}<mark>{old_mid}</mark>{old_suffix}"),
+            format!("{new_prefix}<mark>{new_mid}</mark>{new_suffix}"),
         )
     }
 }

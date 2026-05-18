@@ -15,7 +15,7 @@ pub(crate) fn show_one_rgt(
 ) -> Result<()> {
     let spec = rgt::parse_rgt(rgt_path)?;
 
-    println!("=== {} ({}) ===", name, status);
+    println!("=== {name} ({status}) ===");
     println!("format:   .rgt");
     println!("command:  {}", spec.command);
     print_optional_field("exit", &spec.exit_code.map(|c| c.to_string()));
@@ -24,7 +24,7 @@ pub(crate) fn show_one_rgt(
     print_optional_field("flaky", &spec.flaky_note);
     print_optional_field("preprocess", &spec.preprocess);
     print_optional_field("diff_mode", &spec.diff_mode);
-    print_optional_field("timeout", &spec.timeout.map(|t| format!("{}s", t)));
+    print_optional_field("timeout", &spec.timeout.map(|t| format!("{t}s")));
 
     if verbosity >= 1 {
         let baseline_stdout = rgt::read_baseline_stdout(rgt_path)?;

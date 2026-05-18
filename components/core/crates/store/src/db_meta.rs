@@ -21,13 +21,13 @@ pub fn count_latest_results(db_name: &str) -> Result<u32> {
 
 /// Store test metadata (key-value pair)
 pub fn store_metadata(db_name: &str, key: &str, value: &str) -> Result<()> {
-    log::info!("db/store_metadata {} key={}", db_name, key);
+    log::info!("db/store_metadata {db_name} key={key}");
     with_lock(db_name, || sqlite_diff::store_metadata(db_name, key, value))
 }
 
 /// Read test metadata by key. Returns None if not set.
 pub fn read_metadata(db_name: &str, key: &str) -> Result<Option<String>> {
-    log::info!("db/read_metadata {} key={}", db_name, key);
+    log::info!("db/read_metadata {db_name} key={key}");
     with_lock(db_name, || sqlite_diff::read_metadata(db_name, key))
 }
 

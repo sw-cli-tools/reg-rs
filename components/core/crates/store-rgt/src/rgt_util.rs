@@ -12,7 +12,7 @@ pub fn tdb_path_for_rgt(rgt_path: &str) -> String {
 
 /// Check if a path ends with the `.rgt` extension.
 pub fn is_rgt_path(path: &str) -> bool {
-    path.ends_with(&format!(".{}", RGT_EXTENSION))
+    path.ends_with(&format!(".{RGT_EXTENSION}"))
 }
 
 /// Resolve the .tdb database path for a test file.
@@ -20,7 +20,7 @@ pub fn is_rgt_path(path: &str) -> bool {
 /// For `.rgt` files, returns the companion `.tdb` cache path.
 /// For `.tdb` files, returns the path as-is.
 pub fn db_path(test_path: &str) -> String {
-    if test_path.ends_with(&format!(".{}", RGT_EXTENSION)) {
+    if test_path.ends_with(&format!(".{RGT_EXTENSION}")) {
         tdb_path_for_rgt(test_path)
     } else {
         test_path.to_string()

@@ -88,7 +88,7 @@ pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> 
 
 /// Store a metadata key-value pair, creating the table if needed.
 pub fn store_metadata(db_name: &str, key: &str, value: &str) -> Result<()> {
-    log::info!("sqlite/store_metadata {} key={}", db_name, key);
+    log::info!("sqlite/store_metadata {db_name} key={key}");
     let mut conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
         let tx = conn
@@ -107,7 +107,7 @@ pub fn store_metadata(db_name: &str, key: &str, value: &str) -> Result<()> {
 
 /// Read a metadata value by key. Returns None if the table or key doesn't exist.
 pub fn read_metadata(db_name: &str, key: &str) -> Result<Option<String>> {
-    log::info!("sqlite/read_metadata {} key={}", db_name, key);
+    log::info!("sqlite/read_metadata {db_name} key={key}");
     let conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     let result = {
         // Table may not exist in older .tdb files

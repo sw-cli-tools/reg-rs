@@ -134,8 +134,7 @@ impl StatementContext {
 pub fn get_statement(statement_context: &StatementContext, statement_template: &str) -> String {
     render(statement_context, statement_template).unwrap_or_else(|e| {
         panic!(
-            "SQL template rendering failed (this is a bug): template='{}', error={}",
-            statement_template, e
+            "SQL template rendering failed (this is a bug): template='{statement_template}', error={e}"
         )
     })
 }

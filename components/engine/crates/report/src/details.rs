@@ -85,7 +85,7 @@ pub fn show_details(
 ) -> reg_rs_types::error::Result<()> {
     log::info!("details/show_details");
     let rendered = render(details_report_context)?;
-    println!("{}", rendered);
+    println!("{rendered}");
     if verbosity_level > 1 {
         details_failures::show_failures(details_report_context, verbosity_level)?;
     }

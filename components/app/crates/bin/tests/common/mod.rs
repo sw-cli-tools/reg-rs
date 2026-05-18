@@ -16,6 +16,6 @@ pub fn setup() {
 /// Remove all files for a given test stem (.rgt, .out, .err, .tdb, locks).
 pub fn cleanup_test_files(data_dir: &std::path::Path, stem: &str) {
     for ext in &["rgt", "out", "err", "tdb", "tdb.lock", "rgt.lock"] {
-        let _ = std::fs::remove_file(data_dir.join(format!("{}.{}", stem, ext)));
+        let _ = std::fs::remove_file(data_dir.join(format!("{stem}.{ext}")));
     }
 }

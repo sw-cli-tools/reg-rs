@@ -33,7 +33,7 @@ pub fn list(config: &Config) -> Result<()> {
         } else {
             command
         };
-        println!("{:<7} {:<30} {}", status, name, cmd_display);
+        println!("{status:<7} {name:<30} {cmd_display}");
     }
     println!(
         "---\n{} test(s) matched pattern '{}'",
@@ -46,7 +46,7 @@ pub fn list(config: &Config) -> Result<()> {
 
 /// Read the command and database path for a test file.
 fn read_test_command(test_path: &str) -> Result<(String, String)> {
-    if test_path.ends_with(&format!(".{}", RGT_EXTENSION)) {
+    if test_path.ends_with(&format!(".{RGT_EXTENSION}")) {
         let spec = rgt::parse_rgt(test_path)?;
         let tdb_path = rgt_util::tdb_path_for_rgt(test_path);
         Ok((spec.command, tdb_path))

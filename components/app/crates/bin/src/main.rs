@@ -21,11 +21,11 @@ async fn main() {
 
     match result {
         Ok(exit_code) => {
-            log::info!(target: "reg_rs::main", "end (exit {})", exit_code);
+            log::info!(target: "reg_rs::main", "end (exit {exit_code})");
             std::process::exit(exit_code);
         }
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("Error: {e}");
             std::process::exit(2);
         }
     }

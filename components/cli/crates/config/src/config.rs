@@ -109,7 +109,7 @@ impl Config {
             Subcommands::Report { verbosity, .. }
             | Subcommands::Run { verbosity, .. }
             | Subcommands::Show { verbosity, .. } => {
-                log::debug!("verbosity_level: {}", verbosity);
+                log::debug!("verbosity_level: {verbosity}");
                 *verbosity
             }
             _ => 0,

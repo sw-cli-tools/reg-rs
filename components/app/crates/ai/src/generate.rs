@@ -34,18 +34,13 @@ pub fn generate_command(
 ) -> Result<String> {
     let api_key = env::var(API_KEY_ENV).map_err(|_| {
         RegError::Config(format!(
-            "{} environment variable not set. Get an API key at https://console.anthropic.com/",
-            API_KEY_ENV
+            "{API_KEY_ENV} environment variable not set. Get an API key at https://console.anthropic.com/"
         ))
     })?;
 
     let model = env::var(MODEL_ENV).unwrap_or_else(|_| DEFAULT_MODEL.to_string());
 
-    log::info!(
-        "ai/generate_command model={}, description={}",
-        model,
-        description
-    );
+    log::info!("ai/generate_command model={model}, description={description}");
 
     let prompt = build_prompt(description, context, existing_tests);
     let body = build_request_body(&model, &prompt);
@@ -55,11 +50,11 @@ pub fn generate_command(
         .set("anthropic-version", "2023-06-01")
         .set("content-type", "application/json")
         .send_json(&body)
-        .map_err(|e| RegError::Other(format!("Claude API request failed: {}", e)))?;
+        .map_err(|e| RegError::Other(format!("Claude API request failed: {e}")))?;
 
     let response_body: serde_json::Value = response
         .into_json()
-        .map_err(|e| RegError::Other(format!("Failed to parse Claude API response: {}", e)))?;
+        .map_err(|e| RegError::Other(format!("Failed to parse Claude API response: {e}")))?;
 
     extract_command(&response_body)
 }
@@ -76,20 +71,19 @@ pub fn build_prompt(description: &str, context: Option<&str>, existing_tests: &[
 
     if let Some(ctx) = context {
         prompt.push_str(&format!(
-            "Context (tool help or reference output):\n```\n{}\n```\n\n",
-            ctx
+            "Context (tool help or reference output):\n```\n{ctx}\n```\n\n"
         ));
     }
 
     if !existing_tests.is_empty() {
         prompt.push_str("Existing test commands (follow similar patterns):\n");
         for cmd in existing_tests {
-            prompt.push_str(&format!("  - {}\n", cmd));
+            prompt.push_str(&format!("  - {cmd}\n"));
         }
         prompt.push('\n');
     }
 
-    prompt.push_str(&format!("User description: {}", description));
+    prompt.push_str(&format!("User description: {description}"));
     prompt
 }
 
@@ -114,10 +108,7 @@ pub fn extract_command(response: &serde_json::Value) -> Result<String> {
         .and_then(|blocks| blocks.first())
         .and_then(|block| block["text"].as_str())
         .ok_or_else(|| {
-            RegError::Other(format!(
-                "Unexpected Claude API response format: {}",
-                response
-            ))
+            RegError::Other(format!("Unexpected Claude API response format: {response}"))
         })?;
 
     let command = command.trim().to_string();

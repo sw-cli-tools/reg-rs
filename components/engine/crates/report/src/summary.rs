@@ -46,7 +46,7 @@ impl SummaryReportContext {
 
 /// Conditionally color output
 fn maybe_color(condition: bool, cb: &dyn Fn(&str) -> String, count: u32) -> String {
-    let s = format!(" {:05}", count);
+    let s = format!(" {count:05}");
     if condition { cb(&s) } else { s }
 }
 
@@ -69,6 +69,6 @@ pub fn show_summary(
 ) -> reg_rs_types::error::Result<()> {
     log::info!("summary/show_summary");
     let rendered = render(summary_report_context)?;
-    println!("{}", rendered);
+    println!("{rendered}");
     Ok(())
 }

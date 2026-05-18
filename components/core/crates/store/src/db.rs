@@ -20,11 +20,11 @@ where
     F: FnOnce() -> Result<T>,
 {
     let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
-        .map_err(|e| RegError::FileLock(format!("unable to get lock for {}: {}", db_name, e)))?;
+        .map_err(|e| RegError::FileLock(format!("unable to get lock for {db_name}: {e}")))?;
     let result = f();
     filelock
         .unlock()
-        .map_err(|e| RegError::FileLock(format!("unable to unlock {}: {}", db_name, e)))?;
+        .map_err(|e| RegError::FileLock(format!("unable to unlock {db_name}: {e}")))?;
     result
 }
 

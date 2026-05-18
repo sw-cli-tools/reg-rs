@@ -80,22 +80,13 @@ pub struct StatusFlags {
 /// Generate HTML status indicator for landing page
 pub fn status_indicator(fail: usize, pending: usize, total: usize, pass: usize) -> String {
     if fail > 0 {
-        format!(
-            r#"<span class="status-indicator fail">&#10007; {} failed</span>"#,
-            fail
-        )
+        format!(r#"<span class="status-indicator fail">&#10007; {fail} failed</span>"#)
     } else if total == 0 {
         r#"<span class="status-indicator pending">No tests found</span>"#.to_string()
     } else if pending > 0 {
-        format!(
-            r#"<span class="status-indicator pending">? {} not yet run</span>"#,
-            pending
-        )
+        format!(r#"<span class="status-indicator pending">? {pending} not yet run</span>"#)
     } else {
-        format!(
-            r#"<span class="status-indicator pass">&#10003; All {} tests passing</span>"#,
-            pass
-        )
+        format!(r#"<span class="status-indicator pass">&#10003; All {pass} tests passing</span>"#)
     }
 }
 

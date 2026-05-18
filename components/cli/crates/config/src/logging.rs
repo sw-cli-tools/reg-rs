@@ -5,7 +5,7 @@ use crate::time;
 /// Set up file logging with the given level filter
 pub fn setup_logging(level: log::LevelFilter) -> reg_rs_types::error::Result<()> {
     let pid = process::id();
-    let file_name = format!("reg-rs-{}.log", pid);
+    let file_name = format!("reg-rs-{pid}.log");
     eprintln!("logging/setup_logging file: {}", &file_name);
     fern::Dispatch::new()
         .level(level)

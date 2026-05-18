@@ -19,7 +19,7 @@ pub fn remove(config: &Config) -> Result<()> {
         return Ok(());
     }
     for test in &tests.found {
-        let is_rgt = test.ends_with(&format!(".{}", RGT_EXTENSION));
+        let is_rgt = test.ends_with(&format!(".{RGT_EXTENSION}"));
         if is_rgt {
             remove_rgt_files(test)?;
         } else {
@@ -42,9 +42,9 @@ fn remove_rgt_files(test: &str) -> Result<()> {
     let tdb_path = rgt_util::tdb_path_for_rgt(test);
     let _ = db::drop_all_results(&tdb_path);
     let _ = std::fs::remove_file(&tdb_path);
-    let lock_path = format!("{}.{}", tdb_path, LOCK_EXTENSION);
+    let lock_path = format!("{tdb_path}.{LOCK_EXTENSION}");
     let _ = std::fs::remove_file(&lock_path);
-    let rgt_lock = format!("{}.{}", test, LOCK_EXTENSION);
+    let rgt_lock = format!("{test}.{LOCK_EXTENSION}");
     let _ = std::fs::remove_file(&rgt_lock);
     Ok(())
 }
@@ -53,11 +53,11 @@ fn remove_rgt_files(test: &str) -> Result<()> {
 fn remove_tdb_files(test: &str) -> Result<()> {
     db::drop_all_results(test)?;
     if let Err(e) = std::fs::remove_file(test) {
-        log::debug!("could not remove {}: {}", test, e);
+        log::debug!("could not remove {test}: {e}");
     }
-    let lock_path = format!("{}.{}", test, LOCK_EXTENSION);
+    let lock_path = format!("{test}.{LOCK_EXTENSION}");
     if let Err(e) = std::fs::remove_file(&lock_path) {
-        log::debug!("could not remove {}: {}", lock_path, e);
+        log::debug!("could not remove {lock_path}: {e}");
     }
     Ok(())
 }

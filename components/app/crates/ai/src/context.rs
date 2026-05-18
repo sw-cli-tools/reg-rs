@@ -5,7 +5,7 @@ use reg_rs_types::error::Result;
 
 /// Run a context command and return its stdout.
 pub fn gather_context(context_cmd: &str) -> Result<Option<String>> {
-    eprintln!("Running context command: {}", context_cmd);
+    eprintln!("Running context command: {context_cmd}");
     let (_, _, stdout) = reg_rs_exec::process::exec(context_cmd.to_string())?;
     Ok(Some(stdout))
 }

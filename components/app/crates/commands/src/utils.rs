@@ -22,7 +22,7 @@ pub fn resolve_test_path(test: &str) -> String {
         resolved.set_extension("");
     }
     let mut name = resolved.file_name().unwrap_or_default().to_os_string();
-    name.push(format!(".{}", RGT_EXTENSION));
+    name.push(format!(".{RGT_EXTENSION}"));
     resolved.set_file_name(name);
     resolved.to_string_lossy().to_string()
 }
@@ -32,7 +32,7 @@ pub fn resolve_test_path(test: &str) -> String {
 /// For `.rgt` tests, reads the spec from the TOML file.
 /// For `.tdb` tests, reads from the database.
 pub fn read_test_command(test_path: &str) -> Result<(String, String)> {
-    if test_path.ends_with(&format!(".{}", RGT_EXTENSION)) {
+    if test_path.ends_with(&format!(".{RGT_EXTENSION}")) {
         let spec = rgt::parse_rgt(test_path)?;
         let tdb_path = rgt::tdb_path_for_rgt(test_path);
         Ok((spec.command, tdb_path))

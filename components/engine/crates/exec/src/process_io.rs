@@ -10,7 +10,7 @@ pub fn collect_output(
     let stderr = stderr_handle.join().unwrap_or_default();
     let status_code = status.code().unwrap_or(-1);
 
-    log::debug!("status: {:#?} status_code:{}", status, status_code);
+    log::debug!("status: {status:#?} status_code:{status_code}");
     log::debug!("stdout:\n{}", &stdout);
     log::debug!("stderr:\n{}", &stderr);
 

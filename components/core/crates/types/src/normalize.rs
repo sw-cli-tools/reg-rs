@@ -39,8 +39,7 @@ impl FromStr for DiffMode {
             "json" => Ok(Self::Json),
             "lines-unordered" => Ok(Self::LinesUnordered),
             other => Err(RegError::Config(format!(
-                "Unknown diff mode '{}'. Valid modes: text, json, lines-unordered",
-                other
+                "Unknown diff mode '{other}'. Valid modes: text, json, lines-unordered"
             ))),
         }
     }
@@ -73,10 +72,10 @@ fn normalize_json(input: &str) -> Result<String> {
     }
 
     let value: serde_json::Value = serde_json::from_str(input)
-        .map_err(|e| RegError::Other(format!("diff-mode json: output is not valid JSON: {}", e)))?;
+        .map_err(|e| RegError::Other(format!("diff-mode json: output is not valid JSON: {e}")))?;
 
     let mut normalized = serde_json::to_string_pretty(&value)
-        .map_err(|e| RegError::Other(format!("diff-mode json: failed to serialize: {}", e)))?;
+        .map_err(|e| RegError::Other(format!("diff-mode json: failed to serialize: {e}")))?;
     normalized.push('\n');
     Ok(normalized)
 }

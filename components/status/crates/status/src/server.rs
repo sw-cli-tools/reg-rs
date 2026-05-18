@@ -16,7 +16,7 @@ pub async fn start(
     initial_tests: &[String],
 ) -> reg_rs_types::error::Result<()> {
     log::info!("server/start - BEGIN");
-    log::info!("server/start - port={}, pattern={}", port, pattern);
+    log::info!("server/start - port={port}, pattern={pattern}");
 
     let app_state = AppState::new(pattern.to_string(), data_dir);
 
@@ -32,14 +32,14 @@ pub async fn start(
                     guard.runs = runs;
                 }
             }
-            Err(e) => log::warn!("server/start - failed to load tests: {}", e),
+            Err(e) => log::warn!("server/start - failed to load tests: {e}"),
         }
     }
 
     let _handles = crate::monitor::launch_monitor(app_state.clone());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
-    println!("Listening at {}.  Ctrl-C to terminate server", addr);
+    println!("Listening at {addr}.  Ctrl-C to terminate server");
 
     let app = Router::new()
         .route("/", get(handlers::serve_landing))

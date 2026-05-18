@@ -37,19 +37,16 @@ pub fn exec_with_timeout(
     match rx.recv_timeout(timeout) {
         Ok(Ok(status)) => collect_output(status, stdout_handle, stderr_handle),
         Ok(Err(e)) => Err(RegError::CommandExecution(format!(
-            "failed waiting for '{}': {}",
-            command, e
+            "failed waiting for '{command}': {e}"
         ))),
         Err(mpsc::RecvTimeoutError::Timeout) => {
             kill_child(child_pid, wait_handle);
             Err(RegError::CommandExecution(format!(
-                "command timed out after {:?}: '{}'",
-                timeout, command
+                "command timed out after {timeout:?}: '{command}'"
             )))
         }
         Err(e) => Err(RegError::CommandExecution(format!(
-            "channel error waiting for '{}': {}",
-            command, e
+            "channel error waiting for '{command}': {e}"
         ))),
     }
 }
@@ -62,7 +59,7 @@ fn spawn_shell(command: &str) -> reg_rs_types::error::Result<std::process::Child
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
-        .map_err(|e| RegError::CommandExecution(format!("failed to execute '{}': {}", command, e)))
+        .map_err(|e| RegError::CommandExecution(format!("failed to execute '{command}': {e}")))
 }
 
 /// Spawn threads to read stdout and stderr without pipe deadlocks.

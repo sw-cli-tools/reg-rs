@@ -140,7 +140,7 @@ pub async fn serve_status_view(State(state): State<AppState>) -> impl IntoRespon
     let state_data = match state.state_data.lock() {
         Ok(guard) => guard,
         Err(e) => {
-            log::error!("Failed to lock state data: {}", e);
+            log::error!("Failed to lock state data: {e}");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Html("<h1>Error: mutex poisoned</h1>".to_string()),
@@ -151,7 +151,7 @@ pub async fn serve_status_view(State(state): State<AppState>) -> impl IntoRespon
     match build_status_page(&state_data) {
         Ok(page) => (StatusCode::OK, Html(page)),
         Err(e) => {
-            log::error!("Failed to render status view: {}", e);
+            log::error!("Failed to render status view: {e}");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Html("<h1>Error</h1>".to_string()),
@@ -219,6 +219,6 @@ fn refresh_state(state: &AppState) {
                 guard.state_updated = format!("{}", date.format("%Y-%m-%dT%H:%M:%S%:z"));
             }
         }
-        Err(e) => log::error!("Failed to refresh test runs: {}", e),
+        Err(e) => log::error!("Failed to refresh test runs: {e}"),
     }
 }

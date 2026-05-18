@@ -68,6 +68,6 @@ fn show_pass_entry(
     let rendered = tt
         .render("p", &ctx)
         .map_err(|e| reg_rs_types::error::RegError::Template(e.to_string()))?;
-    println!("{}", rendered);
+    println!("{rendered}");
     Ok(())
 }

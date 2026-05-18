@@ -32,7 +32,7 @@ pub fn show(config: &Config) -> Result<()> {
 
 /// Dispatch to the appropriate show handler based on file type.
 fn show_one_test(test_path: &str, verbosity: u8) -> Result<()> {
-    let is_rgt = test_path.ends_with(&format!(".{}", RGT_EXTENSION));
+    let is_rgt = test_path.ends_with(&format!(".{RGT_EXTENSION}"));
     let name = format_test_name(test_path);
     let tdb_path = if is_rgt {
         rgt_util::tdb_path_for_rgt(test_path)
@@ -101,7 +101,7 @@ pub(crate) fn print_content_or_empty(content: &str) {
 
 /// Print text, appending a newline if the text doesn't already end with one.
 pub(crate) fn print_terminated(text: &str) {
-    print!("{}", text);
+    print!("{text}");
     if !text.ends_with('\n') {
         println!();
     }
@@ -123,7 +123,7 @@ pub(crate) fn show_latest_and_diffs(tdb_path: &str, diff_count: u32) -> Result<(
         println!("\n--- differences ({}) ---", diffs.len());
         for (type_code, chunk) in &diffs {
             let label = RegressionType::display_label(type_code).unwrap_or("unknown");
-            println!("[{}] {}", label, chunk);
+            println!("[{label}] {chunk}");
         }
     }
     Ok(())
