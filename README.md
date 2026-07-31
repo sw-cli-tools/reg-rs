@@ -82,17 +82,27 @@ reg-rs captures command output and exit codes as "golden" test results, then com
 
 - Rust 2024 edition or later
 - Cargo build tool
+- `sw-install` for installing the built binary
 
 ### Building from Source
 
 ```bash
 git clone https://github.com/sw-cli-tools/reg-rs.git
 cd reg-rs
-cargo build --release
 
-# Install the binary
-cargo install --path .
+# Build and verify every component workspace. This produces a debug binary.
+./scripts/build-all.sh
+
+# Point sw-install at the app workspace and select the debug artifact.
+sw-install -p components/app --type debug
 ```
+
+For a first-time `sw-install` setup, run `sw-install --setup-install-dir` and
+reload your shell before installing. The binary crate itself is located at
+`components/app/crates/bin`, but its artifact is produced in the app
+workspace's `components/app/target/debug` directory, so pass
+`components/app` to `sw-install`. Since `build-all.sh` performs a debug build,
+the install command must use `--type debug`.
 
 ### Shell Aliases (for interactive use)
 
