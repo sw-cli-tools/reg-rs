@@ -1,13 +1,10 @@
-use file_lock::FileLock;
+use std::fs::OpenOptions;
 
 use crate::queries;
 use crate::queries::statements;
 use crate::sqlite;
 use reg_rs_types::error::{RegError, Result};
 use reg_rs_types::types::TestResults;
-
-const BLOCKING: bool = true;
-const WRITING: bool = true;
 
 /// Get the path to the lock file for a given database file.
 pub(crate) fn lock_file_path(db_name: &str) -> String {
@@ -19,10 +16,17 @@ pub(crate) fn with_lock<T, F>(db_name: &str, f: F) -> Result<T>
 where
     F: FnOnce() -> Result<T>,
 {
-    let filelock = FileLock::lock(&lock_file_path(db_name), BLOCKING, WRITING)
-        .map_err(|e| RegError::FileLock(format!("unable to get lock for {db_name}: {e}")))?;
+    let lock_err =
+        |e: std::io::Error| RegError::FileLock(format!("unable to get lock for {db_name}: {e}"));
+    let lock_file = OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(lock_file_path(db_name))
+        .map_err(lock_err)?;
+    lock_file.lock().map_err(lock_err)?;
     let result = f();
-    filelock
+    lock_file
         .unlock()
         .map_err(|e| RegError::FileLock(format!("unable to unlock {db_name}: {e}")))?;
     result

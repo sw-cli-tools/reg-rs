@@ -47,3 +47,14 @@ fn test_exec_fast_command_within_timeout() {
     assert_eq!(code, 0);
     assert_eq!(stdout.trim(), "fast");
 }
+
+#[test]
+fn test_exec_timeout_stops_the_command() {
+    let marker = std::env::temp_dir().join(format!("reg-rs-kill-{}", std::process::id()));
+    let _ = std::fs::remove_file(&marker);
+    let command = format!("sleep 1; touch '{}'", marker.display());
+    let result = process::exec_with_timeout(command, Duration::from_millis(100));
+    assert!(result.is_err());
+    std::thread::sleep(Duration::from_millis(1500));
+    assert!(!marker.exists(), "timed-out command kept running");
+}
