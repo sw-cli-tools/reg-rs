@@ -27,6 +27,24 @@ fn project_root() -> PathBuf {
         .expect("failed to resolve repo root")
 }
 
+/// A `bash` command. On Windows, `bash` on `PATH` can be System32's WSL
+/// launcher, so go through Git Bash's `sh` (the one reg-rs itself uses).
+fn bash() -> process::Command {
+    if cfg!(windows) {
+        let mut cmd = process::Command::new("sh");
+        cmd.args(["-c", r#"exec bash "$0" "$@""#]);
+        cmd
+    } else {
+        process::Command::new("bash")
+    }
+}
+
+/// A path with forward slashes, which both Windows and `sh` accept
+/// (backslashes are escapes inside the shell commands the demos build).
+fn sh_path(path: &std::path::Path) -> String {
+    path.display().to_string().replace('\\', "/")
+}
+
 /// Run a demo script with REG_RS_BIN pointing at the debug binary
 /// and REG_RS_DATA_DIR pointing at an isolated test directory.
 fn run_demo_script(script_name: &str) -> process::Output {
@@ -35,10 +53,10 @@ fn run_demo_script(script_name: &str) -> process::Output {
     let _ = fs::create_dir_all(&data_dir);
     let script_path = project_root().join("demo").join(script_name);
 
-    process::Command::new("bash")
-        .arg(&script_path)
-        .env("REG_RS_BIN", &bin_path)
-        .env("REG_RS_DATA_DIR", &data_dir)
+    bash()
+        .arg(sh_path(&script_path))
+        .env("REG_RS_BIN", sh_path(&bin_path))
+        .env("REG_RS_DATA_DIR", sh_path(&data_dir))
         .current_dir(project_root())
         .output()
         .unwrap_or_else(|e| panic!("failed to run {script_name}: {e}"))
@@ -1071,10 +1089,12 @@ fn integration_test_exit_codes() {
         .assert()
         .code(1);
 
-    // Error case — nonexistent data dir → exit 2
+    // Error case — a data dir that cannot be created (beneath a file) → exit 2
+    let not_a_dir = common::test_data_dir().join("exitcode_not_a_dir");
+    fs::write(&not_a_dir, "").expect("failed to write test file");
     reg_rs()
         .args(["run", "-p", "foo"])
-        .env("REG_RS_DATA_DIR", "/nonexistent_dir_xyz")
+        .env("REG_RS_DATA_DIR", not_a_dir.join("data"))
         .assert()
         .code(2);
 
@@ -1083,4 +1103,5 @@ fn integration_test_exit_codes() {
     let _ = fs::remove_file(&lock_file);
     let _ = fs::remove_file(&test_rgt);
     let _ = fs::remove_file(&test_out);
+    let _ = fs::remove_file(&not_a_dir);
 }

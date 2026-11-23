@@ -15,6 +15,7 @@ pub fn data_dir() -> PathBuf {
         PathBuf::from(".")
     } else {
         env::var("HOME")
+            .or_else(|_| env::var("USERPROFILE"))
             .map(|h| PathBuf::from(h).join(".local").join("reg-rs"))
             .unwrap_or_else(|_| PathBuf::from("data"))
     };
