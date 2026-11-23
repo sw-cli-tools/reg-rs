@@ -16,7 +16,7 @@ const META_FLAKY_NOTE: &str = "flaky_note";
 /// Create a new test
 pub fn create(config: &Config) -> Result<()> {
     log::info!("command/create");
-    log::debug!("create config: {:?}", &config);
+    log::debug!("create config: {:?}", config);
 
     let opts = config.extract_create_options();
 
@@ -59,7 +59,7 @@ fn resolve_ai_command(opts: &CreateOptions, description: &str) -> Result<Option<
     let existing = reg_rs_ai::context::gather_existing_test_commands();
     let command =
         reg_rs_ai::generate::generate_command(description, context.as_deref(), &existing)?;
-    eprintln!("AI generated command: {}", &command);
+    eprintln!("AI generated command: {}", command);
     eprint!("Proceed? [y/n] ");
     let mut input = String::new();
     std::io::stdin()

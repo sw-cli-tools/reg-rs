@@ -10,6 +10,7 @@ pub use crate::subcommands::Subcommands;
 #[derive(Debug, PartialEq, Parser)]
 #[clap(
     name = "reg-rs",
+    bin_name = "reg-rs",
     version = generated_version(),
     long_version = extended_version(),
     about = "reg-rs (regress) - A CLI for regression testing",

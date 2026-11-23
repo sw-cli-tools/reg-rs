@@ -10,7 +10,7 @@ pub fn write_difference(
     difference_type: &str,
     difference_chunk: &str,
 ) -> Result<()> {
-    log::info!("sqlite/write_difference {} {}", &db_name, &difference_type);
+    log::info!("sqlite/write_difference {} {}", db_name, difference_type);
     let mut conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
         let tx = conn
@@ -33,7 +33,7 @@ pub fn write_difference(
 
 /// Read test result differences
 pub fn read_differences(db_name: &str, select_statement: &str) -> Result<Vec<(String, String)>> {
-    log::info!("sqlite/read_differences {} {}", &db_name, &select_statement);
+    log::info!("sqlite/read_differences {} {}", db_name, select_statement);
     let mut result = vec![];
     let conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
@@ -55,7 +55,7 @@ pub fn read_differences(db_name: &str, select_statement: &str) -> Result<Vec<(St
 
 /// Count rows in a table
 pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
-    log::info!("sqlite/count_rows {} {}", &db_name, &count_statement);
+    log::info!("sqlite/count_rows {} {}", db_name, count_statement);
     let count;
     let conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
@@ -78,11 +78,7 @@ pub fn count_rows(db_name: &str, count_statement: &str) -> Result<u32> {
 
 /// Check that a table exists
 pub fn table_exists(db_name: &str, table_exists_statement: &str) -> Result<u32> {
-    log::info!(
-        "sqlite/table_exists {} {}",
-        &db_name,
-        &table_exists_statement
-    );
+    log::info!("sqlite/table_exists {} {}", db_name, table_exists_statement);
     count_rows(db_name, table_exists_statement)
 }
 
@@ -133,8 +129,8 @@ pub fn read_metadata(db_name: &str, key: &str) -> Result<Option<String>> {
 pub fn count_differences_by_type(db_name: &str, count_diff_type_statement: &str) -> Result<u32> {
     log::info!(
         "sqlite/count_differences_by_type {} {}",
-        &db_name,
-        &count_diff_type_statement
+        db_name,
+        count_diff_type_statement
     );
     count_rows(db_name, count_diff_type_statement)
 }

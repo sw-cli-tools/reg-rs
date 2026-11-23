@@ -42,7 +42,7 @@ fn is_test_file(path: &str) -> bool {
 /// When both `.rgt` and `.tdb` files exist for the same test stem, the `.rgt`
 /// file takes precedence.
 pub fn discover(pattern: String) -> Result<DiscoverResult> {
-    log::info!("finder/discover pattern {}", &pattern);
+    log::info!("finder/discover pattern {}", pattern);
     let data_dir = crate::data_dir::data_dir();
     if !data_dir.exists() {
         return Err(RegError::Other(format!(
@@ -97,6 +97,6 @@ pub fn discover_in(dir: &std::path::Path, pattern: &str) -> Result<TestNames> {
 
     let mut found: Vec<String> = by_stem.into_values().collect();
     found.sort();
-    log::debug!("finder/discover_in found {:?}", &found);
+    log::debug!("finder/discover_in found {:?}", found);
     Ok(TestNames { found })
 }

@@ -6,7 +6,7 @@ use crate::time;
 pub fn setup_logging(level: log::LevelFilter) -> reg_rs_types::error::Result<()> {
     let pid = process::id();
     let file_name = format!("reg-rs-{pid}.log");
-    eprintln!("logging/setup_logging file: {}", &file_name);
+    eprintln!("logging/setup_logging file: {}", file_name);
     fern::Dispatch::new()
         .level(level)
         .chain(fern::DateBased::new(&file_name, "%Y-%m-%d"))

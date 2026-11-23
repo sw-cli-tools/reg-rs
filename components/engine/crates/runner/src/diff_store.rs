@@ -12,7 +12,7 @@ pub fn maybe_store_exit_code_differences(
     prior: &TestResults,
     latest: &TestResults,
 ) -> Result<()> {
-    log::info!("diff/maybe_store_exit_code_differences {}", &db_name);
+    log::info!("diff/maybe_store_exit_code_differences {}", db_name);
     if prior.exit_code != latest.exit_code {
         log::debug!(
             "exit code diff: {} vs {}",

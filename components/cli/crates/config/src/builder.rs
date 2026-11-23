@@ -13,6 +13,6 @@ pub fn build() -> config::Config {
         mode: args.command,
         debug: args.debug,
     };
-    log::info!("config {:?}", &config);
+    log::info!("config {:?}", config);
     config
 }

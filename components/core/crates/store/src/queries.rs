@@ -150,6 +150,6 @@ fn render(
     let result = tt
         .render("statement_template", &statement_context)
         .map_err(|e| reg_rs_types::error::RegError::Template(e.to_string()))?;
-    log::debug!("render_statement: {}", &result);
+    log::debug!("render_statement: {}", result);
     Ok(result)
 }

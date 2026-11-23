@@ -64,7 +64,7 @@ fn collect_latest_result(
 
 /// Get diff HTML strings from database
 fn get_diffs(test_name: &str) -> reg_rs_types::error::Result<Vec<String>> {
-    log::info!("server/get_diffs test_name {}", &test_name);
+    log::info!("server/get_diffs test_name {}", test_name);
     let differences = db_ops::read_differences(test_name)?;
     Ok(diff_format::format_diffs_html(&differences))
 }

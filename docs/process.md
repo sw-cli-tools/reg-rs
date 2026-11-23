@@ -45,7 +45,7 @@ git diff
 
 **Test Coverage**:
 - Unit tests for pure logic (in `#[cfg(test)]` modules)
-- Integration tests for CLI commands (`tests/integration_test.rs`)
+- Integration tests for CLI commands (`components/app/crates/bin/tests/*_test.rs`)
 - Demo script tests for dogfooding (`demo/*.sh` run via `cargo test`)
 - Edge case handling
 

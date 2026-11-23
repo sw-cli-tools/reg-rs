@@ -21,9 +21,10 @@ pub fn resolve_test_path(test: &str) -> String {
     {
         resolved.set_extension("");
     }
-    let mut name = resolved.file_name().unwrap_or_default().to_os_string();
-    name.push(format!(".{RGT_EXTENSION}"));
-    resolved.set_file_name(name);
+    // Append in place rather than set_file_name, which on Windows rebuilds
+    // the path with `\` and turns `subdir/foo` into `subdir\foo.rgt`.
+    let mut resolved = resolved.into_os_string();
+    resolved.push(format!(".{RGT_EXTENSION}"));
     resolved.to_string_lossy().to_string()
 }
 

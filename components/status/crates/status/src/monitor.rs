@@ -53,7 +53,7 @@ fn watch(app_state: AppState) -> Result<(), RegError> {
     };
     // Canonicalize to absolute path — notify watcher needs this for reliable event delivery
     let data_dir = raw_dir.canonicalize().unwrap_or_else(|_| raw_dir.clone());
-    log::info!("monitor/watch data_dir: {:?}", &data_dir);
+    log::info!("monitor/watch data_dir: {:?}", data_dir);
 
     let (tx, rx) = channel();
     let mut watcher = notify::watcher(tx, Duration::from_secs(2))

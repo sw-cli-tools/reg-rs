@@ -1,5 +1,3 @@
-use std::process::Command;
-
 /// Collect output from reader threads after the process exits successfully.
 pub fn collect_output(
     status: std::process::ExitStatus,
@@ -11,16 +9,14 @@ pub fn collect_output(
     let status_code = status.code().unwrap_or(-1);
 
     log::debug!("status: {status:#?} status_code:{status_code}");
-    log::debug!("stdout:\n{}", &stdout);
-    log::debug!("stderr:\n{}", &stderr);
+    log::debug!("stdout:\n{}", stdout);
+    log::debug!("stderr:\n{}", stderr);
 
     Ok((status_code, stderr, stdout))
 }
 
-/// Kill a child process by PID and join its wait thread.
-pub fn kill_child(child_pid: u32, wait_handle: std::thread::JoinHandle<std::process::Child>) {
-    let _ = Command::new("kill")
-        .args(["-9", &child_pid.to_string()])
-        .output();
-    let _ = wait_handle.join();
+/// Kill a child process and reap it (portable: no external `kill` command).
+pub fn kill_child(child: &mut std::process::Child) {
+    let _ = child.kill();
+    let _ = child.wait();
 }

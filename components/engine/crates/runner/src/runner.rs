@@ -19,7 +19,7 @@ pub fn run_one_timeout(
 ) -> reg_rs_types::error::Result<Option<TestResults>> {
     log::info!(
         "runner/run_one_timeout test_name {}, dry_run {}, timeout {}s",
-        &test_name,
+        test_name,
         dry_run,
         timeout_secs
     );
@@ -49,7 +49,7 @@ pub fn run_one(
 ) -> reg_rs_types::error::Result<Option<TestResults>> {
     log::info!(
         "runner/run_one test_name {}, dry_run {}",
-        &test_name,
+        test_name,
         dry_run
     );
     if dry_run {
@@ -78,7 +78,7 @@ pub fn run_one_with_executor(
 ) -> reg_rs_types::error::Result<Option<TestResults>> {
     log::info!(
         "runner/run_one_with_executor test_name {}, dry_run {}",
-        &test_name,
+        test_name,
         dry_run
     );
     if dry_run {
