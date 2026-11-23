@@ -52,7 +52,7 @@ impl Config {
 
     /// Extracts the test name pattern
     pub fn extract_pattern(&self) -> &str {
-        log::debug!("extract_pattern mode: {:?}", &self.mode);
+        log::debug!("extract_pattern mode: {:?}", self.mode);
         let p = match &self.mode {
             Subcommands::Create { .. } => unreachable!(),
             Subcommands::Analyze { pattern, .. } => pattern,
@@ -67,7 +67,7 @@ impl Config {
             Subcommands::Run { pattern, .. } => pattern,
             Subcommands::Status { pattern, .. } => pattern,
         };
-        log::debug!("extract_pattern result: {:?}", &p);
+        log::debug!("extract_pattern result: {:?}", p);
         p
     }
 

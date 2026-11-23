@@ -9,7 +9,7 @@ pub fn remove(config: &Config) -> Result<()> {
     log::info!("command/remove");
     let pattern = config.extract_pattern().to_string();
     let tests = reg_rs_discover::finder::discover(pattern.clone())?;
-    log::debug!("remove tests: {:?}", &tests);
+    log::debug!("remove tests: {:?}", tests);
     if tests.found.is_empty() {
         eprintln!(
             "warning: no tests matched pattern '{}' in {}",

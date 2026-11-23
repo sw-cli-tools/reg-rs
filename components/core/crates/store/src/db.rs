@@ -38,7 +38,7 @@ pub fn store_results(
     test_results: &TestResults,
     statement_context: queries::StatementContext,
 ) -> Result<()> {
-    log::info!("db/store_results {}", &db_name);
+    log::info!("db/store_results {}", db_name);
     with_lock(db_name, || {
         sqlite::create_table(
             db_name,
@@ -58,9 +58,9 @@ pub fn store_results(
 
 /// Read first time test results
 pub fn read_original_results(db_name: &str) -> Result<TestResults> {
-    log::info!("db/read_original_results {}", &db_name);
+    log::info!("db/read_original_results {}", db_name);
     with_lock(db_name, || {
-        log::debug!("read_original_results db: {}", &db_name);
+        log::debug!("read_original_results db: {}", db_name);
         sqlite::read_results(
             db_name,
             &queries::get_statement(
@@ -73,7 +73,7 @@ pub fn read_original_results(db_name: &str) -> Result<TestResults> {
 
 /// Read latest test results
 pub fn read_latest_results(db_name: &str) -> Result<TestResults> {
-    log::info!("db/read_latest_results {}", &db_name);
+    log::info!("db/read_latest_results {}", db_name);
     with_lock(db_name, || {
         sqlite::read_results(
             db_name,
@@ -87,7 +87,7 @@ pub fn read_latest_results(db_name: &str) -> Result<TestResults> {
 
 /// Atomically clear and replace latest test results under a single file lock.
 pub fn replace_latest_results(db_name: &str, test_results: &TestResults) -> Result<()> {
-    log::info!("db/replace_latest_results {}", &db_name);
+    log::info!("db/replace_latest_results {}", db_name);
     with_lock(db_name, || {
         sqlite::create_table(
             db_name,
@@ -117,13 +117,13 @@ pub fn replace_latest_results(db_name: &str, test_results: &TestResults) -> Resu
 
 /// Reset latest test results
 pub fn reset_latest_results(db_name: &str) -> Result<()> {
-    log::info!("db/reset_latest_results {}", &db_name);
+    log::info!("db/reset_latest_results {}", db_name);
     with_lock(db_name, || drop_and_recreate_latest(db_name))
 }
 
 /// Drop all test results
 pub fn drop_all_results(db_name: &str) -> Result<()> {
-    log::info!("db/drop_all_results {}", &db_name);
+    log::info!("db/drop_all_results {}", db_name);
     with_lock(db_name, || {
         sqlite::drop_table(
             db_name,

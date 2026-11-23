@@ -21,7 +21,7 @@ pub fn exec_with_timeout(
     command: String,
     timeout: Duration,
 ) -> reg_rs_types::error::Result<(i32, String, String)> {
-    log::info!("process/exec command: {} (timeout: {:?})", &command, timeout);
+    log::info!("process/exec command: {} (timeout: {:?})", command, timeout);
     let mut child = spawn_shell(&command)?;
     let (stdout_handle, stderr_handle) = spawn_output_readers(&mut child);
     match wait_until(&mut child, timeout) {

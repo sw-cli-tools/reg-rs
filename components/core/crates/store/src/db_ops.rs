@@ -13,7 +13,7 @@ pub use crate::db_meta::{
 
 /// Reset test result differences
 pub fn reset_differences(db_name: &str) -> Result<()> {
-    log::info!("db/reset_differences {}", &db_name);
+    log::info!("db/reset_differences {}", db_name);
     with_lock(db_name, || {
         sqlite::drop_table(
             db_name,
@@ -39,7 +39,7 @@ pub fn store_difference(
     difference_type: RegressionType,
     difference_chunk: &str,
 ) -> Result<()> {
-    log::info!("db/store_difference {}", &db_name);
+    log::info!("db/store_difference {}", db_name);
     with_lock(db_name, || {
         let difference_type = (difference_type as usize).to_string();
         sqlite_diff::write_difference(db_name, &difference_type, difference_chunk)?;
@@ -49,7 +49,7 @@ pub fn store_difference(
 
 /// Read test result differences
 pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
-    log::info!("db/read_differences {}", &db_name);
+    log::info!("db/read_differences {}", db_name);
     with_lock(db_name, || {
         sqlite_diff::read_differences(
             db_name,
@@ -63,7 +63,7 @@ pub fn read_differences(db_name: &str) -> Result<Vec<(String, String)>> {
 
 /// Count test result differences
 pub fn count_differences(db_name: &str) -> Result<u32> {
-    log::info!("db/count_differences {}", &db_name);
+    log::info!("db/count_differences {}", db_name);
     with_lock(db_name, || {
         sqlite_diff::count_rows(
             db_name,
@@ -77,7 +77,7 @@ pub fn count_differences(db_name: &str) -> Result<u32> {
 
 /// Count test differences by type
 pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u32> {
-    log::info!("db/difference_count_by_type {}", &db_name);
+    log::info!("db/difference_count_by_type {}", db_name);
     with_lock(db_name, || {
         sqlite_diff::count_differences_by_type(
             db_name,
@@ -91,7 +91,7 @@ pub fn difference_count_by_type(db_name: &str, difference_type: u8) -> Result<u3
 
 /// Clear test result differences
 pub fn clear_differences(db_name: &str) -> Result<()> {
-    log::info!("db/clear_differences {}", &db_name);
+    log::info!("db/clear_differences {}", db_name);
     with_lock(db_name, || {
         sqlite::create_table(
             db_name,

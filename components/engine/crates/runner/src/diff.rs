@@ -14,7 +14,7 @@ use crate::diff_store;
 pub fn get_differences(older: &str, newer: &str) -> Option<Vec<Difference>> {
     log::info!("diff/get_differences");
     let differences = diff(older, newer, "\n");
-    log::debug!("get_differences: {:?}", &differences);
+    log::debug!("get_differences: {:?}", differences);
     if differences.0 > 0 {
         Some(differences.1)
     } else {
@@ -47,7 +47,7 @@ pub fn process_differences(
     prior_test_result: &TestResults,
     latest_test_result: &TestResults,
 ) -> Result<()> {
-    log::info!("diff/process_differences {}", &db_name);
+    log::info!("diff/process_differences {}", db_name);
 
     let pp = db_ops::read_metadata(db_name, reg_rs_types::constants::PREPROCESS_KEY)?;
     let pp_ref = pp.as_deref();
@@ -76,7 +76,7 @@ pub fn process_differences_with_settings(
     preprocess_cmd: Option<&str>,
     diff_mode_str: Option<&str>,
 ) -> Result<()> {
-    log::info!("diff/process_differences_with_settings {}", &db_name);
+    log::info!("diff/process_differences_with_settings {}", db_name);
 
     let diff_mode = diff_mode_str
         .map(|s| s.parse::<normalize::DiffMode>())

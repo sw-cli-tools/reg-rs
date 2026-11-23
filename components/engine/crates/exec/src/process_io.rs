@@ -9,8 +9,8 @@ pub fn collect_output(
     let status_code = status.code().unwrap_or(-1);
 
     log::debug!("status: {status:#?} status_code:{status_code}");
-    log::debug!("stdout:\n{}", &stdout);
-    log::debug!("stderr:\n{}", &stderr);
+    log::debug!("stdout:\n{}", stdout);
+    log::debug!("stderr:\n{}", stderr);
 
     Ok((status_code, stderr, stdout))
 }

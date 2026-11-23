@@ -578,12 +578,11 @@ fn wait_for_api_tests(base_url: &str, timeout_secs: u64) -> serde_json::Value {
     let api_url = format!("{base_url}/api/status");
     let start = std::time::Instant::now();
     while start.elapsed() < std::time::Duration::from_secs(timeout_secs) {
-        if let Ok(resp) = ureq::get(&api_url).call() {
-            if let Ok(json) = resp.into_json::<serde_json::Value>() {
-                if json["total_count"].as_u64().unwrap_or(0) > 0 {
-                    return json;
-                }
-            }
+        if let Ok(resp) = ureq::get(&api_url).call()
+            && let Ok(json) = resp.into_json::<serde_json::Value>()
+            && json["total_count"].as_u64().unwrap_or(0) > 0
+        {
+            return json;
         }
         std::thread::sleep(std::time::Duration::from_millis(500));
     }

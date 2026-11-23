@@ -5,7 +5,7 @@ use reg_rs_types::types::TestResults;
 
 /// Read test results from a table
 pub fn read_results(db_name: &str, select_statement: &str) -> Result<TestResults> {
-    log::info!("sqlite/read_results {} {}", &db_name, &select_statement);
+    log::info!("sqlite/read_results {} {}", db_name, select_statement);
     let test;
     let conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
@@ -36,7 +36,7 @@ pub fn read_results(db_name: &str, select_statement: &str) -> Result<TestResults
 
 /// Create a table in the database
 pub fn create_table(db_name: &str, create_statement: &str) -> Result<()> {
-    log::info!("sqlite/create_table {} {}", &db_name, &create_statement);
+    log::info!("sqlite/create_table {} {}", db_name, create_statement);
     let mut conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
         let tx = conn
@@ -53,7 +53,7 @@ pub fn create_table(db_name: &str, create_statement: &str) -> Result<()> {
 
 /// Write test results to a table
 pub fn write_results(db_name: &str, test: &TestResults, insert_statement: &str) -> Result<()> {
-    log::info!("sqlite/write_results {} {}", &db_name, &insert_statement);
+    log::info!("sqlite/write_results {} {}", db_name, insert_statement);
     let mut conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
         let tx = conn
@@ -80,7 +80,7 @@ pub fn write_results(db_name: &str, test: &TestResults, insert_statement: &str) 
 
 /// Drop a table from the database
 pub fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
-    log::info!("sqlite/drop_table {} {}", &db_name, &drop_statement);
+    log::info!("sqlite/drop_table {} {}", db_name, drop_statement);
     let mut conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
         let tx = conn
@@ -97,7 +97,7 @@ pub fn drop_table(db_name: &str, drop_statement: &str) -> Result<()> {
 
 /// Delete all rows from a table
 pub fn delete_all_rows(db_name: &str, delete_statement: &str) -> Result<()> {
-    log::info!("sqlite/remove_rows {} {}", &db_name, &delete_statement);
+    log::info!("sqlite/remove_rows {} {}", db_name, delete_statement);
     let mut conn = Connection::open(db_name).map_err(|e| RegError::Database(e.to_string()))?;
     {
         let tx = conn
