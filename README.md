@@ -104,6 +104,20 @@ workspace's `components/app/target/debug` directory, so pass
 `components/app` to `sw-install`. Since `build-all.sh` performs a debug build,
 the install command must use `--type debug`.
 
+### Windows
+
+reg-rs builds and runs on Windows (x64, MSVC toolchain). Two things differ
+from Linux and macOS:
+
+- **Test commands run through `sh -c` on every OS.** On Windows that is the
+  `sh` from [Git for Windows](https://gitforwindows.org/) (Git Bash), which
+  must be on `PATH`. A `.rgt` file's `command` is therefore a POSIX shell
+  command everywhere, and the same tests run unchanged on all three systems.
+  Run `scripts/build-all.sh` and the `bin/source-rg.sh` aliases from Git Bash.
+- **SQLite is compiled in.** Linux and macOS link the system's SQLite
+  (Linux needs `libsqlite3-dev` or its equivalent); on Windows the `bundled`
+  build of SQLite is used, so no DLL or import library is needed.
+
 ### Shell Aliases (for interactive use)
 
 The shell aliases are the recommended way to use reg-rs interactively. Add to your `.bashrc` or `.zshrc`:

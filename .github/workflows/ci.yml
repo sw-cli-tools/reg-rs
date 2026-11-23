@@ -1,0 +1,51 @@
+# Build, lint and test every component workspace (scripts/build-all.sh)
+# on Linux, macOS and Windows. Windows runs in Git Bash, the same `sh`
+# reg-rs uses to run test commands there.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: SQLite (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            components/core
+            components/engine
+            components/status
+            components/cli
+            components/app
+
+      - name: fmt, clippy, test and build every component
+        run: scripts/build-all.sh
